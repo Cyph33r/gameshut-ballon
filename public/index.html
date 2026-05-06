@@ -20,8 +20,12 @@
     <p class="join-tagline">Pop the balloon that sounds like the word!</p>
     <form id="join-form">
       <label class="join-field-label">Enter your nickname</label>
-      <input id="username-input" type="text" placeholder="Nickname"
-             maxlength="24" autocomplete="off" autocapitalize="words" required />
+      <div class="join-input-group">
+        <div id="join-avatar">👤</div>
+        <input id="username-input" type="text" placeholder="Nickname"
+               maxlength="15" autocomplete="off" autocapitalize="words" required />
+        <button type="button" id="btn-random-name" class="k-btn-icon" title="Randomize Profile">🎲</button>
+      </div>
       <p class="join-hint">Use <strong>admin</strong> to host the game</p>
       <button type="submit" class="k-btn-primary">Let's go!</button>
     </form>
@@ -156,6 +160,8 @@
   const $gameScreen   = document.getElementById('game-screen');
   const $joinForm     = document.getElementById('join-form');
   const $usernameInput= document.getElementById('username-input');
+  const $joinAvatar   = document.getElementById('join-avatar');
+  const $btnRandom    = document.getElementById('btn-random-name');
 
   const $hostPanel    = document.getElementById('host-panel');
   const $playerPanel  = document.getElementById('player-panel');
@@ -189,6 +195,7 @@
   let hasClicked      = false;
   let totalScore      = 0;
   let myUsername      = '';
+  let myAvatar        = '👤';
   let resyncInterval  = null;
   let overlayTimer    = null;
   let closeTimer      = null;
@@ -303,12 +310,26 @@
   }
 
   // ── Join ─────────────────────────────────────────────────────────────────
+  const adjectives = ['Happy', 'Blue', 'Fast', 'Clever', 'Brave', 'Wild', 'Cool', 'Epic', 'Magic', 'Sneaky'];
+  const nouns = ['Tiger', 'Fox', 'Bear', 'Wolf', 'Owl', 'Panda', 'Lion', 'Hawk', 'Duck', 'Frog'];
+  const emojis = ['🐯', '🦊', '🐻', '🐺', '🦉', '🐼', '🦁', '🦅', '🦆', '🐸', '🦄', '🐙', '🦖', '🐢', '🐧'];
+
+  function randomizeProfile() {
+    const adj = adjectives[Math.floor(Math.random() * adjectives.length)];
+    const noun = nouns[Math.floor(Math.random() * nouns.length)];
+    $usernameInput.value = `${adj} ${noun}`;
+    myAvatar = emojis[Math.floor(Math.random() * emojis.length)];
+    $joinAvatar.textContent = myAvatar;
+  }
+  
+  $btnRandom.addEventListener('click', randomizeProfile);
+
   $joinForm.addEventListener('submit', (e) => {
     e.preventDefault();
     const name = $usernameInput.value.trim();
     if (!name) return;
     myUsername = name;
-    socket.emit('join', name);
+    socket.emit('join', { username: name, avatar: myAvatar });
   });
 
   // ── Panel switcher ───────────────────────────────────────────────────────
@@ -431,7 +452,7 @@
       li.style.animationDelay = `${i * 0.07}s`;
       li.innerHTML = `
         <span class="lb-rank">${medals[i] || i + 1}</span>
-        <span class="lb-name">${e.username}</span>
+        <span class="lb-name"><span class="lb-avatar">${e.avatar || '👤'}</span> ${e.username}</span>
         <span class="lb-pts">${e.score} pts</span>
       `;
       $lbList.appendChild(li);

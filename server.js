@@ -67,7 +67,7 @@ function startRound(word, correctColor) {
     // Leaderboard
     const lb = [...players.values()]
       .filter(p => !p.isGM)
-      .map(p => ({ username: p.username, score: p.score }))
+      .map(p => ({ username: p.username, avatar: p.avatar, score: p.score }))
       .sort((a, b) => b.score - a.score);
 
     io.emit('round_closed',    { roundId: round.id, correctColor: round.correctColor });
@@ -81,6 +81,7 @@ io.on('connection', (socket) => {
 
   players.set(socket.id, {
     username:         'Guest',
+    avatar:           '👤',
     isGM:             false,
     score:            0,
     clickedThisRound: false,
@@ -94,14 +95,20 @@ io.on('connection', (socket) => {
   });
 
   // ── Join ──────────────────────────────────────────────────────────────────
-  socket.on('join', (username) => {
+  socket.on('join', (payload) => {
+    // backwards compatibility if client sent string
+    const data = typeof payload === 'string' ? { username: payload, avatar: '👤' } : payload;
+    
     const player = players.get(socket.id);
     if (!player) return;
-    const clean      = String(username).trim().slice(0, 24) || 'Guest';
+    
+    const clean      = String(data.username).trim().slice(0, 24) || 'Guest';
     player.username  = clean;
+    player.avatar    = data.avatar || '👤';
     player.isGM      = clean.toLowerCase() === GM_USERNAME;
-    console.log(`  join: "${clean}" isGM=${player.isGM}`);
-    socket.emit('joined', { username: clean, isGM: player.isGM });
+    
+    console.log(`  join: "${clean}" ${player.avatar} isGM=${player.isGM}`);
+    socket.emit('joined', { username: clean, avatar: player.avatar, isGM: player.isGM });
   });
 
   // ── GM submits a word + correct colour ────────────────────────────────────

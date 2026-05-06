@@ -86,9 +86,24 @@ html, body {
   color: var(--k-muted);
 }
 
-#username-input {
+.join-input-group {
   width: 100%;
-  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+#join-avatar {
+  font-size: 2rem;
+  user-select: none;
+  min-width: 44px;
+  text-align: center;
+}
+
+#username-input {
+  flex: 1;
+  width: 100%;
+  padding: 14px 12px;
   background: rgba(255,255,255,0.12);
   border: 2px solid rgba(255,255,255,0.2);
   border-radius: var(--radius);
@@ -100,6 +115,19 @@ html, body {
   transition: border-color 0.2s;
   text-align: center;
 }
+
+.k-btn-icon {
+  background: rgba(255,255,255,0.15);
+  border: none;
+  border-radius: var(--radius);
+  padding: 0 12px;
+  font-size: 1.4rem;
+  cursor: pointer;
+  height: 100%;
+  transition: background 0.2s;
+  min-height: 54px;
+}
+.k-btn-icon:hover { background: rgba(255,255,255,0.25); }
 
 #username-input::placeholder { color: rgba(255,255,255,0.35); }
 #username-input:focus         { border-color: rgba(255,255,255,0.6); }
@@ -472,7 +500,8 @@ html, body {
 }
 
 .lb-rank { font-size: 1.3rem; min-width: 32px; text-align: center; }
-.lb-name { flex: 1; }
+.lb-name { flex: 1; display: flex; align-items: center; gap: 8px; }
+.lb-avatar { font-size: 1.2rem; }
 .lb-pts  { font-size: 1rem; color: var(--k-muted); white-space: nowrap; }
 
 .lb-host-action { margin-top: 8px; text-align: center; }

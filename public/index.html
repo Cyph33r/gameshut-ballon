@@ -63,19 +63,19 @@
         <p class="word-form-label">Which colour does it sound like?</p>
         <div class="host-grid">
           <button type="button" class="host-tile red"    data-color="red">
-            <span class="tile-shape">▲</span>
+            <div class="tile-balloon"></div>
             <span class="tile-label">Red</span>
           </button>
           <button type="button" class="host-tile blue"   data-color="blue">
-            <span class="tile-shape">◆</span>
+            <div class="tile-balloon"></div>
             <span class="tile-label">Blue</span>
           </button>
           <button type="button" class="host-tile yellow" data-color="yellow">
-            <span class="tile-shape">●</span>
+            <div class="tile-balloon"></div>
             <span class="tile-label">Yellow</span>
           </button>
           <button type="button" class="host-tile green"  data-color="green">
-            <span class="tile-shape">■</span>
+            <div class="tile-balloon"></div>
             <span class="tile-label">Green</span>
           </button>
         </div>
@@ -98,19 +98,19 @@
     <!-- 2×2 colour tiles -->
     <div class="k-tiles" id="player-tiles">
       <button class="k-tile red    disabled" data-color="red"    disabled>
-        <span class="tile-shape">▲</span>
+        <div class="tile-balloon"></div>
         <span class="tile-label">Red</span>
       </button>
       <button class="k-tile blue   disabled" data-color="blue"   disabled>
-        <span class="tile-shape">◆</span>
+        <div class="tile-balloon"></div>
         <span class="tile-label">Blue</span>
       </button>
       <button class="k-tile yellow disabled" data-color="yellow" disabled>
-        <span class="tile-shape">●</span>
+        <div class="tile-balloon"></div>
         <span class="tile-label">Yellow</span>
       </button>
       <button class="k-tile green  disabled" data-color="green"  disabled>
-        <span class="tile-shape">■</span>
+        <div class="tile-balloon"></div>
         <span class="tile-label">Green</span>
       </button>
     </div>
@@ -129,7 +129,7 @@
     <h2 class="lb-title">🏆 Leaderboard</h2>
     <ol id="lb-list" class="lb-list"></ol>
     <div id="lb-host-action" class="lb-host-action hidden">
-      <p class="lb-next-hint">Ready for the next word?</p>
+      <button id="btn-next-round" class="k-btn-primary">Next Round</button>
     </div>
   </section>
 
@@ -173,6 +173,7 @@
   const $resultPts    = document.getElementById('result-pts');
   const $lbList       = document.getElementById('lb-list');
   const $lbHostAction = document.getElementById('lb-host-action');
+  const $btnNextRound = document.getElementById('btn-next-round');
   const $connStatus   = document.getElementById('conn-status');
 
   const playerTiles   = Array.from(document.querySelectorAll('.k-tile'));
@@ -318,6 +319,13 @@
     if (which === 'player') $playerPanel.classList.remove('hidden');
     if (which === 'lb')     $lbPanel.classList.remove('hidden');
   }
+
+  $btnNextRound.addEventListener('click', () => {
+    if (isGM) {
+      showPanel('host');
+      $wordInput.focus();
+    }
+  });
 
   // ── Host: word form ──────────────────────────────────────────────────────
   // Each host tile acts as "submit with this colour"

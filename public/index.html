@@ -165,6 +165,7 @@
   const $totalScore   = document.getElementById('total-score');
   const $hostStatus   = document.getElementById('host-status');
   const $hostError    = document.getElementById('host-error');
+  const $wordForm     = document.getElementById('word-form');
   const $wordInput    = document.getElementById('word-input');
   const $wordDisplay  = document.getElementById('word-display');
   const $resultBar    = document.getElementById('result-bar');
@@ -328,6 +329,8 @@
   });
 
   // ── Host: word form ──────────────────────────────────────────────────────
+  $wordForm.addEventListener('submit', (e) => e.preventDefault());
+
   // Each host tile acts as "submit with this colour"
   hostTiles.forEach(tile => {
     tile.addEventListener('click', () => {

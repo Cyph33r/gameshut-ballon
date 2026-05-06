@@ -91,8 +91,10 @@ io.on('connection', (socket) => {
     socket.emit('sync_pong', clientTime, Date.now());
   });
 
-  // Initialize player
+  // Initialize player with no username initially
   players[socket.id] = {
+    username: 'Guest',
+    isAdmin: false,
     score: 0,
     inventory: { red: 1, blue: 1, green: 1, yellow: 1 },
     lastClick: null
@@ -100,7 +102,20 @@ io.on('connection', (socket) => {
   
   broadcastState();
 
+  socket.on('join_game', (username) => {
+    if (players[socket.id]) {
+      players[socket.id].username = username || 'Guest';
+      // Simple admin check based on special username
+      if (username.toLowerCase() === 'admin' || username.toLowerCase() === 'prime') {
+        players[socket.id].isAdmin = true;
+      }
+      broadcastState();
+    }
+  });
+
   socket.on('start_game', () => {
+    const player = players[socket.id];
+    if (!player || !player.isAdmin) return; // Only Admin can start the game
     if (gameState === 'playing') return;
     
     gameState = 'playing';

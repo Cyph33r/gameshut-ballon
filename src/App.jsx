@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import io from 'socket.io-client'
 
 const COLORS = ['red', 'blue', 'green', 'yellow'];
@@ -9,10 +9,12 @@ const COLOR_HEX = {
   yellow: '#eccc68'
 };
 
-// Auto-connect to same origin or localhost:3000
 const socket = io(window.location.origin.includes('localhost') ? 'http://localhost:3000' : '/');
 
 function App() {
+  const [hasJoined, setHasJoined] = useState(false);
+  const [usernameInput, setUsernameInput] = useState('');
+  
   const [gameState, setGameState] = useState('waiting');
   const [primeInventory, setPrimeInventory] = useState({ red: 0, blue: 0, green: 0, yellow: 0 });
   const [players, setPlayers] = useState({});
@@ -20,7 +22,7 @@ function App() {
   const [targetTime, setTargetTime] = useState(null);
   
   const [timerAnimKey, setTimerAnimKey] = useState(0);
-  const [timeOffset, setTimeOffset] = useState(0); // serverTime = localTime + offset
+  const [timeOffset, setTimeOffset] = useState(0);
   const [isSynced, setIsSynced] = useState(false);
 
   // NTP Sync
@@ -36,7 +38,6 @@ function App() {
     const handlePong = (clientTimeSent, serverTime) => {
       const now = Date.now();
       const rtt = now - clientTimeSent;
-      // Assume one-way latency is half RTT
       const serverTimeAtReceive = serverTime + (rtt / 2);
       const offset = serverTimeAtReceive - now;
       
@@ -46,7 +47,6 @@ function App() {
         syncCount++;
         setTimeout(doSync, 100);
       } else {
-        // Average the offsets
         const avgOffset = offsets.reduce((a, b) => a + b, 0) / offsets.length;
         setTimeOffset(avgOffset);
         setIsSynced(true);
@@ -70,7 +70,7 @@ function App() {
         setCurrentTarget(state.currentTarget);
         setTargetTime(state.targetTime);
         if (state.currentTarget) {
-          setTimerAnimKey(k => k + 1); // trigger animation
+          setTimerAnimKey(k => k + 1);
         }
       }
     };
@@ -79,12 +79,16 @@ function App() {
     return () => socket.off('state_update', handleStateUpdate);
   }, [currentTarget, targetTime]);
 
+  const handleJoin = (e) => {
+    e.preventDefault();
+    if (!usernameInput.trim()) return;
+    socket.emit('join_game', usernameInput.trim());
+    setHasJoined(true);
+  };
+
   const handlePlayerDispense = (color) => {
     if (gameState !== 'playing' || !currentTarget) return;
-    
-    // Exact synced time of click
     const clickTime = Date.now() + timeOffset;
-    
     socket.emit('player_click', { color, clickTime });
   };
 
@@ -96,7 +100,28 @@ function App() {
     return <div id="game-container"><div className="screen active"><h2>Synchronizing Clocks...</h2></div></div>;
   }
 
-  const myPlayer = players[socket.id] || { score: 0, inventory: { red: 0, blue: 0, green: 0, yellow: 0 }, lastClick: null };
+  if (!hasJoined) {
+    return (
+      <div id="game-container">
+        <div className="screen active">
+          <h2>Join Sync Pop</h2>
+          <form onSubmit={handleJoin} style={{ marginTop: '20px', display: 'flex', flexDirection: 'column', gap: '15px', alignItems: 'center' }}>
+            <input 
+              type="text" 
+              placeholder="Enter your Username" 
+              value={usernameInput}
+              onChange={(e) => setUsernameInput(e.target.value)}
+              style={{ padding: '10px 15px', borderRadius: '8px', border: 'none', fontSize: '1.2rem', outline: 'none' }}
+            />
+            <p style={{fontSize: '0.9rem', opacity: 0.8}}>* Use username 'Admin' to host the game</p>
+            <button type="submit" className="primary-btn" style={{marginTop: '0'}}>Join Game</button>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
+  const myPlayer = players[socket.id] || { username: 'Guest', isAdmin: false, score: 0, inventory: { red: 0, blue: 0, green: 0, yellow: 0 }, lastClick: null };
   
   let targetBalloonState = '';
   if (!currentTarget) targetBalloonState = 'hidden';
@@ -105,7 +130,7 @@ function App() {
   return (
     <div id="game-container">
       <header>
-        <h1>Sync Pop (Multiplayer)</h1>
+        <h1>Sync Pop ({myPlayer.username})</h1>
         <div className="score-board">
           Score: <span>{myPlayer.score}</span>
         </div>
@@ -115,7 +140,12 @@ function App() {
         <div className="screen active">
           <h2>Match the Prime Dispense!</h2>
           <p>Wait for the Prime to dispense a balloon. Click your matching balloon at the EXACT same time.</p>
-          <button className="primary-btn" onClick={startGame}>Start Game</button>
+          
+          {myPlayer.isAdmin ? (
+            <button className="primary-btn" onClick={startGame}>Start Game (Admin)</button>
+          ) : (
+            <p style={{ marginTop: '30px', fontWeight: 'bold', color: COLOR_HEX.yellow }}>Waiting for Admin to start the game...</p>
+          )}
         </div>
       )}
 
@@ -163,7 +193,11 @@ function App() {
         <div className="screen active">
           <h2>Game Over</h2>
           <p>Final Score: <span>{myPlayer.score}</span></p>
-          <button className="primary-btn" onClick={startGame}>Play Again</button>
+          {myPlayer.isAdmin ? (
+            <button className="primary-btn" onClick={startGame}>Play Again</button>
+          ) : (
+            <p style={{ marginTop: '30px', fontWeight: 'bold', color: COLOR_HEX.yellow }}>Waiting for Admin to start a new game...</p>
+          )}
         </div>
       )}
     </div>

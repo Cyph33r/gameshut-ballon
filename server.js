@@ -47,7 +47,7 @@ function startRound(word, correctColor) {
   round.id++;
   round.word         = word;
   round.correctColor = correctColor;
-  round.revealTime   = serverNow();
+  round.revealTime   = serverNow() + 1500; // Shift start time forward by overlay duration
   round.isOpen       = true;
 
   // Reset per-round click flags

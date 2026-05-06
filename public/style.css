@@ -509,13 +509,27 @@ html, body {
 }
 
 @keyframes lb-in {
-  from { transform: translateX(-30px); opacity: 0; }
-  to   { transform: translateX(0);     opacity: 1; }
+  0%   { transform: translateY(30px) scale(0.95); opacity: 0; }
+  60%  { transform: translateY(-4px) scale(1.02); opacity: 1; }
+  100% { transform: translateY(0) scale(1); opacity: 1; }
 }
 
 .lb-rank { font-size: 1.3rem; min-width: 32px; text-align: center; }
 .lb-name { flex: 1; display: flex; align-items: center; gap: 8px; }
 .lb-avatar { font-size: 1.2rem; }
+.lb-streak {
+  font-size: 0.8rem;
+  background: rgba(255,152,0,0.25);
+  color: #ffa726;
+  padding: 2px 8px;
+  border-radius: 12px;
+  margin-left: 4px;
+  animation: streak-pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) both 0.3s;
+}
+@keyframes streak-pop {
+  from { transform: scale(0); opacity: 0; }
+  to   { transform: scale(1); opacity: 1; }
+}
 .lb-pts  { font-size: 1rem; color: var(--k-muted); white-space: nowrap; }
 
 .lb-host-action { margin-top: 8px; text-align: center; }

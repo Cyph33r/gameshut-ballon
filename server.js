@@ -51,7 +51,10 @@ function startRound(word, correctColor) {
   round.isOpen       = true;
 
   // Reset per-round click flags
-  for (const [, p] of players) p.clickedThisRound = false;
+  for (const [, p] of players) {
+    p.clickedThisRound = false;
+    p.answeredCorrectlyThisRound = false;
+  }
 
   // Broadcast: word is revealed NOW — revealTime is the start of the window
   io.emit('round_start', {
@@ -64,10 +67,20 @@ function startRound(word, correctColor) {
   roundCloseTimeout = setTimeout(() => {
     round.isOpen = false;
 
+    for (const [, p] of players) {
+      if (!p.isGM) {
+        if (p.answeredCorrectlyThisRound) {
+          p.streak++;
+        } else {
+          p.streak = 0;
+        }
+      }
+    }
+
     // Leaderboard
     const lb = [...players.values()]
       .filter(p => !p.isGM)
-      .map(p => ({ username: p.username, avatar: p.avatar, score: p.score }))
+      .map(p => ({ username: p.username, avatar: p.avatar, score: p.score, streak: p.streak }))
       .sort((a, b) => b.score - a.score);
 
     io.emit('round_closed',    { roundId: round.id, correctColor: round.correctColor });
@@ -84,7 +97,9 @@ io.on('connection', (socket) => {
     avatar:           '👤',
     isGM:             false,
     score:            0,
+    streak:           0,
     clickedThisRound: false,
+    answeredCorrectlyThisRound: false,
   });
 
   socket.emit('welcome', { serverTime: serverNow() });
@@ -141,13 +156,22 @@ io.on('connection', (socket) => {
     }
 
     const correctColor = color === round.correctColor;
+    if (correctColor) {
+      player.answeredCorrectlyThisRound = true;
+    }
+
     // Response time from when the word was revealed
     const responseMs   = Math.max(0, effectiveTime - round.revealTime);
 
     // Score: correct = 10 pts, -1 per 100ms response time, min 0
-    const points = correctColor
+    let points = correctColor
       ? Math.max(0, 10 - Math.floor(responseMs / 100))
       : 0;
+      
+    // Apply 1.2x streak bonus if they already had a streak of 2 entering this round (this is their 3rd+)
+    if (correctColor && player.streak >= 2) {
+      points = Math.floor(points * 1.2);
+    }
 
     player.score += points;
 

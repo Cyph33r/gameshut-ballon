@@ -325,9 +325,9 @@
   }
 
   // ── Join ─────────────────────────────────────────────────────────────────
-  const adjectives = ['Happy', 'Blue', 'Fast', 'Clever', 'Brave', 'Wild', 'Cool', 'Epic', 'Magic', 'Sneaky'];
-  const nouns = ['Tiger', 'Fox', 'Bear', 'Wolf', 'Owl', 'Panda', 'Lion', 'Hawk', 'Duck', 'Frog'];
-  const emojis = ['🐯', '🦊', '🐻', '🐺', '🦉', '🐼', '🦁', '🦅', '🦆', '🐸', '🦄', '🐙', '🦖', '🐢', '🐧'];
+  const adjectives = ['Happy','Blue','Fast','Clever','Brave','Wild','Cool','Epic','Magic','Sneaky','Fierce','Mighty','Swift','Lucky','Smart','Bold','Neon','Cosmic','Silent','Mega','Cyber','Super','Rapid','Hyper','Flash','Shiny','Grand','Funky','Noble','Royal'];
+  const nouns = ['Tiger','Fox','Bear','Wolf','Owl','Panda','Lion','Hawk','Duck','Frog','Dragon','Shark','Eagle','Cat','Dog','Seal','Koala','Whale','Puma','Cobra','Toad','Crow','Swan','Rhino','Moose','Sloth','Gecko','Lemur','Zebra','Sheep'];
+  const emojis = ['🐯','🦊','🐻','🐺','🦉','🐼','🦁','🦅','🦆','🐸','🐉','🦈','🐈','🐕','🦭','🐨','🐳','🐍','🦢','🦏','🦥','🦎','🦓','🐑','🦖','🦄','🐙','🐢','🐧','🦍'];
 
   function randomizeAvatar() {
     myAvatar = emojis[Math.floor(Math.random() * emojis.length)];
@@ -480,9 +480,17 @@
       const li = document.createElement('li');
       li.className = `lb-row${e.username === myUsername ? ' lb-me' : ''}`;
       li.style.animationDelay = `${i * 0.07}s`;
+      const streakBadge = e.streak >= 3 
+        ? `<span class="lb-streak" title="${e.streak} correct in a row!">🔥 ${e.streak}</span>` 
+        : '';
+
       li.innerHTML = `
         <span class="lb-rank">${medals[i] || i + 1}</span>
-        <span class="lb-name"><span class="lb-avatar">${e.avatar || '👤'}</span> ${e.username}</span>
+        <span class="lb-name">
+          <span class="lb-avatar">${e.avatar || '👤'}</span> 
+          ${e.username}
+          ${streakBadge}
+        </span>
         <span class="lb-pts">${e.score} pts</span>
       `;
       $lbList.appendChild(li);

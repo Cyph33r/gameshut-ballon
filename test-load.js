@@ -4,9 +4,9 @@ const URL = process.env.URL || 'http://localhost:3000';
 const NUM_CLIENTS = 150;
 
 const COLORS = ['red', 'blue', 'yellow', 'green'];
-const adjectives = ['Fast', 'Cool', 'Epic', 'Magic', 'Sneaky', 'Brave', 'Wild'];
-const nouns = ['Bot', 'Script', 'Tester', 'Ghost', 'Ninja', 'Racer', 'Clone'];
-const emojis = ['🤖', '👽', '👾', '👻', '💻', '🚀', '⚡'];
+const adjectives = ['Happy','Blue','Fast','Clever','Brave','Wild','Cool','Epic','Magic','Sneaky','Fierce','Mighty','Swift','Lucky','Smart','Bold','Neon','Cosmic','Silent','Mega','Cyber','Super','Rapid','Hyper','Flash','Shiny','Grand','Funky','Noble','Royal'];
+const nouns = ['Tiger','Fox','Bear','Wolf','Owl','Panda','Lion','Hawk','Duck','Frog','Dragon','Shark','Eagle','Cat','Dog','Seal','Koala','Whale','Puma','Cobra','Toad','Crow','Swan','Rhino','Moose','Sloth','Gecko','Lemur','Zebra','Sheep'];
+const emojis = ['🐯','🦊','🐻','🐺','🦉','🐼','🦁','🦅','🦆','🐸','🐉','🦈','🐈','🐕','🦭','🐨','🐳','🐍','🦢','🦏','🦥','🦎','🦓','🐑','🦖','🦄','🐙','🐢','🐧','🦍'];
 
 const clients = [];
 

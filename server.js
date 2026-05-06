@@ -15,91 +15,67 @@ const io = new Server(server, {
 
 const PORT = process.env.PORT || 3000;
 
-// ─── High-resolution server clock ─────────────────────────────────────────────
-// process.hrtime.bigint() gives nanosecond precision and is monotonic.
-// We calibrate it once against Date.now() so clients can compare.
-const hrtimeOrigin   = process.hrtime.bigint();
-const dateOrigin     = Date.now();
-
-/**
- * Returns current time in milliseconds using the high-resolution monotonic clock.
- * Never jumps backwards unlike Date.now().
- */
+// ─── High-resolution monotonic clock ──────────────────────────────────────────
+const hrtimeOrigin = process.hrtime.bigint();
+const dateOrigin   = Date.now();
 function serverNow() {
   return dateOrigin + Number((process.hrtime.bigint() - hrtimeOrigin) / 1_000_000n);
 }
 
 // ─── Constants ─────────────────────────────────────────────────────────────────
+const COLORS         = ['red', 'blue', 'yellow', 'green'];
+const GM_USERNAME    = 'admin';
+const ANSWER_WINDOW  = 10_000; // 10s to answer before round auto-closes
+const MAX_TRUST_DIFF = 1000;   // ms: max allowed drift for client clickTime
 
-const COLORS          = ['red', 'blue', 'green', 'yellow'];
-const INVENTORY_SIZE  = 150;
-const CLICK_LEAD_MS   = 3000; // countdown before primeTime
-const CLICK_WINDOW_MS = 2000; // accept clicks up to 2s after primeTime
-const GM_USERNAME     = 'admin';
-
-// Maximum ms of difference to accept a client-sent clickTime.
-// If the client's value is wildly off it's likely tampered — fall back to
-// server arrival time instead.
-const MAX_TRUST_DIFF_MS = 500;
-
-// ─── Server State ──────────────────────────────────────────────────────────────
-
-const primeInventory = {
-  red:    INVENTORY_SIZE,
-  blue:   INVENTORY_SIZE,
-  green:  INVENTORY_SIZE,
-  yellow: INVENTORY_SIZE,
-};
-
+// ─── State ────────────────────────────────────────────────────────────────────
 let round = {
-  id:        0,
-  color:     null,
-  primeTime: null,   // absolute ms (serverNow() scale)
-  isOpen:    false,
+  id:           0,
+  word:         null,   // the homophone word shown to players
+  correctColor: null,   // the colour it maps to
+  revealTime:   null,   // server timestamp when word was revealed
+  isOpen:       false,
 };
 
 let roundCloseTimeout = null;
+const players = new Map(); // socketId → player object
 
-// Map: socketId → { username, isGM, score, clickedThisRound, rtt }
-const players = new Map();
-
-// ─── Round Lifecycle ───────────────────────────────────────────────────────────
-
-function startRound(color) {
-  if (roundCloseTimeout) {
-    clearTimeout(roundCloseTimeout);
-    roundCloseTimeout = null;
-  }
-
-  primeInventory[color]--;
+// ─── Round Lifecycle ──────────────────────────────────────────────────────────
+function startRound(word, correctColor) {
+  if (roundCloseTimeout) { clearTimeout(roundCloseTimeout); roundCloseTimeout = null; }
 
   round.id++;
-  round.color     = color;
-  round.primeTime = serverNow() + CLICK_LEAD_MS;
-  round.isOpen    = false;
+  round.word         = word;
+  round.correctColor = correctColor;
+  round.revealTime   = serverNow();
+  round.isOpen       = true;
 
-  for (const [, p] of players) {
-    p.clickedThisRound = false;
-  }
+  // Reset per-round click flags
+  for (const [, p] of players) p.clickedThisRound = false;
 
+  // Broadcast: word is revealed NOW — revealTime is the start of the window
   io.emit('round_start', {
     roundId:      round.id,
-    color:        round.color,
-    primeTime:    round.primeTime,
-    primeInventory,
+    word:         round.word,
+    revealTime:   round.revealTime,
   });
 
-  setTimeout(() => { round.isOpen = true; }, CLICK_LEAD_MS - 500);
-
+  // Auto-close after ANSWER_WINDOW
   roundCloseTimeout = setTimeout(() => {
     round.isOpen = false;
-    io.emit('round_closed', { roundId: round.id });
-    io.emit('inventory_update', { primeInventory });
-  }, CLICK_LEAD_MS + CLICK_WINDOW_MS);
+
+    // Leaderboard
+    const lb = [...players.values()]
+      .filter(p => !p.isGM)
+      .map(p => ({ username: p.username, score: p.score }))
+      .sort((a, b) => b.score - a.score);
+
+    io.emit('round_closed',    { roundId: round.id, correctColor: round.correctColor });
+    io.emit('leaderboard',     lb);
+  }, ANSWER_WINDOW);
 }
 
-// ─── Socket Handlers ───────────────────────────────────────────────────────────
-
+// ─── Socket Handlers ──────────────────────────────────────────────────────────
 io.on('connection', (socket) => {
   console.log(`[+] ${socket.id} | total: ${io.engine.clientsCount}`);
 
@@ -108,21 +84,11 @@ io.on('connection', (socket) => {
     isGM:             false,
     score:            0,
     clickedThisRound: false,
-    rtt:              null, // last measured round-trip time
   });
 
-  socket.emit('welcome', {
-    serverTime:  serverNow(),
-    roundId:     round.id,
-    color:       round.color,
-    primeTime:   round.primeTime,
-    roundIsOpen: round.isOpen,
-    primeInventory,
-  });
+  socket.emit('welcome', { serverTime: serverNow() });
 
   // ── Time Sync ──────────────────────────────────────────────────────────────
-  // Client sends [clientSentAt]. Server replies with [clientSentAt, serverNow].
-  // Client measures RTT, computes offset, repeats 10 times, filters outliers.
   socket.on('time_sync', (clientSentAt) => {
     socket.emit('time_sync_reply', clientSentAt, serverNow());
   });
@@ -131,59 +97,49 @@ io.on('connection', (socket) => {
   socket.on('join', (username) => {
     const player = players.get(socket.id);
     if (!player) return;
-
-    const clean  = String(username).trim().slice(0, 32) || 'Guest';
-    player.username = clean;
-    player.isGM     = clean.toLowerCase() === GM_USERNAME;
-
+    const clean      = String(username).trim().slice(0, 24) || 'Guest';
+    player.username  = clean;
+    player.isGM      = clean.toLowerCase() === GM_USERNAME;
     console.log(`  join: "${clean}" isGM=${player.isGM}`);
-
-    socket.emit('joined', {
-      username:      player.username,
-      isGM:          player.isGM,
-      primeInventory,
-    });
+    socket.emit('joined', { username: clean, isGM: player.isGM });
   });
 
-  // ── GM Dispense ───────────────────────────────────────────────────────────
-  socket.on('gm_dispense', (color) => {
+  // ── GM submits a word + correct colour ────────────────────────────────────
+  socket.on('gm_word', ({ word, correctColor }) => {
     const player = players.get(socket.id);
-    if (!player || !player.isGM)       return;
-    if (!COLORS.includes(color))        return;
-    if (primeInventory[color] <= 0)     return;
-    if (round.isOpen)                   return;
+    if (!player || !player.isGM) return;
+    if (!word || !COLORS.includes(correctColor)) return;
+    if (round.isOpen) return; // can't start mid-round
 
-    startRound(color);
+    startRound(word.trim(), correctColor);
   });
 
-  // ── Player Click ──────────────────────────────────────────────────────────
+  // ── Player click ──────────────────────────────────────────────────────────
   socket.on('click', ({ color, clickTime } = {}) => {
     const player = players.get(socket.id);
-    if (!player)                 return;
-    if (player.isGM)             return;
-    if (player.clickedThisRound) return;
-    if (!round.isOpen)           return;
+    if (!player || player.isGM)       return;
+    if (player.clickedThisRound)      return;
+    if (!round.isOpen)                return;
 
     player.clickedThisRound = true;
 
-    const serverArrivalTime = serverNow();
+    const arrivalTime = serverNow();
 
-    // ── Timing arbitration ─────────────────────────────────────────────────
-    // Prefer the client's synced clickTime. If it is suspiciously far from the
-    // server arrival time (tampered or severely drifted), fall back to arrival.
-    let effectiveClickTime = serverArrivalTime; // default: server arrival
+    // Trust client timestamp if it's within MAX_TRUST_DIFF of arrival
+    let effectiveTime = arrivalTime;
     if (typeof clickTime === 'number' && isFinite(clickTime)) {
-      const drift = Math.abs(serverArrivalTime - clickTime);
-      if (drift <= MAX_TRUST_DIFF_MS) {
-        effectiveClickTime = clickTime; // ✅ client timestamp is plausible
+      if (Math.abs(arrivalTime - clickTime) <= MAX_TRUST_DIFF) {
+        effectiveTime = clickTime;
       }
-      // else: drift too large, ignore client time
     }
 
-    const correctColor = color === round.color;
-    const diff         = Math.abs(effectiveClickTime - round.primeTime); // ms
-    const points       = correctColor
-      ? Math.max(0, Math.round(10 - (diff / 1000) / 0.1))
+    const correctColor = color === round.correctColor;
+    // Response time from when the word was revealed
+    const responseMs   = Math.max(0, effectiveTime - round.revealTime);
+
+    // Score: correct = 10 pts, -1 per 500ms response time, min 0
+    const points = correctColor
+      ? Math.max(0, 10 - Math.floor(responseMs / 500))
       : 0;
 
     player.score += points;
@@ -192,12 +148,10 @@ io.on('connection', (socket) => {
       roundId:       round.id,
       correctColor,
       selectedColor: color,
-      roundColor:    round.color,
-      diff,
+      roundColor:    round.correctColor,
+      responseMs,
       points,
       totalScore:    player.score,
-      // Tell client which timestamp was used for transparency
-      usedClientTime: effectiveClickTime !== serverArrivalTime,
     });
   });
 
@@ -209,10 +163,9 @@ io.on('connection', (socket) => {
 });
 
 // ─── Static & Health ──────────────────────────────────────────────────────────
-
 app.use(express.static(path.join(__dirname, 'public')));
 app.get('/health', (_req, res) =>
-  res.json({ status: 'ok', players: players.size, round: round.id, primeInventory })
+  res.json({ status: 'ok', players: players.size, round: round.id })
 );
 app.use((_req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 

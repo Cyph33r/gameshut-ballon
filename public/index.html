@@ -3,493 +3,454 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Sync Pop — Multiplayer Timing Game</title>
-  <meta name="description" content="A real-time multiplayer reaction game. Click exactly when the server drops the balloon to score!" />
+  <title>Sync Pop — Homophone Balloon Game</title>
+  <meta name="description" content="Pop the balloon whose colour sounds like the word!" />
   <link rel="stylesheet" href="style.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;900&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&display=swap" rel="stylesheet" />
 </head>
 <body>
 
-<div id="app">
-
-  <!-- ── Join Screen ─────────────────────────────────────────────────────── -->
-  <div id="join-screen" class="screen">
-    <div class="join-logo">Sync<span>Pop</span></div>
-    <p class="join-sub">A real-time multiplayer timing game</p>
+<!-- ═══════════════════════════════════════════════════════════════════
+     JOIN SCREEN
+══════════════════════════════════════════════════════════════════════ -->
+<div id="join-screen" class="kscreen">
+  <div class="join-card">
+    <div class="join-logo">🎈 SyncPop</div>
+    <p class="join-tagline">Pop the balloon that sounds like the word!</p>
     <form id="join-form">
-      <input id="username-input" type="text" placeholder="Enter username" maxlength="32" autocomplete="off" required />
-      <p class="join-hint">Use username <strong>admin</strong> to be the Game Master</p>
-      <button type="submit" class="btn-join">Join Game</button>
+      <label class="join-field-label">Enter your nickname</label>
+      <input id="username-input" type="text" placeholder="Nickname"
+             maxlength="24" autocomplete="off" autocapitalize="words" required />
+      <p class="join-hint">Use <strong>admin</strong> to host the game</p>
+      <button type="submit" class="k-btn-primary">Let's go!</button>
     </form>
   </div>
-
-  <!-- ── Game Screen ─────────────────────────────────────────────────────── -->
-  <div id="game-screen" class="screen hidden">
-
-    <header id="header">
-      <div class="logo">Sync<span>Pop</span></div>
-      <div id="score-display">Score: <strong id="total-score">0</strong></div>
-    </header>
-
-    <main id="game">
-
-      <div id="round-info">Round <span id="round-num">—</span></div>
-
-      <!-- GM Panel -->
-      <section id="gm-panel" class="hidden">
-        <h2 class="gm-title">🎮 Game Master</h2>
-        <p class="gm-sub">Select a balloon from the prime inventory to start a round</p>
-        <div id="gm-inventory" class="gm-grid"></div>
-        <div id="gm-status" class="gm-status"></div>
-      </section>
-
-      <!-- Player Panel -->
-      <section id="player-panel" class="hidden">
-
-        <div id="status-wrap">
-          <div id="status-label">Waiting for Game Master…</div>
-          <div id="countdown">
-            <svg width="0" height="0" style="position:absolute">
-              <defs>
-                <linearGradient id="arc-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%"   stop-color="#7c5cfc"/>
-                  <stop offset="100%" stop-color="#e040fb"/>
-                </linearGradient>
-              </defs>
-            </svg>
-            <svg viewBox="0 0 120 120" id="timer-svg">
-              <circle class="track" cx="60" cy="60" r="52"/>
-              <circle class="fill"  cx="60" cy="60" r="52" id="timer-arc"/>
-            </svg>
-            <div id="countdown-inner">
-              <span id="countdown-num">—</span>
-            </div>
-          </div>
-        </div>
-
-        <p id="pick-label" class="pick-label">Pick the right balloon at the right moment!</p>
-        <div id="player-balloons" class="player-grid">
-          <button class="player-balloon" data-color="red"    style="--bcolor:#ff4d6d" disabled></button>
-          <button class="player-balloon" data-color="blue"   style="--bcolor:#4dabf7" disabled></button>
-          <button class="player-balloon" data-color="green"  style="--bcolor:#00e5a0" disabled></button>
-          <button class="player-balloon" data-color="yellow" style="--bcolor:#ffd94a" disabled></button>
-        </div>
-
-        <div id="result" class="hidden">
-          <div id="result-diff"></div>
-          <div id="result-points"></div>
-        </div>
-
-      </section>
-
-    </main>
-
-    <div id="conn-status" class="disconnected">Connecting…</div>
-  </div>
-
 </div>
 
-<!-- ── Full-screen countdown overlay ─────────────────────────────────── -->
-<div id="overlay" class="overlay hidden">
-  <div class="overlay-balloon" id="overlay-balloon"></div>
-  <div class="overlay-count" id="overlay-count">3</div>
-  <div class="overlay-label" id="overlay-label">Get ready!</div>
+<!-- ═══════════════════════════════════════════════════════════════════
+     GAME SCREEN
+══════════════════════════════════════════════════════════════════════ -->
+<div id="game-screen" class="kscreen hidden">
+
+  <header class="k-header">
+    <div class="k-header-left">
+      <span class="k-logo">🎈</span>
+      <span id="round-badge">Round <strong id="round-num">—</strong></span>
+    </div>
+    <div class="k-score-pill" id="score-pill">
+      <span class="k-score-icon">⭐</span>
+      <span id="total-score">0</span>
+    </div>
+  </header>
+
+  <!-- ── HOST PANEL ────────────────────────────────────────────────── -->
+  <section id="host-panel" class="k-panel hidden">
+    <div class="host-inner">
+      <p class="host-title">🎮 You're the Host</p>
+      <p class="host-sub">Type the word you'll say aloud, then pick the balloon colour it sounds like</p>
+
+      <form id="word-form" class="word-form">
+        <input
+          id="word-input"
+          type="text"
+          placeholder='e.g. "blew" or "read"'
+          maxlength="40"
+          autocomplete="off"
+          autocapitalize="off"
+          required
+        />
+        <p class="word-form-label">Which colour does it sound like?</p>
+        <div class="host-grid">
+          <button type="button" class="host-tile red"    data-color="red">
+            <span class="tile-shape">▲</span>
+            <span class="tile-label">Red</span>
+          </button>
+          <button type="button" class="host-tile blue"   data-color="blue">
+            <span class="tile-shape">◆</span>
+            <span class="tile-label">Blue</span>
+          </button>
+          <button type="button" class="host-tile yellow" data-color="yellow">
+            <span class="tile-shape">●</span>
+            <span class="tile-label">Yellow</span>
+          </button>
+          <button type="button" class="host-tile green"  data-color="green">
+            <span class="tile-shape">■</span>
+            <span class="tile-label">Green</span>
+          </button>
+        </div>
+        <p id="host-error" class="host-error hidden">Please enter a word and select a colour.</p>
+      </form>
+
+      <div id="host-status" class="host-status"></div>
+    </div>
+  </section>
+
+  <!-- ── PLAYER PANEL ──────────────────────────────────────────────── -->
+  <section id="player-panel" class="k-panel hidden">
+
+    <!-- The word -->
+    <div class="word-display-wrap">
+      <p class="word-display-label">Pop the balloon that sounds like…</p>
+      <div class="word-display" id="word-display">—</div>
+    </div>
+
+    <!-- 2×2 colour tiles -->
+    <div class="k-tiles" id="player-tiles">
+      <button class="k-tile red    disabled" data-color="red"    disabled>
+        <span class="tile-shape">▲</span>
+        <span class="tile-label">Red</span>
+      </button>
+      <button class="k-tile blue   disabled" data-color="blue"   disabled>
+        <span class="tile-shape">◆</span>
+        <span class="tile-label">Blue</span>
+      </button>
+      <button class="k-tile yellow disabled" data-color="yellow" disabled>
+        <span class="tile-shape">●</span>
+        <span class="tile-label">Yellow</span>
+      </button>
+      <button class="k-tile green  disabled" data-color="green"  disabled>
+        <span class="tile-shape">■</span>
+        <span class="tile-label">Green</span>
+      </button>
+    </div>
+
+    <!-- Result banner -->
+    <div id="result-bar" class="k-result hidden">
+      <div id="result-icon"  class="result-icon"></div>
+      <div id="result-text"  class="result-text"></div>
+      <div id="result-pts"   class="result-pts"></div>
+    </div>
+
+  </section>
+
+  <!-- ── LEADERBOARD PANEL ─────────────────────────────────────────── -->
+  <section id="leaderboard-panel" class="k-panel hidden">
+    <h2 class="lb-title">🏆 Leaderboard</h2>
+    <ol id="lb-list" class="lb-list"></ol>
+    <div id="lb-host-action" class="lb-host-action hidden">
+      <p class="lb-next-hint">Ready for the next word?</p>
+    </div>
+  </section>
+
+</div><!-- #game-screen -->
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     WORD REVEAL OVERLAY (full-screen flash)
+══════════════════════════════════════════════════════════════════════ -->
+<div id="overlay" class="ov hidden">
+  <div class="ov-prompt">Pop the balloon that sounds like…</div>
+  <div class="ov-word"   id="ov-word"></div>
 </div>
+
+<div id="conn-status" class="k-conn disconnected">Connecting…</div>
 
 <script src="/socket.io/socket.io.js"></script>
 <script>
 (() => {
-  // ── Constants ──────────────────────────────────────────────────────────────
-  const COLOR_HEX = {
-    red:    '#ff4d6d',
-    blue:   '#4dabf7',
-    green:  '#00e5a0',
-    yellow: '#ffd94a',
-  };
-  const COLORS_ORDER  = ['red', 'blue', 'green', 'yellow'];
-  const CIRCUMFERENCE = 2 * Math.PI * 52;
-  const SYNC_SAMPLES  = 10; // ↑ from 5 — more samples = better offset estimate
 
-  // ── DOM ────────────────────────────────────────────────────────────────────
-  const $joinScreen    = document.getElementById('join-screen');
-  const $gameScreen    = document.getElementById('game-screen');
-  const $joinForm      = document.getElementById('join-form');
-  const $usernameInput = document.getElementById('username-input');
-  const $gmPanel       = document.getElementById('gm-panel');
-  const $gmInventory   = document.getElementById('gm-inventory');
-  const $gmStatus      = document.getElementById('gm-status');
-  const $playerPanel   = document.getElementById('player-panel');
-  const $totalScore    = document.getElementById('total-score');
-  const $roundNum      = document.getElementById('round-num');
-  const $statusLabel   = document.getElementById('status-label');
-  const $countdownNum  = document.getElementById('countdown-num');
-  const $timerArc      = document.getElementById('timer-arc');
-  const $result        = document.getElementById('result');
-  const $resultDiff    = document.getElementById('result-diff');
-  const $resultPoints  = document.getElementById('result-points');
-  const $connStatus    = document.getElementById('conn-status');
-  const balloonBtns    = Array.from(document.querySelectorAll('.player-balloon'));
+  const SYNC_SAMPLES = 10;
 
-  // Overlay elements
-  const $overlay       = document.getElementById('overlay');
-  const $overlayBalloon= document.getElementById('overlay-balloon');
-  const $overlayCount  = document.getElementById('overlay-count');
-  const $overlayLabel  = document.getElementById('overlay-label');
+  // ── DOM ──────────────────────────────────────────────────────────────────
+  const $joinScreen   = document.getElementById('join-screen');
+  const $gameScreen   = document.getElementById('game-screen');
+  const $joinForm     = document.getElementById('join-form');
+  const $usernameInput= document.getElementById('username-input');
 
-  // ── State ──────────────────────────────────────────────────────────────────
-  let timeOffset    = 0;
-  let isGM          = false;
-  let hasClicked    = false;
-  let animFrame     = null;
-  let totalScore    = 0;
-  let roundOpen     = false;
-  let enableTimer   = null;
-  let disableTimer  = null;
-  let resyncInterval = null;
+  const $hostPanel    = document.getElementById('host-panel');
+  const $playerPanel  = document.getElementById('player-panel');
+  const $lbPanel      = document.getElementById('leaderboard-panel');
 
-  // ── IMPROVEMENT 1: Monotonic clock ────────────────────────────────────────
-  // performance.now() is monotonic — never jumps backwards due to OS clock
-  // corrections. We pin it to Date.now() once at startup.
+  const $roundNum     = document.getElementById('round-num');
+  const $totalScore   = document.getElementById('total-score');
+  const $hostStatus   = document.getElementById('host-status');
+  const $hostError    = document.getElementById('host-error');
+  const $wordInput    = document.getElementById('word-input');
+  const $wordDisplay  = document.getElementById('word-display');
+  const $resultBar    = document.getElementById('result-bar');
+  const $resultIcon   = document.getElementById('result-icon');
+  const $resultText   = document.getElementById('result-text');
+  const $resultPts    = document.getElementById('result-pts');
+  const $lbList       = document.getElementById('lb-list');
+  const $lbHostAction = document.getElementById('lb-host-action');
+  const $connStatus   = document.getElementById('conn-status');
+
+  const playerTiles   = Array.from(document.querySelectorAll('.k-tile'));
+  const hostTiles     = Array.from(document.querySelectorAll('.host-tile'));
+
+  const $overlay      = document.getElementById('overlay');
+  const $ovWord       = document.getElementById('ov-word');
+
+  // ── State ────────────────────────────────────────────────────────────────
+  let timeOffset      = 0;
+  let isGM            = false;
+  let hasClicked      = false;
+  let totalScore      = 0;
+  let myUsername      = '';
+  let resyncInterval  = null;
+  let overlayTimer    = null;
+  let closeTimer      = null;
+
+  // ── Monotonic clock ──────────────────────────────────────────────────────
   const perfOrigin = performance.now();
   const dateOrigin = Date.now();
+  const monoNow    = () => dateOrigin + (performance.now() - perfOrigin);
+  const serverNow  = () => monoNow() + timeOffset;
 
-  function monoNow() {
-    return dateOrigin + (performance.now() - perfOrigin);
-  }
-
-  // Our best estimate of what the server clock reads right now
-  function serverNow() {
-    return monoNow() + timeOffset;
-  }
-
-  // ── Socket ─────────────────────────────────────────────────────────────────
+  // ── Socket ───────────────────────────────────────────────────────────────
   const socket = io();
 
   socket.on('connect', () => {
-    setConnStatus(true);
-    // IMPROVEMENT 5: Always re-sync on (re)connect before doing anything else
+    setConn(true);
     clearInterval(resyncInterval);
     runTimeSync();
   });
 
   socket.on('disconnect', () => {
     clearInterval(resyncInterval);
-    setConnStatus(false);
+    setConn(false);
   });
 
-  socket.on('welcome', (data) => {
-    if (data.roundId > 0) $roundNum.textContent = data.roundId;
-  });
+  socket.on('welcome', () => {});
 
   socket.on('joined', (data) => {
     isGM = data.isGM;
-    showGameScreen(data.isGM);
-    if (data.isGM) renderGMInventory(data.primeInventory);
+    showPanel(isGM ? 'host' : 'player');
   });
 
+  // New round: word is revealed right now
   socket.on('round_start', (data) => {
     $roundNum.textContent = data.roundId;
     hasClicked = false;
-    roundOpen  = false;
+
     if (isGM) {
-      renderGMInventory(data.primeInventory);
-      setGMStatus(`Round ${data.roundId} — ${data.color.toUpperCase()} dispensed!`, 'active');
-      setGMButtonsEnabled(false);
-      // GM also sees the overlay so they know the countdown has started
-      showOverlay(data.color, data.primeTime);
+      // GM sees status update + leaderboard clears
+      setHostStatus(`Round ${data.roundId} — "${data.word}" sent to players!`, 'active');
+      setHostTilesEnabled(false);
+      resetWordForm();
     } else {
       hideResult();
-      applyCountdown(data.primeTime);
-      showOverlay(data.color, data.primeTime);
+      showWordAndEnableTiles(data.word);
     }
+
+    // Flash overlay for everyone
+    showOverlay(data.word);
+
+    // Auto-disable tiles after 10s (server will also close)
+    clearTimeout(closeTimer);
+    closeTimer = setTimeout(() => {
+      disableAllTiles();
+      if (!hasClicked && !isGM) {
+        setWordLabel('Time\'s up! Wait for the next word…');
+      }
+    }, 10_000);
   });
 
-  socket.on('round_closed', () => {
-    roundOpen = false;
+  socket.on('round_closed', (data) => {
+    clearTimeout(closeTimer);
+    disableAllTiles();
+    // Reveal the correct colour on tiles
+    playerTiles.forEach(t => {
+      if (t.dataset.color === data.correctColor) t.classList.add('correct');
+    });
     if (isGM) {
-      setGMStatus('Round over. Select next balloon to start a new round.', '');
-      setGMButtonsEnabled(true);
-    } else {
-      disableAllBalloons();
-      setStatus('Round over. Waiting for Game Master…');
-      stopCountdown();
+      setHostTilesEnabled(true);
+      setHostStatus('Round over. Enter the next word!', '');
     }
-  });
-
-  socket.on('inventory_update', (data) => {
-    if (isGM) renderGMInventory(data.primeInventory);
   });
 
   socket.on('click_result', (data) => {
     totalScore = data.totalScore;
     $totalScore.textContent = totalScore;
-    disableAllBalloons();
-    stopCountdown();
+    disableAllTiles();
     showResult(data);
   });
 
-  // ── IMPROVEMENTS 2, 3, 4: NTP time sync ───────────────────────────────────
-  // 10 samples, 50ms gap, outlier rejection (RTT > 2× min), periodic re-sync
+  socket.on('leaderboard', (entries) => {
+    showLeaderboard(entries);
+  });
+
+  // ── NTP Sync ─────────────────────────────────────────────────────────────
   function runTimeSync() {
-    const offsets = [];
-    const rtts    = [];
-    let done      = 0;
+    const offsets = [], rtts = [];
+    let done = 0;
 
     const handler = (sentAt, serverTime) => {
-      const now    = monoNow();           // monotonic — no OS clock jumps
-      const rtt    = now - sentAt;
-      const offset = (serverTime + rtt / 2) - now;
-      offsets.push(offset);
+      const now = monoNow();
+      const rtt = now - sentAt;
+      offsets.push((serverTime + rtt / 2) - now);
       rtts.push(rtt);
 
       if (++done < SYNC_SAMPLES) {
-        setTimeout(doPing, 50);          // spread samples to capture jitter
+        setTimeout(() => socket.emit('time_sync', monoNow()), 50);
       } else {
         socket.off('time_sync_reply', handler);
-
-        // IMPROVEMENT 3: Discard samples where RTT > 2× the minimum RTT
-        // (these are likely blips, not representative of steady-state lag)
         const minRtt   = Math.min(...rtts);
         const filtered = offsets.filter((_, i) => rtts[i] <= minRtt * 2);
-        const clean    = filtered.length >= 3 ? filtered : offsets; // need ≥3
-
-        timeOffset = clean.reduce((a, b) => a + b, 0) / clean.length;
-
-        const avgRtt = rtts.reduce((a, b) => a + b, 0) / rtts.length;
-        setConnStatus(true, Math.round(avgRtt / 2), Math.round(Math.abs(timeOffset)));
-
-        // IMPROVEMENT 4: Re-sync every 30s to correct for long-term drift
+        const clean    = filtered.length >= 3 ? filtered : offsets;
+        timeOffset     = clean.reduce((a, b) => a + b, 0) / clean.length;
+        const avgRtt   = rtts.reduce((a, b) => a + b, 0) / rtts.length;
+        setConn(true, Math.round(avgRtt / 2), Math.round(Math.abs(timeOffset)));
         clearInterval(resyncInterval);
         resyncInterval = setInterval(runTimeSync, 30_000);
       }
     };
 
     socket.on('time_sync_reply', handler);
-    doPing();
+    socket.emit('time_sync', monoNow());
   }
 
-  function doPing() { socket.emit('time_sync', monoNow()); }
-
-  // ── Full-screen overlay countdown ─────────────────────────────────────────
-  let overlayTimeout = null;
-
-  function showOverlay(color, serverPrimeTime) {
-    // Convert server primeTime to local ms
-    const msUntilPrime = (serverPrimeTime - timeOffset) - monoNow();
-
-    // Style the balloon indicator with the dispensed colour
-    $overlayBalloon.style.background = COLOR_HEX[color];
-    $overlayBalloon.style.boxShadow  = `0 0 80px ${COLOR_HEX[color]}, 0 0 160px ${COLOR_HEX[color]}60`;
-
-    // Show overlay
-    $overlay.className = 'overlay';
-    $overlay.style.setProperty('--bcolor', COLOR_HEX[color]);
-
-    // Animate 3 → 2 → 1 → GO!
-    // Each digit occupies 1/3 of the countdown period
-    const step = msUntilPrime / 3;
-
-    function setCount(label, sublabel, cls) {
-      $overlayCount.textContent = label;
-      $overlayLabel.textContent = sublabel;
-      $overlayCount.className   = `overlay-count ${cls || ''}`;
-    }
-
-    clearTimeout(overlayTimeout);
-    setCount('3', 'Get ready!', 'tick');
-
-    // Restart animation each tick by toggling the class
-    const reschedule = (num, delay) => setTimeout(() => {
-      void $overlayCount.offsetWidth; // force reflow to restart animation
-      if (num === 'GO!') {
-        setCount('GO!', `Click the ${color.toUpperCase()} balloon!`, 'go');
-        // Hide overlay shortly after GO! so player can click
-        overlayTimeout = setTimeout(hideOverlay, 600);
-      } else {
-        setCount(num, 'Get ready!', 'tick');
-      }
-    }, delay);
-
-    reschedule('2',   step);
-    reschedule('1',   step * 2);
-    reschedule('GO!', step * 3 - 200); // 200ms early so GO! is visible before buttons activate
-  }
-
-  function hideOverlay() {
-    $overlay.className = 'overlay hidden';
-  }
-
-  // ── Join Form ──────────────────────────────────────────────────────────────
+  // ── Join ─────────────────────────────────────────────────────────────────
   $joinForm.addEventListener('submit', (e) => {
     e.preventDefault();
     const name = $usernameInput.value.trim();
     if (!name) return;
+    myUsername = name;
     socket.emit('join', name);
   });
 
-  // ── Game Screen Setup ──────────────────────────────────────────────────────
-  function showGameScreen(gm) {
+  // ── Panel switcher ───────────────────────────────────────────────────────
+  function showPanel(which) {
     $joinScreen.classList.add('hidden');
     $gameScreen.classList.remove('hidden');
-    if (gm) {
-      $gmPanel.classList.remove('hidden');
-      $playerPanel.classList.add('hidden');
-    } else {
-      $playerPanel.classList.remove('hidden');
-      $gmPanel.classList.add('hidden');
-    }
+    [$hostPanel, $playerPanel, $lbPanel].forEach(p => p.classList.add('hidden'));
+    if (which === 'host')   $hostPanel.classList.remove('hidden');
+    if (which === 'player') $playerPanel.classList.remove('hidden');
+    if (which === 'lb')     $lbPanel.classList.remove('hidden');
   }
 
-  // ── GM Inventory ───────────────────────────────────────────────────────────
-  function renderGMInventory(inv) {
-    $gmInventory.innerHTML = '';
-    for (const color of COLORS_ORDER) {
-      const count = inv[color];
-      const card  = document.createElement('button');
-      card.className = `gm-balloon${count === 0 ? ' depleted' : ''}`;
-      card.disabled  = count === 0;
-      card.style.setProperty('--bcolor', COLOR_HEX[color]);
-      card.innerHTML = `
-        <div class="gm-balloon-icon"></div>
-        <span class="gm-color-name">${color}</span>
-        <span class="gm-count">${count} left</span>
-      `;
-      card.addEventListener('click', () => { if (!roundOpen) socket.emit('gm_dispense', color); });
-      $gmInventory.appendChild(card);
-    }
-  }
-
-  function setGMStatus(text, cls) {
-    $gmStatus.textContent = text;
-    $gmStatus.className   = `gm-status ${cls}`;
-  }
-
-  function setGMButtonsEnabled(enabled) {
-    $gmInventory.querySelectorAll('.gm-balloon:not(.depleted)').forEach(b => {
-      b.disabled = !enabled;
-    });
-  }
-
-  // ── Player: Countdown ──────────────────────────────────────────────────────
-  function applyCountdown(serverPrimeTime) {
-    // Convert server absolute timestamp to local monotonic ms
-    const localPrimeTime = serverPrimeTime - timeOffset;
-    const msUntilPrime   = localPrimeTime - monoNow(); // ← monotonic
-
-    disableAllBalloons();
-    setStatus('Get ready — pick the right balloon at the right moment!');
-    startCountdown(msUntilPrime);
-
-    if (enableTimer)  clearTimeout(enableTimer);
-    if (disableTimer) clearTimeout(disableTimer);
-
-    enableTimer = setTimeout(() => {
-      if (!hasClicked) { enableAllBalloons(); setStatus('NOW! Click the right balloon!'); }
-      roundOpen = true;
-    }, Math.max(0, msUntilPrime - 500));
-
-    disableTimer = setTimeout(() => {
-      if (!hasClicked) { disableAllBalloons(); setStatus('Too slow! Waiting for next round…'); }
-      roundOpen = false;
-      stopCountdown();
-    }, msUntilPrime + 2000);
-  }
-
-  function startCountdown(msTotal) {
-    stopCountdown();
-    if (msTotal <= 0) return;
-    const startMono = monoNow();               // ← monotonic start reference
-    $timerArc.style.strokeDasharray  = CIRCUMFERENCE;
-    $timerArc.style.strokeDashoffset = 0;
-
-    const tick = () => {
-      const remaining = Math.max(0, msTotal - (monoNow() - startMono)); // ← monotonic
-      $countdownNum.textContent        = (remaining / 1000).toFixed(1);
-      $timerArc.style.strokeDashoffset = CIRCUMFERENCE * (1 - remaining / msTotal);
-      if (remaining > 0) animFrame = requestAnimationFrame(tick);
-    };
-    animFrame = requestAnimationFrame(tick);
-  }
-
-  function stopCountdown() {
-    if (animFrame) { cancelAnimationFrame(animFrame); animFrame = null; }
-    $countdownNum.textContent        = '—';
-    $timerArc.style.strokeDashoffset = CIRCUMFERENCE;
-  }
-
-  // ── Player: Click ─────────────────────────────────────────────────────────
-  balloonBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
-      if (btn.disabled || hasClicked) return;
-      hasClicked = true;
-      disableAllBalloons();
-      btn.classList.add('chosen');
-
-      // IMPROVEMENT 1: Send the synced server timestamp so scoring is based on
-      // when you *clicked*, not when the packet *arrived* at the server.
-      // The server validates this against its arrival time with a ±500ms guard.
-      socket.emit('click', {
-        color:     btn.dataset.color,
-        clickTime: serverNow(),
-      });
+  // ── Host: word form ──────────────────────────────────────────────────────
+  // Each host tile acts as "submit with this colour"
+  hostTiles.forEach(tile => {
+    tile.addEventListener('click', () => {
+      const word = $wordInput.value.trim();
+      const color = tile.dataset.color;
+      if (!word) {
+        $hostError.classList.remove('hidden');
+        $wordInput.focus();
+        return;
+      }
+      $hostError.classList.add('hidden');
+      socket.emit('gm_word', { word, correctColor: color });
     });
   });
 
-  // ── UI Helpers ────────────────────────────────────────────────────────────
-  function enableAllBalloons() {
-    balloonBtns.forEach(b => {
-      b.disabled = false;
-      b.classList.add('active');
-      b.classList.remove('chosen', 'correct', 'wrong');
-    });
+  function setHostStatus(msg, cls) {
+    $hostStatus.textContent = msg;
+    $hostStatus.className   = `host-status ${cls}`;
   }
 
-  function disableAllBalloons() {
-    balloonBtns.forEach(b => {
-      b.disabled = true;
-      b.classList.remove('active');
-    });
+  function setHostTilesEnabled(on) {
+    hostTiles.forEach(t => { t.disabled = !on; });
+    if ($wordInput) $wordInput.disabled = !on;
   }
 
-  function setStatus(text) { $statusLabel.textContent = text; }
+  function resetWordForm() {
+    $wordInput.value = '';
+  }
 
+  // ── Player: word reveal ──────────────────────────────────────────────────
+  function showWordAndEnableTiles(word) {
+    $wordDisplay.textContent = word.toUpperCase();
+    enableAllTiles();
+  }
+
+  function setWordLabel(text) {
+    $wordDisplay.textContent = text;
+  }
+
+  // ── Player: click ────────────────────────────────────────────────────────
+  playerTiles.forEach(tile => {
+    tile.addEventListener('click', () => {
+      if (tile.disabled || hasClicked) return;
+      hasClicked = true;
+      disableAllTiles();
+      tile.classList.add('chosen');
+      socket.emit('click', { color: tile.dataset.color, clickTime: serverNow() });
+    });
+  });
+
+  // ── Overlay (word flash) ──────────────────────────────────────────────────
+  function showOverlay(word) {
+    $ovWord.textContent = word.toUpperCase();
+    $overlay.className  = 'ov';
+    clearTimeout(overlayTimer);
+    // Auto-hide after 1.5s — players can now see the tiles
+    overlayTimer = setTimeout(() => { $overlay.className = 'ov hidden'; }, 1500);
+  }
+
+  // ── Result UI ────────────────────────────────────────────────────────────
   function showResult(data) {
-    balloonBtns.forEach(b => {
-      if (b.dataset.color === data.roundColor)                           b.classList.add('correct');
-      if (b.dataset.color === data.selectedColor && !data.correctColor) b.classList.add('wrong');
+    playerTiles.forEach(t => {
+      if (t.dataset.color === data.roundColor)                           t.classList.add('correct');
+      if (t.dataset.color === data.selectedColor && !data.correctColor) t.classList.add('wrong');
     });
 
-    $result.classList.remove('hidden');
+    $resultBar.classList.remove('hidden');
+
     if (!data.correctColor) {
-      $resultDiff.textContent   = `Wrong balloon! It was ${data.roundColor.toUpperCase()}`;
-      $resultPoints.textContent = '+0 pts';
-      $result.className = 'result miss';
+      $resultBar.className    = 'k-result wrong-result';
+      $resultIcon.textContent = '✗';
+      $resultText.textContent = `Wrong! It was ${data.roundColor.toUpperCase()}`;
+      $resultPts.textContent  = '+0';
     } else {
-      // Server tells us if it trusted our clickTime or fell back to arrival time
-      const note = data.usedClientTime ? '' : ' (server fallback)';
-      $resultDiff.textContent   = `Off by ${data.diff}ms (${(data.diff / 1000).toFixed(3)}s)${note}`;
-      $resultPoints.textContent = `+${data.points} pts`;
-      $result.className = data.points >= 8 ? 'result great' : data.points >= 4 ? 'result ok' : 'result miss';
+      const speed = data.responseMs < 1000 ? 'Lightning fast!' : data.responseMs < 3000 ? 'Nice!' : 'Correct!';
+      $resultBar.className    = `k-result ${data.points >= 8 ? 'great-result' : 'ok-result'}`;
+      $resultIcon.textContent = '✓';
+      $resultText.textContent = `${speed} (${(data.responseMs / 1000).toFixed(2)}s)`;
+      $resultPts.textContent  = `+${data.points}`;
+      document.getElementById('score-pill').classList.add('pop');
+      setTimeout(() => document.getElementById('score-pill').classList.remove('pop'), 600);
     }
   }
 
   function hideResult() {
-    $result.className = 'hidden';
-    balloonBtns.forEach(b => b.classList.remove('chosen', 'correct', 'wrong'));
+    $resultBar.className = 'k-result hidden';
+    playerTiles.forEach(t => t.classList.remove('chosen', 'correct', 'wrong'));
+    $wordDisplay.textContent = '—';
   }
 
-  // IMPROVEMENT 6: Show ping + offset in the status bar
-  function setConnStatus(connected, oneWayMs, offsetMs) {
-    if (!connected) {
-      $connStatus.textContent = 'Disconnected — reconnecting…';
-      $connStatus.className   = 'disconnected';
-      return;
-    }
-    $connStatus.textContent = oneWayMs !== undefined
-      ? `Connected · ping ${oneWayMs}ms · sync ±${offsetMs}ms`
-      : 'Connected · syncing…';
-    $connStatus.className = 'connected';
+  // ── Leaderboard ──────────────────────────────────────────────────────────
+  function showLeaderboard(entries) {
+    $lbList.innerHTML = '';
+    const medals = ['🥇','🥈','🥉'];
+    entries.slice(0, 10).forEach((e, i) => {
+      const li = document.createElement('li');
+      li.className = `lb-row${e.username === myUsername ? ' lb-me' : ''}`;
+      li.style.animationDelay = `${i * 0.07}s`;
+      li.innerHTML = `
+        <span class="lb-rank">${medals[i] || i + 1}</span>
+        <span class="lb-name">${e.username}</span>
+        <span class="lb-pts">${e.score} pts</span>
+      `;
+      $lbList.appendChild(li);
+    });
+
+    $lbHostAction.classList.toggle('hidden', !isGM);
+    showPanel('lb');
+  }
+
+  // ── Tile helpers ─────────────────────────────────────────────────────────
+  function enableAllTiles() {
+    playerTiles.forEach(t => {
+      t.disabled = false;
+      t.classList.remove('disabled', 'chosen', 'correct', 'wrong');
+    });
+  }
+
+  function disableAllTiles() {
+    playerTiles.forEach(t => {
+      t.disabled = true;
+      t.classList.add('disabled');
+    });
+  }
+
+  // ── Connection ───────────────────────────────────────────────────────────
+  function setConn(ok, ping, offset) {
+    $connStatus.textContent = ok
+      ? (ping !== undefined ? `● Connected · ${ping}ms · ±${offset}ms` : '● Connected')
+      : '● Disconnected — reconnecting…';
+    $connStatus.className = `k-conn ${ok ? 'connected' : 'disconnected'}`;
   }
 
 })();

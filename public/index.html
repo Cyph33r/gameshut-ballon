@@ -97,6 +97,9 @@
     <div class="word-display-wrap">
       <p class="word-display-label">Pop the balloon that sounds like…</p>
       <div class="word-display" id="word-display">—</div>
+      <div id="timer-bar-wrap" class="timer-bar-wrap hidden">
+        <div id="timer-bar" class="timer-bar"></div>
+      </div>
     </div>
 
     <!-- 2×2 colour tiles -->
@@ -174,6 +177,8 @@
   const $wordForm     = document.getElementById('word-form');
   const $wordInput    = document.getElementById('word-input');
   const $wordDisplay  = document.getElementById('word-display');
+  const $timerBarWrap = document.getElementById('timer-bar-wrap');
+  const $timerBar     = document.getElementById('timer-bar');
   const $resultBar    = document.getElementById('result-bar');
   const $resultIcon   = document.getElementById('result-icon');
   const $resultText   = document.getElementById('result-text');
@@ -245,6 +250,15 @@
 
     // Flash overlay for everyone
     showOverlay(data.word);
+
+    if (!isGM) {
+      $timerBar.classList.remove('active');
+      $timerBarWrap.classList.remove('hidden');
+      // Start the shrinking animation exactly as the overlay disappears
+      setTimeout(() => {
+        $timerBar.classList.add('active');
+      }, 1500);
+    }
 
     // Auto-disable tiles after 10s (server will also close)
     clearTimeout(closeTimer);
@@ -452,6 +466,8 @@
 
   function hideResult() {
     $resultBar.className = 'k-result hidden';
+    $timerBarWrap.classList.add('hidden');
+    $timerBar.classList.remove('active');
     playerTiles.forEach(t => t.classList.remove('chosen', 'correct', 'wrong'));
     $wordDisplay.textContent = '—';
   }

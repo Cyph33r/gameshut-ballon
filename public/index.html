@@ -52,7 +52,6 @@
         <div id="status-wrap">
           <div id="status-label">Waiting for Game Master…</div>
           <div id="countdown">
-            <!-- Gradient def -->
             <svg width="0" height="0" style="position:absolute">
               <defs>
                 <linearGradient id="arc-grad" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -66,16 +65,19 @@
               <circle class="fill"  cx="60" cy="60" r="52" id="timer-arc"/>
             </svg>
             <div id="countdown-inner">
-              <div id="target-color-dot"></div>
               <span id="countdown-num">—</span>
             </div>
           </div>
         </div>
 
-        <!-- Click Button -->
-        <button id="click-btn" class="btn" disabled>
-          <span id="btn-label">WAIT</span>
-        </button>
+        <!-- Player Balloon Buttons -->
+        <p id="pick-label" class="pick-label">Pick the right balloon at the right moment!</p>
+        <div id="player-balloons" class="player-grid">
+          <button class="player-balloon" data-color="red"    style="--bcolor:#ff4d6d" disabled></button>
+          <button class="player-balloon" data-color="blue"   style="--bcolor:#4dabf7" disabled></button>
+          <button class="player-balloon" data-color="green"  style="--bcolor:#00e5a0" disabled></button>
+          <button class="player-balloon" data-color="yellow" style="--bcolor:#ffd94a" disabled></button>
+        </div>
 
         <!-- Result Banner -->
         <div id="result" class="hidden">
@@ -114,19 +116,20 @@
   const $gmInventory    = document.getElementById('gm-inventory');
   const $gmStatus       = document.getElementById('gm-status');
 
-  const $playerPanel    = document.getElementById('player-panel');
-  const $totalScore     = document.getElementById('total-score');
-  const $roundNum       = document.getElementById('round-num');
-  const $statusLabel    = document.getElementById('status-label');
-  const $countdownNum   = document.getElementById('countdown-num');
-  const $targetColorDot = document.getElementById('target-color-dot');
-  const $timerArc       = document.getElementById('timer-arc');
-  const $clickBtn       = document.getElementById('click-btn');
-  const $btnLabel       = document.getElementById('btn-label');
-  const $result         = document.getElementById('result');
-  const $resultDiff     = document.getElementById('result-diff');
-  const $resultPoints   = document.getElementById('result-points');
-  const $connStatus     = document.getElementById('conn-status');
+  const $playerPanel      = document.getElementById('player-panel');
+  const $totalScore       = document.getElementById('total-score');
+  const $roundNum         = document.getElementById('round-num');
+  const $statusLabel      = document.getElementById('status-label');
+  const $countdownNum     = document.getElementById('countdown-num');
+  const $timerArc         = document.getElementById('timer-arc');
+  const $playerBalloons   = document.getElementById('player-balloons');
+  const $result           = document.getElementById('result');
+  const $resultDiff       = document.getElementById('result-diff');
+  const $resultPoints     = document.getElementById('result-points');
+  const $connStatus       = document.getElementById('conn-status');
+
+  // All 4 player balloon buttons
+  const balloonBtns = Array.from(document.querySelectorAll('.player-balloon'));
 
   // ── State ──────────────────────────────────────────────────────────────────
   let timeOffset   = 0;
@@ -203,9 +206,9 @@
   socket.on('click_result', (data) => {
     totalScore = data.totalScore;
     $totalScore.textContent = totalScore;
-    showResult(data.diff, data.points);
-    disableButton('✓');
+    disableAllBalloons();
     stopCountdown();
+    showResult(data);
   });
 
   // ── Time Sync (NTP median of 5 samples) ───────────────────────────────────
@@ -295,26 +298,29 @@
 
   // ── Player: Countdown ──────────────────────────────────────────────────────
   function applyCountdown(serverPrimeTime) {
-    // Convert server absolute time → local time
     const localPrimeTime = serverPrimeTime - timeOffset;
     const msUntilPrime   = localPrimeTime - Date.now();
 
-    disableButton('WAIT');
-    setStatus('Get ready…');
+    disableAllBalloons();
+    setStatus('Get ready — pick the right balloon at the right moment!');
     startCountdown(msUntilPrime);
 
     if (enableTimer)  clearTimeout(enableTimer);
     if (disableTimer) clearTimeout(disableTimer);
 
+    // Enable balloon buttons 500ms before primeTime
     enableTimer = setTimeout(() => {
-      if (!hasClicked) { enableButton('CLICK!'); setStatus('CLICK NOW!'); }
+      if (!hasClicked) { enableAllBalloons(); setStatus('NOW! Click the right balloon!'); }
       roundOpen = true;
     }, Math.max(0, msUntilPrime - 500));
 
+    // Close window 2s after primeTime
     disableTimer = setTimeout(() => {
-      if (!hasClicked) disableButton('TOO LATE');
+      if (!hasClicked) {
+        disableAllBalloons();
+        setStatus('Too slow! Waiting for next round…');
+      }
       roundOpen = false;
-      setStatus('Missed it. Waiting for next round…');
       stopCountdown();
     }, msUntilPrime + 2000);
   }
@@ -341,37 +347,58 @@
     $timerArc.style.strokeDashoffset = CIRCUMFERENCE;
   }
 
-  // ── Player: Click ─────────────────────────────────────────────────────────
-  $clickBtn.addEventListener('click', () => {
-    if ($clickBtn.disabled || hasClicked) return;
-    hasClicked = true;
-    socket.emit('click');
+  // ── Player: Balloon click handlers ────────────────────────────────────────
+  balloonBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (btn.disabled || hasClicked) return;
+      hasClicked = true;
+      disableAllBalloons();
+      // Highlight chosen balloon
+      btn.classList.add('chosen');
+      socket.emit('click', { color: btn.dataset.color });
+    });
   });
 
   // ── UI Helpers ────────────────────────────────────────────────────────────
-  function enableButton(label) {
-    $clickBtn.disabled = false;
-    $clickBtn.classList.add('active');
-    $btnLabel.textContent = label;
+  function enableAllBalloons() {
+    balloonBtns.forEach(b => {
+      b.disabled = false;
+      b.classList.add('active');
+      b.classList.remove('chosen', 'correct', 'wrong');
+    });
   }
 
-  function disableButton(label) {
-    $clickBtn.disabled = true;
-    $clickBtn.classList.remove('active');
-    $btnLabel.textContent = label;
+  function disableAllBalloons() {
+    balloonBtns.forEach(b => {
+      b.disabled = true;
+      b.classList.remove('active');
+    });
   }
 
   function setStatus(text) { $statusLabel.textContent = text; }
 
-  function showResult(diffMs, points) {
+  function showResult(data) {
+    // Highlight correct / wrong on the balloon buttons
+    balloonBtns.forEach(b => {
+      if (b.dataset.color === data.roundColor)   b.classList.add('correct');
+      if (b.dataset.color === data.selectedColor && !data.correctColor) b.classList.add('wrong');
+    });
+
     $result.classList.remove('hidden');
-    $resultDiff.textContent   = `Off by ${diffMs}ms (${(diffMs/1000).toFixed(3)}s)`;
-    $resultPoints.textContent = `+${points} pts`;
-    $result.className = points >= 8 ? 'result great' : points >= 4 ? 'result ok' : 'result miss';
+    if (!data.correctColor) {
+      $resultDiff.textContent   = `Wrong balloon! It was ${data.roundColor.toUpperCase()}`;
+      $resultPoints.textContent = '+0 pts';
+      $result.className = 'result miss';
+    } else {
+      $resultDiff.textContent   = `Off by ${data.diff}ms (${(data.diff/1000).toFixed(3)}s)`;
+      $resultPoints.textContent = `+${data.points} pts`;
+      $result.className = data.points >= 8 ? 'result great' : data.points >= 4 ? 'result ok' : 'result miss';
+    }
   }
 
   function hideResult() {
     $result.className = 'hidden';
+    balloonBtns.forEach(b => b.classList.remove('chosen','correct','wrong'));
   }
 
   function setConnStatus(connected) {

@@ -388,6 +388,109 @@ body {
 .result.ok     { background: rgba(255,217,74,0.1); border-color: rgba(255,217,74,0.3); color: var(--yellow); }
 .result.miss   { background: rgba(255,77,109,0.1); border-color: rgba(255,77,109,0.3); color: var(--red); }
 
+/* ── Player Balloon Grid ────────────────────────────────────────────────────── */
+
+.pick-label {
+  font-size: 0.82rem;
+  color: var(--muted);
+  font-weight: 600;
+  text-align: center;
+}
+
+.player-grid {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+/* Individual player balloon button */
+.player-balloon {
+  width: 72px;
+  height: 90px;
+  border-radius: 50% 50% 50% 50% / 40% 40% 60% 60%;
+  border: 3px solid transparent;
+  background-color: var(--bcolor);
+  box-shadow: inset -6px -8px 16px rgba(0,0,0,0.3), 0 6px 20px rgba(0,0,0,0.4);
+  cursor: pointer;
+  position: relative;
+  transition: transform 0.12s, box-shadow 0.2s, filter 0.2s, border-color 0.15s;
+  outline: none;
+}
+
+/* Knot at the bottom */
+.player-balloon::after {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-left:  5px solid transparent;
+  border-right: 5px solid transparent;
+  border-bottom: 9px solid var(--bcolor);
+  filter: brightness(0.75);
+}
+
+/* Shine highlight */
+.player-balloon::before {
+  content: '';
+  position: absolute;
+  top: 12px;
+  left: 14px;
+  width: 18px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.25);
+  transform: rotate(-20deg);
+}
+
+/* Waiting — greyed out */
+.player-balloon:disabled {
+  filter: grayscale(0.7) brightness(0.55);
+  cursor: not-allowed;
+}
+
+/* Active (click window open) — full colour, pulsing glow */
+.player-balloon.active:not(:disabled) {
+  filter: none;
+  animation: balloon-pulse 1s ease-in-out infinite;
+  box-shadow: inset -6px -8px 16px rgba(0,0,0,0.3),
+              0 0 20px color-mix(in srgb, var(--bcolor) 70%, transparent),
+              0 6px 20px rgba(0,0,0,0.4);
+}
+
+.player-balloon.active:not(:disabled):hover {
+  transform: translateY(-5px) scale(1.06);
+}
+
+.player-balloon.active:not(:disabled):active {
+  transform: scale(0.93) translateY(4px);
+}
+
+@keyframes balloon-pulse {
+  0%, 100% { box-shadow: inset -6px -8px 16px rgba(0,0,0,0.3), 0 0 16px color-mix(in srgb, var(--bcolor) 55%, transparent); }
+  50%       { box-shadow: inset -6px -8px 16px rgba(0,0,0,0.3), 0 0 36px color-mix(in srgb, var(--bcolor) 85%, transparent); }
+}
+
+/* Chosen — the one the player clicked */
+.player-balloon.chosen {
+  border-color: white;
+  transform: scale(1.08);
+}
+
+/* Correct colour revealed after result */
+.player-balloon.correct {
+  border-color: var(--green);
+  box-shadow: 0 0 24px rgba(0,229,160,0.6);
+}
+
+/* Wrong colour the player picked */
+.player-balloon.wrong {
+  border-color: var(--red);
+  box-shadow: 0 0 24px rgba(255,77,109,0.5);
+  filter: brightness(0.7);
+}
+
 /* ── Connection Status ──────────────────────────────────────────────────────── */
 #conn-status {
   position: fixed;

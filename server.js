@@ -152,7 +152,7 @@ io.on('connection', (socket) => {
   });
 
   // ── Player Click ───────────────────────────────────────────────────────────
-  socket.on('click', () => {
+  socket.on('click', ({ color } = {}) => {
     const player = players.get(socket.id);
     if (!player)                   return;
     if (player.isGM)               return; // GM doesn't play
@@ -162,16 +162,24 @@ io.on('connection', (socket) => {
     player.clickedThisRound = true;
 
     const serverClickTime = Date.now();
-    const diff   = Math.abs(serverClickTime - round.primeTime); // ms
-    const points = Math.max(0, Math.round(10 - (diff / 1000) / 0.1));
+    const correctColor    = color === round.color;
+    const diff            = Math.abs(serverClickTime - round.primeTime); // ms
+
+    // Wrong colour = 0 pts regardless of timing
+    const points = correctColor
+      ? Math.max(0, Math.round(10 - (diff / 1000) / 0.1))
+      : 0;
+
     player.score += points;
 
     socket.emit('click_result', {
-      roundId:    round.id,
-      color:      round.color,
+      roundId:      round.id,
+      correctColor,
+      selectedColor: color,
+      roundColor:   round.color,
       diff,
       points,
-      totalScore: player.score,
+      totalScore:   player.score,
     });
   });
 

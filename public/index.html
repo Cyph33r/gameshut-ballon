@@ -229,6 +229,7 @@
 
   // New round: word is revealed right now
   socket.on('round_start', (data) => {
+    showPanel(isGM ? 'host' : 'player');
     $roundNum.textContent = data.roundId;
     hasClicked = false;
 

@@ -437,6 +437,16 @@ html, body {
 
 .k-tile.disabled { filter: brightness(0.5) saturate(0.4); cursor: not-allowed; }
 
+@keyframes balloon-pop {
+  0%   { transform: scale(1); opacity: 1; }
+  30%  { transform: scale(1.4); opacity: 0.8; }
+  100% { transform: scale(0); opacity: 0; }
+}
+
+.k-tile.chosen .tile-balloon {
+  animation: balloon-pop 0.25s cubic-bezier(0.36, 0.07, 0.19, 0.97) forwards;
+}
+
 .k-tile.chosen  { transform: scale(0.95); box-shadow: 0 0 0 4px #fff, 0 4px 0 rgba(0,0,0,0.3); }
 .k-tile.correct { filter: none; box-shadow: 0 0 0 4px #fff, 0 8px 24px rgba(255,255,255,0.25); }
 .k-tile.wrong   { filter: brightness(0.4) saturate(0.2); }

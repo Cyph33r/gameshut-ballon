@@ -144,9 +144,9 @@ io.on('connection', (socket) => {
     // Response time from when the word was revealed
     const responseMs   = Math.max(0, effectiveTime - round.revealTime);
 
-    // Score: correct = 10 pts, -1 per 500ms response time, min 0
+    // Score: correct = 10 pts, -1 per 100ms response time, min 0
     const points = correctColor
-      ? Math.max(0, 10 - Math.floor(responseMs / 500))
+      ? Math.max(0, 10 - Math.floor(responseMs / 100))
       : 0;
 
     player.score += points;

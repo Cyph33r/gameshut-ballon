@@ -98,7 +98,11 @@ html, body {
   user-select: none;
   min-width: 44px;
   text-align: center;
+  cursor: pointer;
+  transition: transform 0.15s;
 }
+#join-avatar:hover { transform: scale(1.15) rotate(5deg); }
+#join-avatar:active { transform: scale(0.9); }
 
 #username-input {
   flex: 1;

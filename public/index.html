@@ -21,7 +21,7 @@
     <form id="join-form">
       <label class="join-field-label">Enter your nickname</label>
       <div class="join-input-group">
-        <div id="join-avatar">👤</div>
+        <div id="join-avatar" title="Click to change avatar">👤</div>
         <input id="username-input" type="text" placeholder="Nickname"
                maxlength="15" autocomplete="off" autocapitalize="words" required />
         <button type="button" id="btn-random-name" class="k-btn-icon" title="Randomize Profile">🎲</button>
@@ -314,21 +314,34 @@
   const nouns = ['Tiger', 'Fox', 'Bear', 'Wolf', 'Owl', 'Panda', 'Lion', 'Hawk', 'Duck', 'Frog'];
   const emojis = ['🐯', '🦊', '🐻', '🐺', '🦉', '🐼', '🦁', '🦅', '🦆', '🐸', '🦄', '🐙', '🦖', '🐢', '🐧'];
 
+  function randomizeAvatar() {
+    myAvatar = emojis[Math.floor(Math.random() * emojis.length)];
+    $joinAvatar.textContent = myAvatar;
+    $joinAvatar.style.animation = 'none';
+    $joinAvatar.offsetHeight; // trigger reflow
+    $joinAvatar.style.animation = 'score-pop 0.3s ease';
+  }
+
   function randomizeProfile() {
     const adj = adjectives[Math.floor(Math.random() * adjectives.length)];
     const noun = nouns[Math.floor(Math.random() * nouns.length)];
     $usernameInput.value = `${adj} ${noun}`;
-    myAvatar = emojis[Math.floor(Math.random() * emojis.length)];
-    $joinAvatar.textContent = myAvatar;
+    randomizeAvatar();
   }
   
   $btnRandom.addEventListener('click', randomizeProfile);
+  $joinAvatar.addEventListener('click', randomizeAvatar);
 
   $joinForm.addEventListener('submit', (e) => {
     e.preventDefault();
     const name = $usernameInput.value.trim();
     if (!name) return;
     myUsername = name;
+    
+    if (myAvatar === '👤' && name.toLowerCase() !== 'admin') {
+      randomizeAvatar();
+    }
+    
     socket.emit('join', { username: name, avatar: myAvatar });
   });
 

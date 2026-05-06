@@ -27,7 +27,6 @@
   <!-- ── Game Screen ─────────────────────────────────────────────────────── -->
   <div id="game-screen" class="screen hidden">
 
-    <!-- Header -->
     <header id="header">
       <div class="logo">Sync<span>Pop</span></div>
       <div id="score-display">Score: <strong id="total-score">0</strong></div>
@@ -37,7 +36,7 @@
 
       <div id="round-info">Round <span id="round-num">—</span></div>
 
-      <!-- ── GM Panel (hidden for regular players) ── -->
+      <!-- GM Panel -->
       <section id="gm-panel" class="hidden">
         <h2 class="gm-title">🎮 Game Master</h2>
         <p class="gm-sub">Select a balloon from the prime inventory to start a round</p>
@@ -45,10 +44,9 @@
         <div id="gm-status" class="gm-status"></div>
       </section>
 
-      <!-- ── Player Panel (hidden for GM) ── -->
+      <!-- Player Panel -->
       <section id="player-panel" class="hidden">
 
-        <!-- Status & Countdown -->
         <div id="status-wrap">
           <div id="status-label">Waiting for Game Master…</div>
           <div id="countdown">
@@ -70,7 +68,6 @@
           </div>
         </div>
 
-        <!-- Player Balloon Buttons -->
         <p id="pick-label" class="pick-label">Pick the right balloon at the right moment!</p>
         <div id="player-balloons" class="player-grid">
           <button class="player-balloon" data-color="red"    style="--bcolor:#ff4d6d" disabled></button>
@@ -79,7 +76,6 @@
           <button class="player-balloon" data-color="yellow" style="--bcolor:#ffd94a" disabled></button>
         </div>
 
-        <!-- Result Banner -->
         <div id="result" class="hidden">
           <div id="result-diff"></div>
           <div id="result-points"></div>
@@ -92,7 +88,14 @@
     <div id="conn-status" class="disconnected">Connecting…</div>
   </div>
 
-</div><!-- #app -->
+</div>
+
+<!-- ── Full-screen countdown overlay ─────────────────────────────────── -->
+<div id="overlay" class="overlay hidden">
+  <div class="overlay-balloon" id="overlay-balloon"></div>
+  <div class="overlay-count" id="overlay-count">3</div>
+  <div class="overlay-label" id="overlay-label">Get ready!</div>
+</div>
 
 <script src="/socket.io/socket.io.js"></script>
 <script>
@@ -104,105 +107,120 @@
     green:  '#00e5a0',
     yellow: '#ffd94a',
   };
+  const COLORS_ORDER  = ['red', 'blue', 'green', 'yellow'];
   const CIRCUMFERENCE = 2 * Math.PI * 52;
+  const SYNC_SAMPLES  = 10; // ↑ from 5 — more samples = better offset estimate
 
   // ── DOM ────────────────────────────────────────────────────────────────────
-  const $joinScreen     = document.getElementById('join-screen');
-  const $gameScreen     = document.getElementById('game-screen');
-  const $joinForm       = document.getElementById('join-form');
-  const $usernameInput  = document.getElementById('username-input');
+  const $joinScreen    = document.getElementById('join-screen');
+  const $gameScreen    = document.getElementById('game-screen');
+  const $joinForm      = document.getElementById('join-form');
+  const $usernameInput = document.getElementById('username-input');
+  const $gmPanel       = document.getElementById('gm-panel');
+  const $gmInventory   = document.getElementById('gm-inventory');
+  const $gmStatus      = document.getElementById('gm-status');
+  const $playerPanel   = document.getElementById('player-panel');
+  const $totalScore    = document.getElementById('total-score');
+  const $roundNum      = document.getElementById('round-num');
+  const $statusLabel   = document.getElementById('status-label');
+  const $countdownNum  = document.getElementById('countdown-num');
+  const $timerArc      = document.getElementById('timer-arc');
+  const $result        = document.getElementById('result');
+  const $resultDiff    = document.getElementById('result-diff');
+  const $resultPoints  = document.getElementById('result-points');
+  const $connStatus    = document.getElementById('conn-status');
+  const balloonBtns    = Array.from(document.querySelectorAll('.player-balloon'));
 
-  const $gmPanel        = document.getElementById('gm-panel');
-  const $gmInventory    = document.getElementById('gm-inventory');
-  const $gmStatus       = document.getElementById('gm-status');
-
-  const $playerPanel      = document.getElementById('player-panel');
-  const $totalScore       = document.getElementById('total-score');
-  const $roundNum         = document.getElementById('round-num');
-  const $statusLabel      = document.getElementById('status-label');
-  const $countdownNum     = document.getElementById('countdown-num');
-  const $timerArc         = document.getElementById('timer-arc');
-  const $playerBalloons   = document.getElementById('player-balloons');
-  const $result           = document.getElementById('result');
-  const $resultDiff       = document.getElementById('result-diff');
-  const $resultPoints     = document.getElementById('result-points');
-  const $connStatus       = document.getElementById('conn-status');
-
-  // All 4 player balloon buttons
-  const balloonBtns = Array.from(document.querySelectorAll('.player-balloon'));
+  // Overlay elements
+  const $overlay       = document.getElementById('overlay');
+  const $overlayBalloon= document.getElementById('overlay-balloon');
+  const $overlayCount  = document.getElementById('overlay-count');
+  const $overlayLabel  = document.getElementById('overlay-label');
 
   // ── State ──────────────────────────────────────────────────────────────────
-  let timeOffset   = 0;
-  let isSynced     = false;
-  let isGM         = false;
-  let hasClicked   = false;
-  let animFrame    = null;
-  let totalScore   = 0;
-  let roundOpen    = false;
+  let timeOffset    = 0;
+  let isGM          = false;
+  let hasClicked    = false;
+  let animFrame     = null;
+  let totalScore    = 0;
+  let roundOpen     = false;
+  let enableTimer   = null;
+  let disableTimer  = null;
+  let resyncInterval = null;
 
-  // Per-round close timers (client side)
-  let enableTimer  = null;
-  let disableTimer = null;
+  // ── IMPROVEMENT 1: Monotonic clock ────────────────────────────────────────
+  // performance.now() is monotonic — never jumps backwards due to OS clock
+  // corrections. We pin it to Date.now() once at startup.
+  const perfOrigin = performance.now();
+  const dateOrigin = Date.now();
+
+  function monoNow() {
+    return dateOrigin + (performance.now() - perfOrigin);
+  }
+
+  // Our best estimate of what the server clock reads right now
+  function serverNow() {
+    return monoNow() + timeOffset;
+  }
 
   // ── Socket ─────────────────────────────────────────────────────────────────
   const socket = io();
 
-  socket.on('connect',    () => { setConnStatus(true); runTimeSync(); });
-  socket.on('disconnect', () => setConnStatus(false));
-
-  // Initial state on connect (may arrive mid-round)
-  socket.on('welcome', (data) => {
-    runTimeSync(); // re-sync on reconnect
-    if (data.roundId > 0) {
-      $roundNum.textContent = data.roundId;
-    }
+  socket.on('connect', () => {
+    setConnStatus(true);
+    // IMPROVEMENT 5: Always re-sync on (re)connect before doing anything else
+    clearInterval(resyncInterval);
+    runTimeSync();
   });
 
-  // Server confirmed our join
+  socket.on('disconnect', () => {
+    clearInterval(resyncInterval);
+    setConnStatus(false);
+  });
+
+  socket.on('welcome', (data) => {
+    if (data.roundId > 0) $roundNum.textContent = data.roundId;
+  });
+
   socket.on('joined', (data) => {
     isGM = data.isGM;
     showGameScreen(data.isGM);
-    if (data.isGM) {
-      renderGMInventory(data.primeInventory);
-    }
+    if (data.isGM) renderGMInventory(data.primeInventory);
   });
 
-  // New round triggered by GM
   socket.on('round_start', (data) => {
     $roundNum.textContent = data.roundId;
     hasClicked = false;
     roundOpen  = false;
-
     if (isGM) {
       renderGMInventory(data.primeInventory);
-      setGMStatus(`Round ${data.roundId} started — ${data.color.toUpperCase()} balloon dispensed!`, 'active');
-      // Disable all GM buttons during this round
+      setGMStatus(`Round ${data.roundId} — ${data.color.toUpperCase()} dispensed!`, 'active');
       setGMButtonsEnabled(false);
+      // GM also sees the overlay so they know the countdown has started
+      showOverlay(data.color, data.primeTime);
     } else {
       hideResult();
       applyCountdown(data.primeTime);
+      showOverlay(data.color, data.primeTime);
     }
   });
 
-  // Round click window closed
-  socket.on('round_closed', (data) => {
+  socket.on('round_closed', () => {
     roundOpen = false;
     if (isGM) {
-      setGMStatus('Round over. Select the next balloon to start a new round.', '');
+      setGMStatus('Round over. Select next balloon to start a new round.', '');
       setGMButtonsEnabled(true);
     } else {
-      disableButton('WAIT');
+      disableAllBalloons();
       setStatus('Round over. Waiting for Game Master…');
       stopCountdown();
     }
   });
 
-  // GM inventory updated (after round closes)
   socket.on('inventory_update', (data) => {
     if (isGM) renderGMInventory(data.primeInventory);
   });
 
-  // Click result — only sent to us
   socket.on('click_result', (data) => {
     totalScore = data.totalScore;
     $totalScore.textContent = totalScore;
@@ -211,32 +229,96 @@
     showResult(data);
   });
 
-  // ── Time Sync (NTP median of 5 samples) ───────────────────────────────────
+  // ── IMPROVEMENTS 2, 3, 4: NTP time sync ───────────────────────────────────
+  // 10 samples, 50ms gap, outlier rejection (RTT > 2× min), periodic re-sync
   function runTimeSync() {
-    isSynced = false;
-    const samples = [];
-    let done = 0;
+    const offsets = [];
+    const rtts    = [];
+    let done      = 0;
 
-    const handler = (sentAt, serverNow) => {
-      const rtt    = Date.now() - sentAt;
-      const offset = (serverNow + rtt / 2) - Date.now();
-      samples.push(offset);
+    const handler = (sentAt, serverTime) => {
+      const now    = monoNow();           // monotonic — no OS clock jumps
+      const rtt    = now - sentAt;
+      const offset = (serverTime + rtt / 2) - now;
+      offsets.push(offset);
+      rtts.push(rtt);
 
-      if (++done < 5) {
-        ping();
+      if (++done < SYNC_SAMPLES) {
+        setTimeout(doPing, 50);          // spread samples to capture jitter
       } else {
         socket.off('time_sync_reply', handler);
-        samples.sort((a, b) => a - b);
-        timeOffset = samples[2]; // median
-        isSynced   = true;
+
+        // IMPROVEMENT 3: Discard samples where RTT > 2× the minimum RTT
+        // (these are likely blips, not representative of steady-state lag)
+        const minRtt   = Math.min(...rtts);
+        const filtered = offsets.filter((_, i) => rtts[i] <= minRtt * 2);
+        const clean    = filtered.length >= 3 ? filtered : offsets; // need ≥3
+
+        timeOffset = clean.reduce((a, b) => a + b, 0) / clean.length;
+
+        const avgRtt = rtts.reduce((a, b) => a + b, 0) / rtts.length;
+        setConnStatus(true, Math.round(avgRtt / 2), Math.round(Math.abs(timeOffset)));
+
+        // IMPROVEMENT 4: Re-sync every 30s to correct for long-term drift
+        clearInterval(resyncInterval);
+        resyncInterval = setInterval(runTimeSync, 30_000);
       }
     };
 
     socket.on('time_sync_reply', handler);
-    ping();
+    doPing();
   }
 
-  function ping() { socket.emit('time_sync', Date.now()); }
+  function doPing() { socket.emit('time_sync', monoNow()); }
+
+  // ── Full-screen overlay countdown ─────────────────────────────────────────
+  let overlayTimeout = null;
+
+  function showOverlay(color, serverPrimeTime) {
+    // Convert server primeTime to local ms
+    const msUntilPrime = (serverPrimeTime - timeOffset) - monoNow();
+
+    // Style the balloon indicator with the dispensed colour
+    $overlayBalloon.style.background = COLOR_HEX[color];
+    $overlayBalloon.style.boxShadow  = `0 0 80px ${COLOR_HEX[color]}, 0 0 160px ${COLOR_HEX[color]}60`;
+
+    // Show overlay
+    $overlay.className = 'overlay';
+    $overlay.style.setProperty('--bcolor', COLOR_HEX[color]);
+
+    // Animate 3 → 2 → 1 → GO!
+    // Each digit occupies 1/3 of the countdown period
+    const step = msUntilPrime / 3;
+
+    function setCount(label, sublabel, cls) {
+      $overlayCount.textContent = label;
+      $overlayLabel.textContent = sublabel;
+      $overlayCount.className   = `overlay-count ${cls || ''}`;
+    }
+
+    clearTimeout(overlayTimeout);
+    setCount('3', 'Get ready!', 'tick');
+
+    // Restart animation each tick by toggling the class
+    const reschedule = (num, delay) => setTimeout(() => {
+      void $overlayCount.offsetWidth; // force reflow to restart animation
+      if (num === 'GO!') {
+        setCount('GO!', `Click the ${color.toUpperCase()} balloon!`, 'go');
+        // Hide overlay shortly after GO! so player can click
+        overlayTimeout = setTimeout(hideOverlay, 600);
+      } else {
+        setCount(num, 'Get ready!', 'tick');
+      }
+    }, delay);
+
+    reschedule('2',   step);
+    reschedule('1',   step * 2);
+    reschedule('GO!', step * 3 - 200); // 200ms early so GO! is visible before buttons activate
+  }
+
+  function hideOverlay() {
+    $overlay.className = 'overlay hidden';
+  }
 
   // ── Join Form ──────────────────────────────────────────────────────────────
   $joinForm.addEventListener('submit', (e) => {
@@ -250,7 +332,6 @@
   function showGameScreen(gm) {
     $joinScreen.classList.add('hidden');
     $gameScreen.classList.remove('hidden');
-
     if (gm) {
       $gmPanel.classList.remove('hidden');
       $playerPanel.classList.add('hidden');
@@ -260,29 +341,23 @@
     }
   }
 
-  // ── GM Inventory UI ────────────────────────────────────────────────────────
+  // ── GM Inventory ───────────────────────────────────────────────────────────
   function renderGMInventory(inv) {
     $gmInventory.innerHTML = '';
-    for (const color of ['red', 'blue', 'green', 'yellow']) {
+    for (const color of COLORS_ORDER) {
       const count = inv[color];
       const card  = document.createElement('button');
-      card.className   = `gm-balloon${count === 0 ? ' depleted' : ''}`;
-      card.dataset.color = color;
-      card.disabled    = count === 0;
+      card.className = `gm-balloon${count === 0 ? ' depleted' : ''}`;
+      card.disabled  = count === 0;
       card.style.setProperty('--bcolor', COLOR_HEX[color]);
-      card.innerHTML   = `
+      card.innerHTML = `
         <div class="gm-balloon-icon"></div>
         <span class="gm-color-name">${color}</span>
         <span class="gm-count">${count} left</span>
       `;
-      card.addEventListener('click', () => onGMDispense(color));
+      card.addEventListener('click', () => { if (!roundOpen) socket.emit('gm_dispense', color); });
       $gmInventory.appendChild(card);
     }
-  }
-
-  function onGMDispense(color) {
-    if (roundOpen) return; // already a round in flight (belt-and-suspenders)
-    socket.emit('gm_dispense', color);
   }
 
   function setGMStatus(text, cls) {
@@ -291,15 +366,16 @@
   }
 
   function setGMButtonsEnabled(enabled) {
-    $gmInventory.querySelectorAll('.gm-balloon:not(.depleted)').forEach(btn => {
-      btn.disabled = !enabled;
+    $gmInventory.querySelectorAll('.gm-balloon:not(.depleted)').forEach(b => {
+      b.disabled = !enabled;
     });
   }
 
   // ── Player: Countdown ──────────────────────────────────────────────────────
   function applyCountdown(serverPrimeTime) {
+    // Convert server absolute timestamp to local monotonic ms
     const localPrimeTime = serverPrimeTime - timeOffset;
-    const msUntilPrime   = localPrimeTime - Date.now();
+    const msUntilPrime   = localPrimeTime - monoNow(); // ← monotonic
 
     disableAllBalloons();
     setStatus('Get ready — pick the right balloon at the right moment!');
@@ -308,18 +384,13 @@
     if (enableTimer)  clearTimeout(enableTimer);
     if (disableTimer) clearTimeout(disableTimer);
 
-    // Enable balloon buttons 500ms before primeTime
     enableTimer = setTimeout(() => {
       if (!hasClicked) { enableAllBalloons(); setStatus('NOW! Click the right balloon!'); }
       roundOpen = true;
     }, Math.max(0, msUntilPrime - 500));
 
-    // Close window 2s after primeTime
     disableTimer = setTimeout(() => {
-      if (!hasClicked) {
-        disableAllBalloons();
-        setStatus('Too slow! Waiting for next round…');
-      }
+      if (!hasClicked) { disableAllBalloons(); setStatus('Too slow! Waiting for next round…'); }
       roundOpen = false;
       stopCountdown();
     }, msUntilPrime + 2000);
@@ -328,13 +399,13 @@
   function startCountdown(msTotal) {
     stopCountdown();
     if (msTotal <= 0) return;
-    const start = Date.now();
+    const startMono = monoNow();               // ← monotonic start reference
     $timerArc.style.strokeDasharray  = CIRCUMFERENCE;
     $timerArc.style.strokeDashoffset = 0;
 
     const tick = () => {
-      const remaining = Math.max(0, msTotal - (Date.now() - start));
-      $countdownNum.textContent       = (remaining / 1000).toFixed(1);
+      const remaining = Math.max(0, msTotal - (monoNow() - startMono)); // ← monotonic
+      $countdownNum.textContent        = (remaining / 1000).toFixed(1);
       $timerArc.style.strokeDashoffset = CIRCUMFERENCE * (1 - remaining / msTotal);
       if (remaining > 0) animFrame = requestAnimationFrame(tick);
     };
@@ -343,19 +414,25 @@
 
   function stopCountdown() {
     if (animFrame) { cancelAnimationFrame(animFrame); animFrame = null; }
-    $countdownNum.textContent = '—';
+    $countdownNum.textContent        = '—';
     $timerArc.style.strokeDashoffset = CIRCUMFERENCE;
   }
 
-  // ── Player: Balloon click handlers ────────────────────────────────────────
+  // ── Player: Click ─────────────────────────────────────────────────────────
   balloonBtns.forEach(btn => {
     btn.addEventListener('click', () => {
       if (btn.disabled || hasClicked) return;
       hasClicked = true;
       disableAllBalloons();
-      // Highlight chosen balloon
       btn.classList.add('chosen');
-      socket.emit('click', { color: btn.dataset.color });
+
+      // IMPROVEMENT 1: Send the synced server timestamp so scoring is based on
+      // when you *clicked*, not when the packet *arrived* at the server.
+      // The server validates this against its arrival time with a ±500ms guard.
+      socket.emit('click', {
+        color:     btn.dataset.color,
+        clickTime: serverNow(),
+      });
     });
   });
 
@@ -378,9 +455,8 @@
   function setStatus(text) { $statusLabel.textContent = text; }
 
   function showResult(data) {
-    // Highlight correct / wrong on the balloon buttons
     balloonBtns.forEach(b => {
-      if (b.dataset.color === data.roundColor)   b.classList.add('correct');
+      if (b.dataset.color === data.roundColor)                           b.classList.add('correct');
       if (b.dataset.color === data.selectedColor && !data.correctColor) b.classList.add('wrong');
     });
 
@@ -390,7 +466,9 @@
       $resultPoints.textContent = '+0 pts';
       $result.className = 'result miss';
     } else {
-      $resultDiff.textContent   = `Off by ${data.diff}ms (${(data.diff/1000).toFixed(3)}s)`;
+      // Server tells us if it trusted our clickTime or fell back to arrival time
+      const note = data.usedClientTime ? '' : ' (server fallback)';
+      $resultDiff.textContent   = `Off by ${data.diff}ms (${(data.diff / 1000).toFixed(3)}s)${note}`;
       $resultPoints.textContent = `+${data.points} pts`;
       $result.className = data.points >= 8 ? 'result great' : data.points >= 4 ? 'result ok' : 'result miss';
     }
@@ -398,12 +476,20 @@
 
   function hideResult() {
     $result.className = 'hidden';
-    balloonBtns.forEach(b => b.classList.remove('chosen','correct','wrong'));
+    balloonBtns.forEach(b => b.classList.remove('chosen', 'correct', 'wrong'));
   }
 
-  function setConnStatus(connected) {
-    $connStatus.textContent = connected ? 'Connected' : 'Disconnected — reconnecting…';
-    $connStatus.className   = connected ? 'connected'  : 'disconnected';
+  // IMPROVEMENT 6: Show ping + offset in the status bar
+  function setConnStatus(connected, oneWayMs, offsetMs) {
+    if (!connected) {
+      $connStatus.textContent = 'Disconnected — reconnecting…';
+      $connStatus.className   = 'disconnected';
+      return;
+    }
+    $connStatus.textContent = oneWayMs !== undefined
+      ? `Connected · ping ${oneWayMs}ms · sync ±${offsetMs}ms`
+      : 'Connected · syncing…';
+    $connStatus.className = 'connected';
   }
 
 })();

@@ -1,3 +1,110 @@
+/* ── Full-screen Round Overlay ──────────────────────────────────────────────── */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  /* Dark background tinted with the balloon colour */
+  background: color-mix(in srgb, var(--bcolor, #7c5cfc) 12%, #080d1aee);
+  backdrop-filter: blur(6px);
+  animation: overlay-in 0.25s ease-out;
+}
+
+.overlay.hidden {
+  display: none;
+}
+
+@keyframes overlay-in {
+  from { opacity: 0; transform: scale(1.04); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+/* Balloon shape in centre of overlay */
+.overlay-balloon {
+  width: 100px;
+  height: 126px;
+  border-radius: 50% 50% 50% 50% / 40% 40% 60% 60%;
+  position: relative;
+  box-shadow: inset -12px -14px 28px rgba(0,0,0,0.35);
+  animation: balloon-float 2s ease-in-out infinite;
+}
+
+.overlay-balloon::before {
+  content: '';
+  position: absolute;
+  top: 16px;
+  left: 18px;
+  width: 24px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.3);
+  transform: rotate(-20deg);
+}
+
+.overlay-balloon::after {
+  content: '';
+  position: absolute;
+  bottom: -11px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-left:  7px solid transparent;
+  border-right: 7px solid transparent;
+  border-bottom: 12px solid var(--bcolor, #7c5cfc);
+  filter: brightness(0.7);
+}
+
+@keyframes balloon-float {
+  0%, 100% { transform: translateY(0px) rotate(-2deg); }
+  50%       { transform: translateY(-12px) rotate(2deg); }
+}
+
+/* Large countdown number */
+.overlay-count {
+  font-size: 9rem;
+  font-weight: 900;
+  line-height: 1;
+  color: #fff;
+  letter-spacing: -4px;
+  text-shadow: 0 0 60px var(--bcolor, #7c5cfc);
+}
+
+.overlay-count.tick {
+  animation: count-pop 0.35s cubic-bezier(0.36, 0.07, 0.19, 0.97);
+}
+
+.overlay-count.go {
+  color: var(--bcolor, #7c5cfc);
+  animation: go-flash 0.5s ease-out;
+  font-size: 7rem;
+  letter-spacing: -2px;
+}
+
+@keyframes count-pop {
+  0%   { transform: scale(1.5); opacity: 0; }
+  60%  { transform: scale(0.92); opacity: 1; }
+  100% { transform: scale(1); }
+}
+
+@keyframes go-flash {
+  0%   { transform: scale(1.6); opacity: 0; }
+  50%  { transform: scale(0.95); opacity: 1; }
+  100% { transform: scale(1); }
+}
+
+/* Subtitle below the number */
+.overlay-label {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: rgba(255,255,255,0.7);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
 /* ── Reset & Tokens ─────────────────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 

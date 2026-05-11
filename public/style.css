@@ -454,7 +454,11 @@ html, body {
 .balloon-btn:not(.disabled):hover .balloon-shape { transform: scale(1.05); }
 .balloon-btn:not(.disabled):active { transform: translateY(4px); box-shadow: 0 4px 0 rgba(0,0,0,0.4), 0 5px 10px rgba(0,0,0,0.2); }
 
-.balloon-btn.disabled { filter: grayscale(0.6) brightness(0.4); cursor: not-allowed; }
+.balloon-btn {
+  touch-action: manipulation;
+  /* other styles remain */
+}
+.balloon-btn.disabled { filter: grayscale(0.6) brightness(0.4); cursor: not-allowed; pointer-events: none; }
 
 /* Click Animations */
 @keyframes pop-explode {

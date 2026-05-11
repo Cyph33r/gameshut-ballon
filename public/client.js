@@ -295,6 +295,8 @@
 
   $joinForm.addEventListener('submit', (e) => {
     e.preventDefault();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    
     const name = $usernameInput.value.trim();
     if (!name) return;
     myUsername = name;
@@ -370,8 +372,8 @@
   }
 
   balloonBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
-      if (btn.disabled || hasClicked) return;
+    btn.addEventListener('pointerdown', () => {
+      if (btn.classList.contains('disabled') || hasClicked) return;
       hasClicked = true;
       playPopSound(); // Play synthesized pop
       disableAllBalloons();
@@ -477,14 +479,12 @@
   // ── Helpers ────────────────────────────────────────────────────────────────
   function enableAllBalloons() {
     balloonBtns.forEach(t => {
-      t.disabled = false;
       t.classList.remove('disabled', 'chosen', 'correct', 'wrong');
     });
   }
 
   function disableAllBalloons() {
     balloonBtns.forEach(t => {
-      t.disabled = true;
       t.classList.add('disabled');
     });
   }

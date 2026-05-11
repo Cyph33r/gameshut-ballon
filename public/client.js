@@ -21,11 +21,29 @@
   // Admin
   const $sentenceForm   = document.getElementById('sentence-form');
   const $sentenceInput  = document.getElementById('sentence-input');
-  const adminColourBtns = Array.from(document.querySelectorAll('.colour-btn'));
+  const singleColourBtns= Array.from($sentenceForm.querySelectorAll('.colour-btn'));
   const $adminError     = document.getElementById('admin-error');
   const $adminStatus    = document.getElementById('admin-status');
   const $adminRoundControls = document.getElementById('admin-round-controls');
   const $btnForceClose  = document.getElementById('btn-force-close');
+
+  // Admin Story Mode
+  const $tabSingle      = document.getElementById('tab-single');
+  const $tabStory       = document.getElementById('tab-story');
+  const $storyForm      = document.getElementById('story-form');
+  const $storyInput     = document.getElementById('story-input');
+  const $btnProcessStory= document.getElementById('btn-process-story');
+  const $storyBuilder   = document.getElementById('story-builder');
+  const $storyWordsContainer = document.getElementById('story-words-container');
+  const $storyPalette   = document.getElementById('story-palette');
+  const $btnQueueStory  = document.getElementById('btn-queue-story');
+  const storyPaletteBtns= Array.from($storyPalette.querySelectorAll('.colour-btn'));
+  
+  const $queueCard      = document.getElementById('queue-card');
+  const $queueList      = document.getElementById('queue-list');
+  const $queueCount     = document.getElementById('queue-count');
+  const $btnNextQueued  = document.getElementById('btn-next-queued');
+  const $btnClearQueue  = document.getElementById('btn-clear-queue');
 
   // Player
   const $sentenceArea   = document.getElementById('sentence-area');
@@ -69,6 +87,11 @@
   let currentRoundIsOpen = false;
   let pendingClickResult = null;
   let ttsEnabled         = true;
+
+  // Story Mode State
+  let storyDraft         = []; // Array of { sentence, color, wordId }
+  let activeWordSpan     = null;
+  let roundQueue         = []; // Array of { sentence, color }
 
   // ── Monotonic clock ────────────────────────────────────────────────────────
   const perfOrigin = performance.now();
@@ -311,10 +334,9 @@
   // ── Admin: Round Form ──────────────────────────────────────────────────────
   $sentenceForm.addEventListener('submit', (e) => e.preventDefault());
 
-  adminColourBtns.forEach(btn => {
+  singleColourBtns.forEach(btn => {
     btn.addEventListener('click', () => {
       const sentence = $sentenceInput.value.trim();
-      // "null" string from dataset becomes actual null
       const color = btn.dataset.color === 'null' ? null : btn.dataset.color;
       
       if (!sentence) {
@@ -327,6 +349,141 @@
     });
   });
 
+  // ── Admin: Story Mode Logic ────────────────────────────────────────────────
+  $tabSingle.addEventListener('click', () => {
+    $tabSingle.classList.add('active');
+    $tabStory.classList.remove('active');
+    $sentenceForm.classList.remove('hidden');
+    $storyForm.classList.add('hidden');
+  });
+
+  $tabStory.addEventListener('click', () => {
+    $tabStory.classList.add('active');
+    $tabSingle.classList.remove('active');
+    $sentenceForm.classList.add('hidden');
+    $storyForm.classList.remove('hidden');
+  });
+
+  $btnProcessStory.addEventListener('click', () => {
+    const text = $storyInput.value.trim();
+    if (!text) return;
+    
+    // Split into sentences (by . ! ? followed by space or end)
+    const sentences = text.match(/[^.!?]+[.!?]*/g) || [text];
+    
+    $storyWordsContainer.innerHTML = '';
+    storyDraft = [];
+    $storyPalette.classList.add('hidden');
+    activeWordSpan = null;
+
+    let wordIdCounter = 0;
+
+    sentences.forEach((s) => {
+      const sentenceText = s.trim();
+      if (!sentenceText) return;
+      
+      storyDraft.push({ sentence: sentenceText, color: undefined, wordId: null });
+      const sentenceIdx = storyDraft.length - 1;
+
+      // Split sentence into words and spaces to make words clickable
+      const words = sentenceText.split(/(\s+)/);
+      
+      words.forEach(word => {
+        if (!word.trim()) {
+          $storyWordsContainer.appendChild(document.createTextNode(word));
+          return;
+        }
+        
+        const wId = wordIdCounter++;
+        const span = document.createElement('span');
+        span.textContent = word;
+        span.className = 'story-word';
+        span.dataset.sIdx = sentenceIdx;
+        span.dataset.wId = wId;
+        
+        span.addEventListener('click', () => {
+          if (activeWordSpan) activeWordSpan.style.borderBottom = '';
+          activeWordSpan = span;
+          span.style.borderBottom = '3px solid white';
+          $storyPalette.classList.remove('hidden');
+        });
+        
+        $storyWordsContainer.appendChild(span);
+      });
+      $storyWordsContainer.appendChild(document.createTextNode(' '));
+    });
+
+    $storyBuilder.classList.remove('hidden');
+  });
+
+  storyPaletteBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (!activeWordSpan) return;
+      const sIdx = activeWordSpan.dataset.sIdx;
+      const color = btn.dataset.color === 'null' ? null : btn.dataset.color;
+      
+      storyDraft[sIdx].color = color;
+      storyDraft[sIdx].wordId = activeWordSpan.dataset.wId;
+      
+      const allWords = $storyWordsContainer.querySelectorAll(`[data-s-idx="${sIdx}"]`);
+      allWords.forEach(w => w.className = 'story-word');
+      
+      activeWordSpan.classList.add(`selected-${color}`);
+      activeWordSpan.style.borderBottom = '';
+      activeWordSpan = null;
+      $storyPalette.classList.add('hidden');
+    });
+  });
+
+  $btnQueueStory.addEventListener('click', () => {
+    const validRounds = storyDraft.filter(r => r.color !== undefined);
+    if (validRounds.length === 0) {
+      alert("No words were assigned a colour!");
+      return;
+    }
+    
+    roundQueue = roundQueue.concat(validRounds.map(r => ({ sentence: r.sentence, correctColor: r.color })));
+    $storyInput.value = '';
+    $storyBuilder.classList.add('hidden');
+    renderQueue();
+  });
+
+  function renderQueue() {
+    if (roundQueue.length > 0) {
+      $queueCard.classList.remove('hidden');
+    } else {
+      $queueCard.classList.add('hidden');
+    }
+    
+    $queueCount.textContent = roundQueue.length;
+    $queueList.innerHTML = '';
+    
+    roundQueue.forEach((r, idx) => {
+      const li = document.createElement('li');
+      li.innerHTML = `<span style="flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-right:10px;">${idx + 1}. ${r.sentence}</span>
+                      <span class="q-color ${r.correctColor}">${r.correctColor === null ? 'Trap' : r.correctColor}</span>`;
+      $queueList.appendChild(li);
+    });
+
+    if (roundQueue.length === 0) {
+      $btnNextQueued.disabled = true;
+    } else {
+      $btnNextQueued.disabled = currentRoundIsOpen;
+    }
+  }
+
+  $btnNextQueued.addEventListener('click', () => {
+    if (roundQueue.length === 0 || currentRoundIsOpen) return;
+    const next = roundQueue.shift();
+    socket.emit('gm_round', { sentence: next.sentence, correctColor: next.correctColor });
+    renderQueue();
+  });
+
+  $btnClearQueue.addEventListener('click', () => {
+    roundQueue = [];
+    renderQueue();
+  });
+
   $btnForceClose.addEventListener('click', () => {
     socket.emit('gm_close');
   });
@@ -337,8 +494,13 @@
   }
 
   function setAdminTilesEnabled(on) {
-    adminColourBtns.forEach(t => { t.disabled = !on; });
+    singleColourBtns.forEach(t => { t.disabled = !on; });
     if ($sentenceInput) $sentenceInput.disabled = !on;
+    $btnNextQueued.disabled = !on;
+    if (on) {
+      // Re-render queue to update buttons if needed
+      renderQueue();
+    }
   }
 
   // ── Player: Gameplay ───────────────────────────────────────────────────────

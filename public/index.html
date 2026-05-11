@@ -60,7 +60,12 @@
         <span class="admin-crown">👑</span>
         <span class="admin-title">Host Dashboard</span>
       </div>
-      <p class="admin-subtitle">Type a sentence, then choose the hidden colour (or "Trap" if none)</p>
+      <p class="admin-subtitle">Choose a mode to start the game.</p>
+
+      <div class="admin-tabs" style="display: flex; gap: 10px; margin-bottom: 15px;">
+        <button id="tab-single" class="btn-outline active" style="flex:1;">Single Sentence</button>
+        <button id="tab-story" class="btn-outline" style="flex:1;">Story Mode</button>
+      </div>
 
       <form id="sentence-form" class="sentence-form">
         <textarea
@@ -91,6 +96,33 @@
         </div>
         <p id="admin-error" class="admin-error hidden">Please enter a sentence and select a colour (or Trap).</p>
       </form>
+
+      <div id="story-form" class="sentence-form hidden">
+        <textarea id="story-input" placeholder="Paste a multi-sentence story here..." rows="4" autocomplete="off"></textarea>
+        <button type="button" id="btn-process-story" class="btn-primary" style="margin-top: 10px;">Process Story</button>
+
+        <div id="story-builder" class="hidden" style="margin-top: 15px;">
+          <p class="form-label" style="margin-bottom: 5px;">Click a word to set the hidden colour for its sentence:</p>
+          <div id="story-words-container" class="story-words"></div>
+          
+          <div id="story-palette" class="colour-picker-grid hidden" style="margin-top: 10px; background: rgba(0,0,0,0.3); padding: 10px; border-radius: var(--radius);">
+            <button type="button" class="colour-btn red" data-color="red"><div class="btn-balloon"></div><span>Red</span></button>
+            <button type="button" class="colour-btn blue" data-color="blue"><div class="btn-balloon"></div><span>Blue</span></button>
+            <button type="button" class="colour-btn yellow" data-color="yellow"><div class="btn-balloon"></div><span>Yellow</span></button>
+            <button type="button" class="colour-btn green" data-color="green"><div class="btn-balloon"></div><span>Green</span></button>
+            <button type="button" class="colour-btn trap" data-color="null"><span class="trap-icon">🚫</span><span>Trap</span></button>
+          </div>
+
+          <button type="button" id="btn-queue-story" class="btn-primary" style="margin-top:16px;">Save to Queue</button>
+        </div>
+      </div>
+
+      <div id="queue-card" class="sentence-form hidden" style="margin-top: 20px;">
+        <h3 style="color:#fff; margin-bottom:10px; font-size: 1.1rem;">Queue (<span id="queue-count">0</span> remaining)</h3>
+        <button type="button" id="btn-next-queued" class="btn-primary">Start Next Round from Queue</button>
+        <button type="button" id="btn-clear-queue" class="btn-outline" style="margin-top:8px;">Clear Queue</button>
+        <ul id="queue-list" class="queue-list"></ul>
+      </div>
 
       <div id="admin-status" class="admin-status"></div>
 

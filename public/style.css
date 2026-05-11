@@ -615,3 +615,51 @@ html, body {
 }
 .conn-strip.connected { background: rgba(16, 185, 129, 0.15); color: var(--c-green); border: 1px solid rgba(16, 185, 129, 0.3); }
 .conn-strip.disconnected { background: rgba(255, 59, 92, 0.15); color: var(--c-red); border: 1px solid rgba(255, 59, 92, 0.3); }
+
+/* ══════════════════════════════════════════════════════════════════
+   STORY MODE
+══════════════════════════════════════════════════════════════════ */
+.story-words {
+  line-height: 2.2;
+  padding: 15px;
+  background: rgba(0,0,0,0.2);
+  border-radius: var(--radius);
+  max-height: 300px;
+  overflow-y: auto;
+}
+.story-word {
+  cursor: pointer;
+  padding: 2px 6px;
+  margin: 0 2px;
+  border-radius: 4px;
+  transition: all 0.2s;
+  display: inline-block;
+  font-weight: 500;
+}
+.story-word:hover { background: rgba(255,255,255,0.2); transform: scale(1.05); }
+.story-word.selected-red { background: var(--c-red); color: white; box-shadow: 0 2px 5px rgba(255,59,92,0.4); }
+.story-word.selected-blue { background: var(--c-blue); color: white; box-shadow: 0 2px 5px rgba(59,130,246,0.4); }
+.story-word.selected-yellow { background: var(--c-yellow); color: #111; box-shadow: 0 2px 5px rgba(245,158,11,0.4); }
+.story-word.selected-green { background: var(--c-green); color: white; box-shadow: 0 2px 5px rgba(16,185,129,0.4); }
+.story-word.selected-null { background: #555; color: white; text-decoration: line-through; }
+
+.queue-list { list-style: none; padding: 0; margin-top: 10px; max-height: 200px; overflow-y: auto; }
+.queue-list li {
+  padding: 10px;
+  background: rgba(255,255,255,0.05);
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.95rem;
+}
+.queue-list li:first-child { background: rgba(255,255,255,0.1); font-weight: 700; border-radius: var(--radius) var(--radius) 0 0; }
+.queue-list li .q-color {
+  padding: 2px 8px; border-radius: 100px; font-size: 0.8rem; font-weight: 800; text-transform: uppercase;
+}
+.q-color.red { background: var(--c-red); color: white; }
+.q-color.blue { background: var(--c-blue); color: white; }
+.q-color.yellow { background: var(--c-yellow); color: #111; }
+.q-color.green { background: var(--c-green); color: white; }
+.q-color.null { background: #555; color: white; }
+

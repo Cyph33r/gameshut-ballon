@@ -1,220 +1,237 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>BallonBurst — Real-Time Multiplayer Word Game</title>
-  <meta name="description" content="Find the hidden colour word in the sentence and burst the right balloon before anyone else!" />
+  <meta name="description"
+    content="Find the hidden colour word in the sentence and burst the right balloon before anyone else!" />
   <link rel="stylesheet" href="style.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Syne:wght@700;800&display=swap" rel="stylesheet" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Syne:wght@700;800&display=swap"
+    rel="stylesheet" />
 </head>
+
 <body>
 
-<!-- ══════════════════════════════════════════════════════════════════
+  <!-- ══════════════════════════════════════════════════════════════════
      JOIN SCREEN
 ══════════════════════════════════════════════════════════════════════ -->
-<div id="join-screen" class="kscreen">
-  <div class="join-card">
-    <div class="join-logo">
-      <span class="join-balloon-icon">🎈</span>
-      <span class="join-logo-text">BallonBurst</span>
-    </div>
-    <p class="join-tagline">Find the hidden colour — burst the right balloon!</p>
-
-    <form id="join-form">
-      <label class="field-label">Your Nickname</label>
-      <div class="input-group">
-        <div id="join-avatar" title="Click to change avatar">👤</div>
-        <input id="username-input" type="text" placeholder="e.g. Lightning Fox"
-               maxlength="20" autocomplete="off" autocapitalize="words" required />
-        <button type="button" id="btn-random" class="icon-btn" title="Randomise">🎲</button>
+  <div id="join-screen" class="kscreen">
+    <div class="join-card">
+      <div class="join-logo">
+        <span class="join-balloon-icon">🎈</span>
+        <span class="join-logo-text">BallonBurst</span>
       </div>
-      <p class="join-hint">Use <strong>admin</strong> as your nickname to host</p>
-      <button type="submit" class="btn-primary" id="btn-join">Let's Go! 🚀</button>
-    </form>
-  </div>
-</div>
+      <p class="join-tagline">Find the hidden colour — burst the right balloon!</p>
 
-<!-- ══════════════════════════════════════════════════════════════════
+      <form id="join-form">
+        <label class="field-label">Your Nickname</label>
+        <div class="input-group">
+          <div id="join-avatar" title="Click to change avatar">👤</div>
+          <input id="username-input" type="text" placeholder="e.g. Lightning Fox" maxlength="20" autocomplete="off"
+            autocapitalize="words" required />
+          <button type="button" id="btn-random" class="icon-btn" title="Randomise">🎲</button>
+        </div>
+        <p class="join-hint">Use <strong>admin</strong> as your nickname to host</p>
+        <button type="submit" class="btn-primary" id="btn-join">Let's Go! 🚀</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════════
      GAME SCREEN
 ══════════════════════════════════════════════════════════════════════ -->
-<div id="game-screen" class="kscreen hidden">
+  <div id="game-screen" class="kscreen hidden">
 
-  <header class="game-header">
-    <div class="header-left">
-      <span class="header-logo">🎈</span>
-      <span id="round-badge">Round <strong id="round-num">—</strong></span>
-      <button id="btn-tts" class="icon-btn" title="Toggle Text-to-Speech" style="margin-left: 8px; padding: 4px 8px; font-size: 1rem; background: rgba(255,255,255,0.15);">🔊</button>
-    </div>
-    <div id="score-pill" class="score-pill">
-      <span class="score-icon">⭐</span>
-      <span id="total-score">0</span>
-    </div>
-  </header>
-
-  <!-- ── ADMIN PANEL ──────────────────────────────────────────────── -->
-  <section id="admin-panel" class="game-panel hidden">
-    <div class="admin-inner">
-      <div class="admin-title-row">
-        <span class="admin-crown">👑</span>
-        <span class="admin-title">Host Dashboard</span>
+    <header class="game-header">
+      <div class="header-left">
+        <span class="header-logo">🎈</span>
+        <span id="round-badge">Round <strong id="round-num">—</strong></span>
+        <button id="btn-tts" class="icon-btn" title="Toggle Text-to-Speech"
+          style="margin-left: 8px; padding: 4px 8px; font-size: 1rem; background: rgba(255,255,255,0.15);">🔊</button>
       </div>
-      <p class="admin-subtitle">Choose a mode to start the game.</p>
-
-      <div class="admin-tabs" style="display: flex; gap: 10px; margin-bottom: 15px;">
-        <button id="tab-single" class="btn-outline active" style="flex:1;">Single Sentence</button>
-        <button id="tab-story" class="btn-outline" style="flex:1;">Story Mode</button>
+      <div id="score-pill" class="score-pill">
+        <span class="score-icon">⭐</span>
+        <span id="total-score">0</span>
       </div>
+    </header>
 
-      <form id="sentence-form" class="sentence-form">
-        <textarea
-          id="sentence-input"
-          placeholder='e.g. "The villain had an evil grin on his face" → green (grin ≈ green)'
-          maxlength="200"
-          rows="3"
-          autocomplete="off"
-          required
-        ></textarea>
-        <p class="form-label">Hidden colour in this sentence:</p>
-        <div class="colour-picker-grid">
-          <button type="button" class="colour-btn red"    data-color="red"    id="btn-red">
-            <div class="btn-balloon"></div><span>Red</span>
-          </button>
-          <button type="button" class="colour-btn blue"   data-color="blue"   id="btn-blue">
-            <div class="btn-balloon"></div><span>Blue</span>
-          </button>
-          <button type="button" class="colour-btn yellow" data-color="yellow" id="btn-yellow">
-            <div class="btn-balloon"></div><span>Yellow</span>
-          </button>
-          <button type="button" class="colour-btn green"  data-color="green"  id="btn-green">
-            <div class="btn-balloon"></div><span>Green</span>
-          </button>
-          <button type="button" class="colour-btn trap"   data-color="null"   id="btn-trap">
-            <span class="trap-icon">🚫</span><span>Trap<br><small>(no colour)</small></span>
-          </button>
+    <!-- ── ADMIN PANEL ──────────────────────────────────────────────── -->
+    <section id="admin-panel" class="game-panel hidden">
+      <div class="admin-inner">
+        <div class="admin-title-row">
+          <span class="admin-crown">👑</span>
+          <span class="admin-title">Host Dashboard</span>
         </div>
-        <p id="admin-error" class="admin-error hidden">Please enter a sentence and select a colour (or Trap).</p>
-      </form>
+        <p class="admin-subtitle">Choose a mode to start the game.</p>
 
-      <div id="story-form" class="sentence-form hidden">
-        <textarea id="story-input" placeholder="Paste a multi-sentence story here..." rows="4" autocomplete="off"></textarea>
-        <button type="button" id="btn-process-story" class="btn-primary" style="margin-top: 10px;">Process Story</button>
+        <div class="admin-tabs" style="display: flex; gap: 10px; margin-bottom: 15px;">
+          <button id="tab-single" class="btn-outline active" style="flex:1;">Single Sentence</button>
+          <button id="tab-story" class="btn-outline" style="flex:1;">Story Mode</button>
+        </div>
 
-        <div id="story-builder" class="hidden" style="margin-top: 15px;">
-          <p class="form-label" style="margin-bottom: 5px;">Click a word to set the hidden colour for its sentence:</p>
-          <div id="story-words-container" class="story-words"></div>
-          
-          <div id="story-palette" class="colour-picker-grid hidden" style="margin-top: 10px; background: rgba(0,0,0,0.3); padding: 10px; border-radius: var(--radius);">
-            <button type="button" class="colour-btn red" data-color="red"><div class="btn-balloon"></div><span>Red</span></button>
-            <button type="button" class="colour-btn blue" data-color="blue"><div class="btn-balloon"></div><span>Blue</span></button>
-            <button type="button" class="colour-btn yellow" data-color="yellow"><div class="btn-balloon"></div><span>Yellow</span></button>
-            <button type="button" class="colour-btn green" data-color="green"><div class="btn-balloon"></div><span>Green</span></button>
-            <button type="button" class="colour-btn trap" data-color="null"><span class="trap-icon">🚫</span><span>Trap</span></button>
+        <form id="sentence-form" class="sentence-form">
+          <textarea id="sentence-input"
+            placeholder='e.g. "The villain had an evil grin on his face" → green (grin ≈ green)' maxlength="200"
+            rows="3" autocomplete="off" required></textarea>
+          <p class="form-label">Hidden colour in this sentence:</p>
+          <div class="colour-picker-grid">
+            <button type="button" class="colour-btn red" data-color="red" id="btn-red">
+              <div class="btn-balloon"></div><span>Red</span>
+            </button>
+            <button type="button" class="colour-btn blue" data-color="blue" id="btn-blue">
+              <div class="btn-balloon"></div><span>Blue</span>
+            </button>
+            <button type="button" class="colour-btn yellow" data-color="yellow" id="btn-yellow">
+              <div class="btn-balloon"></div><span>Yellow</span>
+            </button>
+            <button type="button" class="colour-btn green" data-color="green" id="btn-green">
+              <div class="btn-balloon"></div><span>Green</span>
+            </button>
+            <button type="button" class="colour-btn trap" data-color="null" id="btn-trap">
+              <span class="trap-icon">🚫</span><span>Trap<br><small>(no colour)</small></span>
+            </button>
           </div>
+          <p id="admin-error" class="admin-error hidden">Please enter a sentence and select a colour (or Trap).</p>
+        </form>
 
-          <button type="button" id="btn-queue-story" class="btn-primary" style="margin-top:16px;">Save to Queue</button>
+        <div id="story-form" class="sentence-form hidden">
+          <textarea id="story-input" placeholder="Paste a multi-sentence story here..." rows="4"
+            autocomplete="off"></textarea>
+          <button type="button" id="btn-process-story" class="btn-primary" style="margin-top: 10px;">Process
+            Story</button>
+
+          <div id="story-builder" class="hidden" style="margin-top: 15px;">
+            <p class="form-label" style="margin-bottom: 5px;">Click a word to set the hidden colour for its sentence:
+            </p>
+            <div id="story-words-container" class="story-words"></div>
+
+            <div id="story-palette" class="colour-picker-grid hidden"
+              style="margin-top: 10px; background: rgba(0,0,0,0.3); padding: 10px; border-radius: var(--radius);">
+              <button type="button" class="colour-btn red" data-color="red">
+                <div class="btn-balloon"></div><span>Red</span>
+              </button>
+              <button type="button" class="colour-btn blue" data-color="blue">
+                <div class="btn-balloon"></div><span>Blue</span>
+              </button>
+              <button type="button" class="colour-btn yellow" data-color="yellow">
+                <div class="btn-balloon"></div><span>Yellow</span>
+              </button>
+              <button type="button" class="colour-btn green" data-color="green">
+                <div class="btn-balloon"></div><span>Green</span>
+              </button>
+              <button type="button" class="colour-btn trap" data-color="null"><span
+                  class="trap-icon">🚫</span><span>Trap</span></button>
+            </div>
+
+            <button type="button" id="btn-queue-story" class="btn-primary" style="margin-top:16px;">Save to
+              Queue</button>
+          </div>
+        </div>
+
+        <div id="queue-card" class="sentence-form hidden" style="margin-top: 20px;">
+          <h3 style="color:#fff; margin-bottom:10px; font-size: 1.1rem;">Queue (<span id="queue-count">0</span>
+            remaining)</h3>
+          <button type="button" id="btn-next-queued" class="btn-primary">Start Next Round from Queue</button>
+          <button type="button" id="btn-clear-queue" class="btn-outline" style="margin-top:8px;">Clear Queue</button>
+          <ul id="queue-list" class="queue-list"></ul>
+        </div>
+
+        <div id="admin-status" class="admin-status"></div>
+
+        <div id="admin-round-controls" class="admin-round-controls hidden">
+          <button id="btn-force-close" class="btn-outline">End Round Early</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── PLAYER PANEL ─────────────────────────────────────────────── -->
+    <section id="player-panel" class="game-panel hidden">
+
+      <!-- Sentence display -->
+      <div class="sentence-area" id="sentence-area">
+        <p class="sentence-label">Find the hidden colour word in:</p>
+        <div class="sentence-display" id="sentence-display">Waiting for host…</div>
+        <div id="timer-wrap" class="timer-wrap hidden">
+          <div id="timer-bar" class="timer-bar"></div>
         </div>
       </div>
 
-      <div id="queue-card" class="sentence-form hidden" style="margin-top: 20px;">
-        <h3 style="color:#fff; margin-bottom:10px; font-size: 1.1rem;">Queue (<span id="queue-count">0</span> remaining)</h3>
-        <button type="button" id="btn-next-queued" class="btn-primary">Start Next Round from Queue</button>
-        <button type="button" id="btn-clear-queue" class="btn-outline" style="margin-top:8px;">Clear Queue</button>
-        <ul id="queue-list" class="queue-list"></ul>
+      <!-- Trap hint -->
+      <div id="trap-hint" class="trap-hint hidden">
+        💡 <strong>Remember:</strong> If there's no hidden colour — don't click anything!
       </div>
 
-      <div id="admin-status" class="admin-status"></div>
-
-      <div id="admin-round-controls" class="admin-round-controls hidden">
-        <button id="btn-force-close" class="btn-outline">End Round Early</button>
+      <!-- 2×2 Balloon Grid -->
+      <div class="balloon-grid" id="balloon-grid">
+        <button class="balloon-btn red    disabled" data-color="red" id="balloon-red" disabled>
+          <div class="balloon-shape"></div>
+          <div class="balloon-string"></div>
+          <span class="balloon-label">Red</span>
+        </button>
+        <button class="balloon-btn blue   disabled" data-color="blue" id="balloon-blue" disabled>
+          <div class="balloon-shape"></div>
+          <div class="balloon-string"></div>
+          <span class="balloon-label">Blue</span>
+        </button>
+        <button class="balloon-btn yellow disabled" data-color="yellow" id="balloon-yellow" disabled>
+          <div class="balloon-shape"></div>
+          <div class="balloon-string"></div>
+          <span class="balloon-label">Yellow</span>
+        </button>
+        <button class="balloon-btn green  disabled" data-color="green" id="balloon-green" disabled>
+          <div class="balloon-shape"></div>
+          <div class="balloon-string"></div>
+          <span class="balloon-label">Green</span>
+        </button>
       </div>
-    </div>
-  </section>
 
-  <!-- ── PLAYER PANEL ─────────────────────────────────────────────── -->
-  <section id="player-panel" class="game-panel hidden">
-
-    <!-- Sentence display -->
-    <div class="sentence-area" id="sentence-area">
-      <p class="sentence-label">Find the hidden colour word in:</p>
-      <div class="sentence-display" id="sentence-display">Waiting for host…</div>
-      <div id="timer-wrap" class="timer-wrap hidden">
-        <div id="timer-bar" class="timer-bar"></div>
+      <!-- Result banner -->
+      <div id="result-bar" class="result-bar hidden">
+        <div id="result-icon" class="result-icon"></div>
+        <div id="result-body" class="result-body">
+          <div id="result-text" class="result-text"></div>
+          <div id="result-sub" class="result-sub"></div>
+        </div>
+        <div id="result-pts" class="result-pts"></div>
       </div>
-    </div>
 
-    <!-- Trap hint -->
-    <div id="trap-hint" class="trap-hint hidden">
-      💡 <strong>Remember:</strong> If there's no hidden colour — don't click anything!
-    </div>
+      <!-- Waiting message (no click yet, round ended) -->
+      <div id="no-click-result" class="no-click-result hidden"></div>
 
-    <!-- 2×2 Balloon Grid -->
-    <div class="balloon-grid" id="balloon-grid">
-      <button class="balloon-btn red    disabled" data-color="red"    id="balloon-red"    disabled>
-        <div class="balloon-shape"></div>
-        <div class="balloon-string"></div>
-        <span class="balloon-label">Red</span>
-      </button>
-      <button class="balloon-btn blue   disabled" data-color="blue"   id="balloon-blue"   disabled>
-        <div class="balloon-shape"></div>
-        <div class="balloon-string"></div>
-        <span class="balloon-label">Blue</span>
-      </button>
-      <button class="balloon-btn yellow disabled" data-color="yellow" id="balloon-yellow" disabled>
-        <div class="balloon-shape"></div>
-        <div class="balloon-string"></div>
-        <span class="balloon-label">Yellow</span>
-      </button>
-      <button class="balloon-btn green  disabled" data-color="green"  id="balloon-green"  disabled>
-        <div class="balloon-shape"></div>
-        <div class="balloon-string"></div>
-        <span class="balloon-label">Green</span>
-      </button>
-    </div>
+    </section>
 
-    <!-- Result banner -->
-    <div id="result-bar" class="result-bar hidden">
-      <div id="result-icon"  class="result-icon"></div>
-      <div id="result-body"  class="result-body">
-        <div id="result-text" class="result-text"></div>
-        <div id="result-sub"  class="result-sub"></div>
+    <!-- ── LEADERBOARD PANEL ─────────────────────────────────────────── -->
+    <section id="lb-panel" class="game-panel hidden">
+      <div class="lb-header">
+        <h1 class="lb-title">🏆 Leaderboard</h1>
+        <p class="lb-subtitle" id="lb-round-info">After Round —</p>
       </div>
-      <div id="result-pts"   class="result-pts"></div>
-    </div>
+      <ol id="lb-list" class="lb-list"></ol>
+      <div id="lb-admin-cta" class="lb-admin-cta hidden">
+        <button id="btn-next-round" class="btn-primary">▶ Next Round</button>
+      </div>
+    </section>
 
-    <!-- Waiting message (no click yet, round ended) -->
-    <div id="no-click-result" class="no-click-result hidden"></div>
+  </div><!-- #game-screen -->
 
-  </section>
-
-  <!-- ── LEADERBOARD PANEL ─────────────────────────────────────────── -->
-  <section id="lb-panel" class="game-panel hidden">
-    <div class="lb-header">
-      <h1 class="lb-title">🏆 Leaderboard</h1>
-      <p class="lb-subtitle" id="lb-round-info">After Round —</p>
-    </div>
-    <ol id="lb-list" class="lb-list"></ol>
-    <div id="lb-admin-cta" class="lb-admin-cta hidden">
-      <button id="btn-next-round" class="btn-primary">▶ Next Round</button>
-    </div>
-  </section>
-
-</div><!-- #game-screen -->
-
-<!-- ══════════════════════════════════════════════════════════════════
+  <!-- ══════════════════════════════════════════════════════════════════
      SENTENCE FLASH OVERLAY
 ══════════════════════════════════════════════════════════════════════ -->
-<div id="overlay" class="overlay hidden">
-  <p class="ov-label">Find the hidden colour in:</p>
-  <div class="ov-sentence" id="ov-sentence"></div>
-  <p class="ov-sub">Burst the right balloon! 🎈</p>
-</div>
+  <div id="overlay" class="overlay hidden">
+    <p class="ov-label">Find the hidden colour in:</p>
+    <div class="ov-sentence" id="ov-sentence"></div>
+    <p class="ov-sub">Burst the right balloon! 🎈</p>
+  </div>
 
-<!-- Connection indicator -->
-<div id="conn-status" class="conn-strip disconnected">Connecting…</div>
+  <!-- Connection indicator -->
+  <div id="conn-status" class="conn-strip disconnected">Connecting…</div>
 
-<script src="/socket.io/socket.io.js"></script>
-<script src="/client.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/client.js"></script>
 </body>
+
 </html>

@@ -244,47 +244,12 @@
     window.speechSynthesis.speak(utterance);
   }
 
-  // ── SOUND EFFECTS ──────────────────────────────────────────────────────────
-  const AudioContext = window.AudioContext || window.webkitAudioContext;
-  const audioCtx = new AudioContext();
-
-  function unlockAudio() {
-    if (audioCtx.state === 'suspended') audioCtx.resume();
-    // Play silent oscillator to force unlock on iOS
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-    gain.gain.value = 0;
-    osc.connect(gain);
-    gain.connect(audioCtx.destination);
-    osc.start(0);
-    osc.stop(0.01);
-    
-    document.removeEventListener('touchstart', unlockAudio);
-    document.removeEventListener('pointerdown', unlockAudio);
-  }
-  document.addEventListener('touchstart', unlockAudio, { once: true });
-  document.addEventListener('pointerdown', unlockAudio, { once: true });
+  const popAudio = new Audio("data:audio/wav;base64,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");
+  popAudio.volume = 0.5;
 
   function playPopSound() {
-    if (audioCtx.state === 'suspended') audioCtx.resume();
-    
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-    
-    osc.connect(gain);
-    gain.connect(audioCtx.destination);
-    
-    // Rapid frequency drop
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(800, audioCtx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(40, audioCtx.currentTime + 0.05);
-    
-    // Sharp volume envelope
-    gain.gain.setValueAtTime(1, audioCtx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
-    
-    osc.start(audioCtx.currentTime);
-    osc.stop(audioCtx.currentTime + 0.1);
+    popAudio.currentTime = 0;
+    popAudio.play().catch(() => {});
   }
 
   // ── Join ───────────────────────────────────────────────────────────────────

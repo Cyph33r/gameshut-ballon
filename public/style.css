@@ -547,14 +547,20 @@ html, body {
 .lb-row:nth-child(3) .lb-rank { color: #b45309; }
 
 .lb-name { flex: 1; display: flex; align-items: center; gap: 12px; }
-.lb-avatar { font-size: 1.4rem; }
+.lb-avatar { font-size: 1.4rem; flex-shrink: 0; }
+.lb-user-text { line-height: 1.2; word-break: break-word; }
 .lb-streak {
   font-size: 0.8rem;
   background: rgba(250, 204, 21, 0.2);
   color: var(--c-yellow);
   padding: 4px 10px;
   border-radius: 12px;
-  margin-left: 8px;
+  margin-left: auto;
+  white-space: nowrap;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   animation: pop-in 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) both 0.5s;
 }
 

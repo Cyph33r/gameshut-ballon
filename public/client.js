@@ -404,7 +404,7 @@
         <span class="lb-rank">${medals[i] || i + 1}</span>
         <span class="lb-name">
           <span class="lb-avatar">${e.avatar || '👤'}</span> 
-          ${e.username}
+          <span class="lb-user-text">${e.username}</span>
           ${streakBadge}
         </span>
         <span class="lb-pts">${e.score}</span>

@@ -272,7 +272,7 @@ html, body {
 
 .colour-picker-grid {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(70px, 1fr));
   gap: 10px;
 }
 
@@ -282,13 +282,13 @@ html, body {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 16px 8px;
+  padding: 12px 6px;
   border: none;
   border-radius: var(--radius);
   color: #fff;
   font-family: var(--font-main);
   font-weight: 800;
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   text-transform: uppercase;
   cursor: pointer;
   transition: transform 0.1s, filter 0.2s;
@@ -304,18 +304,20 @@ html, body {
 .colour-btn.trap   { background: var(--c-trap); }
 
 .btn-balloon {
-  width: 24px; height: 30px;
+  width: 24px; height: 32px;
+  min-width: 24px; min-height: 32px;
+  flex-shrink: 0;
   border-radius: 50% 50% 50% 50% / 40% 40% 60% 60%;
-  background: rgba(255,255,255,0.3);
-  box-shadow: inset -3px -3px 6px rgba(0,0,0,0.15);
+  background: rgba(255,255,255,0.45);
+  box-shadow: inset -2px -2px 6px rgba(0,0,0,0.2);
   position: relative;
 }
 .btn-balloon::after {
   content: ''; position: absolute; bottom: -4px; left: 50%; transform: translateX(-50%);
-  border-left: 3px solid transparent; border-right: 3px solid transparent; border-bottom: 4px solid rgba(255,255,255,0.3);
+  border-left: 3px solid transparent; border-right: 3px solid transparent; border-bottom: 4px solid rgba(255,255,255,0.45);
 }
-.trap-icon { font-size: 1.5rem; margin-bottom: 4px; }
-.colour-btn.trap small { font-size: 0.65rem; opacity: 0.7; font-weight: 600; text-transform: none; }
+.trap-icon { font-size: 1.5rem; margin-bottom: 2px; }
+.colour-btn.trap small { font-size: 0.65rem; opacity: 0.8; font-weight: 600; text-transform: none; }
 
 .admin-error { color: #ff4757; font-size: 0.9rem; font-weight: 700; text-align: center; }
 .admin-status { text-align: center; font-weight: 700; color: var(--text-muted); min-height: 1.5em; }

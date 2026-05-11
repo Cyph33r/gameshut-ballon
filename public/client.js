@@ -237,10 +237,37 @@
   }
 
   function speak(text) {
+    if (!isGM) return; // Only host speaks
     if (!ttsEnabled || !('speechSynthesis' in window)) return;
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(text);
     window.speechSynthesis.speak(utterance);
+  }
+
+  // ── SOUND EFFECTS ──────────────────────────────────────────────────────────
+  const AudioContext = window.AudioContext || window.webkitAudioContext;
+  const audioCtx = new AudioContext();
+
+  function playPopSound() {
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    
+    // Rapid frequency drop
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(40, audioCtx.currentTime + 0.05);
+    
+    // Sharp volume envelope
+    gain.gain.setValueAtTime(1, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+    
+    osc.start(audioCtx.currentTime);
+    osc.stop(audioCtx.currentTime + 0.1);
   }
 
   // ── Join ───────────────────────────────────────────────────────────────────
@@ -346,6 +373,7 @@
     btn.addEventListener('click', () => {
       if (btn.disabled || hasClicked) return;
       hasClicked = true;
+      playPopSound(); // Play synthesized pop
       disableAllBalloons();
       btn.classList.add('chosen');
       socket.emit('click', { color: btn.dataset.color, clickTime: serverNow() });

@@ -11,143 +11,194 @@ const server = http.createServer(app);
 const io = new Server(server, {
   cors: { origin: '*' },
   perMessageDeflate: false,
+  // Tune for 150 concurrent players
+  pingTimeout: 20000,
+  pingInterval: 10000,
 });
 
 const PORT = process.env.PORT || 3000;
 
-// ─── High-resolution monotonic clock ──────────────────────────────────────────
+// ─── High-resolution monotonic clock ─────────────────────────────────────────
 const hrtimeOrigin = process.hrtime.bigint();
 const dateOrigin   = Date.now();
 function serverNow() {
   return dateOrigin + Number((process.hrtime.bigint() - hrtimeOrigin) / 1_000_000n);
 }
 
-// ─── Constants ─────────────────────────────────────────────────────────────────
-const COLORS         = ['red', 'blue', 'yellow', 'green'];
-const GM_USERNAME    = 'admin';
-const ANSWER_WINDOW  = 10_000; // 10s to answer before round auto-closes
-const MAX_TRUST_DIFF = 1000;   // ms: max allowed drift for client clickTime
+// ─── Constants ───────────────────────────────────────────────────────────────
+const COLORS          = ['red', 'blue', 'yellow', 'green'];
+const GM_USERNAME     = 'admin';
+const ANSWER_WINDOW   = 15_000;  // 15s to answer before round auto-closes
+const MAX_TRUST_DIFF  = 2000;    // ms: max allowed drift for client clickTime
+const POINTS_FIRST    = 10;      // first correct answer gets this
+const POINTS_DECAY    = 1;       // lose 1 point per 100ms slower than first
+const POINTS_MIN      = 1;       // minimum score for a correct answer
+const POINTS_WRONG    = -5;      // penalty for wrong balloon or trap click
+const LEADERBOARD_MAX = 20;      // max entries shown
 
-// ─── State ────────────────────────────────────────────────────────────────────
+// ─── State ───────────────────────────────────────────────────────────────────
 let round = {
   id:           0,
-  word:         null,   // the homophone word shown to players
-  correctColor: null,   // the colour it maps to
-  revealTime:   null,   // server timestamp when word was revealed
+  sentence:     null,   // the full sentence shown to players
+  correctColor: null,   // the colour key, or null for trap rounds
+  revealTime:   null,   // server timestamp when sentence was revealed
   isOpen:       false,
+  firstCorrectAt: null, // server timestamp of first correct answer
 };
 
 let roundCloseTimeout = null;
 const players = new Map(); // socketId → player object
 
-// ─── Round Lifecycle ──────────────────────────────────────────────────────────
-function startRound(word, correctColor) {
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+function buildLeaderboard() {
+  return [...players.values()]
+    .filter(p => !p.isGM)
+    .map(p => ({ username: p.username, avatar: p.avatar, score: p.score, streak: p.streak }))
+    .sort((a, b) => b.score - a.score)
+    .slice(0, LEADERBOARD_MAX);
+}
+
+// ─── Round Lifecycle ─────────────────────────────────────────────────────────
+function startRound(sentence, correctColor) {
   if (roundCloseTimeout) { clearTimeout(roundCloseTimeout); roundCloseTimeout = null; }
 
   round.id++;
-  round.word         = word;
-  round.correctColor = correctColor;
-  round.revealTime   = serverNow() + 1500; // Shift start time forward by overlay duration
-  round.isOpen       = true;
+  round.sentence      = sentence;
+  round.correctColor  = correctColor; // null = trap round
+  round.revealTime    = serverNow() + 1500; // shift forward to account for overlay
+  round.isOpen        = true;
+  round.firstCorrectAt = null;
 
   // Reset per-round click flags
   for (const [, p] of players) {
-    p.clickedThisRound = false;
+    p.clickedThisRound           = false;
     p.answeredCorrectlyThisRound = false;
   }
 
-  // Broadcast: word is revealed NOW — revealTime is the start of the window
+  // Broadcast
   io.emit('round_start', {
-    roundId:      round.id,
-    word:         round.word,
-    revealTime:   round.revealTime,
+    roundId:    round.id,
+    sentence:   round.sentence,
+    revealTime: round.revealTime,
   });
 
   // Auto-close after ANSWER_WINDOW
-  roundCloseTimeout = setTimeout(() => {
-    round.isOpen = false;
-
-    for (const [, p] of players) {
-      if (!p.isGM) {
-        if (p.answeredCorrectlyThisRound) {
-          p.streak++;
-        } else {
-          p.streak = 0;
-        }
-      }
-    }
-
-    // Leaderboard
-    const lb = [...players.values()]
-      .filter(p => !p.isGM)
-      .map(p => ({ username: p.username, avatar: p.avatar, score: p.score, streak: p.streak }))
-      .sort((a, b) => b.score - a.score);
-
-    io.emit('round_closed',    { roundId: round.id, correctColor: round.correctColor });
-    io.emit('leaderboard',     lb);
-  }, ANSWER_WINDOW);
+  roundCloseTimeout = setTimeout(() => closeRound(), ANSWER_WINDOW);
 }
 
-// ─── Socket Handlers ──────────────────────────────────────────────────────────
+function closeRound() {
+  if (!round.isOpen) return;
+  round.isOpen = false;
+
+  if (roundCloseTimeout) { clearTimeout(roundCloseTimeout); roundCloseTimeout = null; }
+
+  // Update streaks: players who didn't click correctly in a trap round are "safe" (no streak change)
+  for (const [, p] of players) {
+    if (!p.isGM) {
+      if (p.answeredCorrectlyThisRound) {
+        p.streak++;
+      } else if (p.clickedThisRound) {
+        // Clicked something wrong — reset streak
+        p.streak = 0;
+      }
+      // Did not click at all: safe (trap round) or missed — keep streak reset only if correctColor exists
+      if (!p.clickedThisRound && round.correctColor !== null) {
+        p.streak = 0; // missed a real round
+      }
+    }
+  }
+
+  io.emit('round_closed', { roundId: round.id, correctColor: round.correctColor });
+  io.emit('leaderboard', buildLeaderboard());
+}
+
+// ─── Socket Handlers ─────────────────────────────────────────────────────────
 io.on('connection', (socket) => {
   console.log(`[+] ${socket.id} | total: ${io.engine.clientsCount}`);
 
   players.set(socket.id, {
-    username:         'Guest',
-    avatar:           '👤',
-    isGM:             false,
-    score:            0,
-    streak:           0,
-    clickedThisRound: false,
-    answeredCorrectlyThisRound: false,
+    username:                    'Guest',
+    avatar:                      '👤',
+    isGM:                        false,
+    score:                       0,
+    streak:                      0,
+    clickedThisRound:            false,
+    answeredCorrectlyThisRound:  false,
   });
 
   socket.emit('welcome', { serverTime: serverNow() });
 
-  // ── Time Sync ──────────────────────────────────────────────────────────────
+  // ── Time Sync ─────────────────────────────────────────────────────────────
   socket.on('time_sync', (clientSentAt) => {
     socket.emit('time_sync_reply', clientSentAt, serverNow());
   });
 
   // ── Join ──────────────────────────────────────────────────────────────────
   socket.on('join', (payload) => {
-    // backwards compatibility if client sent string
-    const data = typeof payload === 'string' ? { username: payload, avatar: '👤' } : payload;
-    
+    const data   = typeof payload === 'string' ? { username: payload, avatar: '👤' } : payload;
     const player = players.get(socket.id);
     if (!player) return;
-    
-    const clean      = String(data.username).trim().slice(0, 24) || 'Guest';
-    player.username  = clean;
-    player.avatar    = data.avatar || '👤';
-    player.isGM      = clean.toLowerCase() === GM_USERNAME;
-    
+
+    const clean     = String(data.username || '').trim().slice(0, 24) || 'Guest';
+    player.username = clean;
+    player.avatar   = data.avatar || '👤';
+    player.isGM     = clean.toLowerCase() === GM_USERNAME;
+
     console.log(`  join: "${clean}" ${player.avatar} isGM=${player.isGM}`);
     socket.emit('joined', { username: clean, avatar: player.avatar, isGM: player.isGM });
+
+    // Send current leaderboard to newly joined player
+    socket.emit('leaderboard', buildLeaderboard());
+
+    // If a round is currently open, send the player into it
+    if (round.isOpen) {
+      socket.emit('round_start', {
+        roundId:    round.id,
+        sentence:   round.sentence,
+        revealTime: round.revealTime,
+      });
+    }
   });
 
-  // ── GM submits a word + correct colour ────────────────────────────────────
-  socket.on('gm_word', ({ word, correctColor }) => {
+  // ── Admin submits a sentence + correct colour ─────────────────────────────
+  socket.on('gm_round', ({ sentence, correctColor }) => {
     const player = players.get(socket.id);
     if (!player || !player.isGM) return;
-    if (!word || !COLORS.includes(correctColor)) return;
+
+    const trimmed = String(sentence || '').trim();
+    if (!trimmed) return;
+
+    // correctColor can be null (trap) or one of COLORS
+    const color = correctColor === null ? null : (COLORS.includes(correctColor) ? correctColor : null);
+
+    // If we got an invalid non-null color string, reject
+    if (correctColor !== null && color === null) return;
+
     if (round.isOpen) return; // can't start mid-round
 
-    startRound(word.trim(), correctColor);
+    startRound(trimmed, color);
+  });
+
+  // ── Admin force-close round ───────────────────────────────────────────────
+  socket.on('gm_close', () => {
+    const player = players.get(socket.id);
+    if (!player || !player.isGM) return;
+    if (!round.isOpen) return;
+    closeRound();
   });
 
   // ── Player click ──────────────────────────────────────────────────────────
   socket.on('click', ({ color, clickTime } = {}) => {
     const player = players.get(socket.id);
-    if (!player || player.isGM)       return;
-    if (player.clickedThisRound)      return;
-    if (!round.isOpen)                return;
+    if (!player || player.isGM)  return;
+    if (player.clickedThisRound) return; // anti-spam: only first click counts
+    if (!round.isOpen)           return;
 
     player.clickedThisRound = true;
 
     const arrivalTime = serverNow();
 
-    // Trust client timestamp if it's within MAX_TRUST_DIFF of arrival
+    // Trust client timestamp if within MAX_TRUST_DIFF of server arrival
     let effectiveTime = arrivalTime;
     if (typeof clickTime === 'number' && isFinite(clickTime)) {
       if (Math.abs(arrivalTime - clickTime) <= MAX_TRUST_DIFF) {
@@ -155,35 +206,59 @@ io.on('connection', (socket) => {
       }
     }
 
-    const correctColor = color === round.correctColor;
-    if (correctColor) {
-      player.answeredCorrectlyThisRound = true;
+    // Time since sentence was revealed
+    const responseMs = Math.max(0, effectiveTime - round.revealTime);
+
+    let points = 0;
+    let isCorrect = false;
+
+    // ── Trap round (correctColor === null) ────────────────────────────────
+    if (round.correctColor === null) {
+      // Any click in a trap round = penalty
+      points    = POINTS_WRONG;
+      isCorrect = false;
     }
+    // ── Real round ─────────────────────────────────────────────────────────
+    else if (color === round.correctColor) {
+      isCorrect = true;
+      player.answeredCorrectlyThisRound = true;
 
-    // Response time from when the word was revealed
-    const responseMs   = Math.max(0, effectiveTime - round.revealTime);
+      if (round.firstCorrectAt === null) {
+        // First correct answer
+        round.firstCorrectAt = effectiveTime;
+        points = POINTS_FIRST;
+      } else {
+        // Subsequent correct answers — lose 1 point per 100ms slower than first
+        const slowMs = Math.max(0, effectiveTime - round.firstCorrectAt);
+        const decay  = Math.floor(slowMs / 100) * POINTS_DECAY;
+        points       = Math.max(POINTS_MIN, POINTS_FIRST - decay);
+      }
 
-    // Score: correct = 10 pts, -1 per 100ms response time, min 0
-    let points = correctColor
-      ? Math.max(0, 10 - Math.floor(responseMs / 100))
-      : 0;
-      
-    // Apply 1.2x streak bonus if they already had a streak of 2 entering this round (this is their 3rd+)
-    if (correctColor && player.streak >= 2) {
-      points = Math.floor(points * 1.2);
+      // Streak bonus: 3+ correct streak → ×1.2
+      if (player.streak >= 2) {
+        points = Math.floor(points * 1.2);
+      }
+    } else {
+      // Wrong colour clicked
+      points    = POINTS_WRONG;
+      isCorrect = false;
     }
 
     player.score += points;
 
     socket.emit('click_result', {
       roundId:       round.id,
-      correctColor,
+      isCorrect,
+      isTrap:        round.correctColor === null,
       selectedColor: color,
-      roundColor:    round.correctColor,
+      correctColor:  round.correctColor,
       responseMs,
       points,
       totalScore:    player.score,
     });
+
+    // Broadcast live score update to all players (lightweight)
+    io.emit('score_update', { username: player.username, score: player.score });
   });
 
   // ── Disconnect ────────────────────────────────────────────────────────────
@@ -193,13 +268,13 @@ io.on('connection', (socket) => {
   });
 });
 
-// ─── Static & Health ──────────────────────────────────────────────────────────
+// ─── Static & Health ─────────────────────────────────────────────────────────
 app.use(express.static(path.join(__dirname, 'public')));
 app.get('/health', (_req, res) =>
-  res.json({ status: 'ok', players: players.size, round: round.id })
+  res.json({ status: 'ok', players: players.size, round: round.id, roundOpen: round.isOpen })
 );
 app.use((_req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 
 server.listen(PORT, '0.0.0.0', () => {
-  console.log(`Server running on http://0.0.0.0:${PORT}`);
+  console.log(`🎈 BallonBurst running on http://0.0.0.0:${PORT}`);
 });

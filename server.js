@@ -256,9 +256,6 @@ io.on('connection', (socket) => {
       points,
       totalScore:    player.score,
     });
-
-    // Broadcast live score update to all players (lightweight)
-    io.emit('score_update', { username: player.username, score: player.score });
   });
 
   // ── Disconnect ────────────────────────────────────────────────────────────

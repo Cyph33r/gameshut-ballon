@@ -16,6 +16,7 @@
 
   const $roundNum      = document.getElementById('round-num');
   const $totalScore    = document.getElementById('total-score');
+  const $btnTts        = document.getElementById('btn-tts');
 
   // Admin
   const $sentenceForm   = document.getElementById('sentence-form');
@@ -66,6 +67,8 @@
   let overlayTimer    = null;
   let closeTimer      = null;
   let currentRoundIsOpen = false;
+  let pendingClickResult = null;
+  let ttsEnabled         = true;
 
   // ── Monotonic clock ────────────────────────────────────────────────────────
   const perfOrigin = performance.now();
@@ -104,6 +107,7 @@
     currentRoundIsOpen = true;
     $roundNum.textContent = data.roundId;
     hasClicked = false;
+    pendingClickResult = null;
 
     if (isGM) {
       setAdminStatus(`Round ${data.roundId} — Active! Players are guessing...`, 'active');
@@ -117,6 +121,7 @@
 
     // Flash overlay
     showOverlay(data.sentence);
+    speak(data.sentence);
 
     if (!isGM) {
       $timerBar.classList.remove('active');
@@ -157,7 +162,12 @@
       setAdminStatus('Round over. Check the leaderboard, then enter the next sentence.', '');
       $adminRoundControls.classList.add('hidden');
     } else {
-      if (!hasClicked) {
+      if (pendingClickResult) {
+        totalScore = pendingClickResult.totalScore;
+        $totalScore.textContent = totalScore;
+        showResult(pendingClickResult);
+        pendingClickResult = null;
+      } else if (!hasClicked) {
         $noClickResult.classList.remove('hidden');
         if (data.correctColor === null) {
           $noClickResult.innerHTML = '✨ <strong>Trap Evaded!</strong> Safe (+0 pts)';
@@ -171,23 +181,17 @@
   });
 
   socket.on('click_result', (data) => {
-    totalScore = data.totalScore;
-    $totalScore.textContent = totalScore;
+    pendingClickResult = data;
     disableAllBalloons();
-    showResult(data);
+    $noClickResult.classList.remove('hidden');
+    $noClickResult.innerHTML = '✅ <strong>Answer locked in!</strong> Waiting for round to end...';
+    $noClickResult.className = 'no-click-result time-up'; // neutral style
   });
 
   socket.on('leaderboard', (entries) => {
     // Only show leaderboard if round is closed, unless you just joined
     if (!currentRoundIsOpen && currentRoundId > 0) {
       showLeaderboard(entries);
-    }
-  });
-
-  socket.on('score_update', (data) => {
-    if (data.username === myUsername) {
-      totalScore = data.score;
-      $totalScore.textContent = totalScore;
     }
   });
 
@@ -219,6 +223,24 @@
 
     socket.on('time_sync_reply', handler);
     socket.emit('time_sync', monoNow());
+  }
+
+  // ── TTS ────────────────────────────────────────────────────────────────────
+  if ($btnTts) {
+    $btnTts.addEventListener('click', () => {
+      ttsEnabled = !ttsEnabled;
+      $btnTts.textContent = ttsEnabled ? '🔊' : '🔇';
+      if (!ttsEnabled && window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+      }
+    });
+  }
+
+  function speak(text) {
+    if (!ttsEnabled || !('speechSynthesis' in window)) return;
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    window.speechSynthesis.speak(utterance);
   }
 
   // ── Join ───────────────────────────────────────────────────────────────────

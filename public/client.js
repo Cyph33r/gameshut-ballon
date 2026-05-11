@@ -300,7 +300,11 @@
 
   $joinForm.addEventListener('submit', (e) => {
     e.preventDefault();
-    if (audioCtx.state === 'suspended') audioCtx.resume();
+    
+    // Play the silent Audio file to force iOS to unlock HTML5 audio context
+    popAudio.play().catch(() => {});
+    popAudio.pause();
+    popAudio.currentTime = 0;
     
     const name = $usernameInput.value.trim();
     if (!name) return;

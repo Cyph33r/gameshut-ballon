@@ -248,6 +248,23 @@
   const AudioContext = window.AudioContext || window.webkitAudioContext;
   const audioCtx = new AudioContext();
 
+  function unlockAudio() {
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    // Play silent oscillator to force unlock on iOS
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    gain.gain.value = 0;
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start(0);
+    osc.stop(0.01);
+    
+    document.removeEventListener('touchstart', unlockAudio);
+    document.removeEventListener('pointerdown', unlockAudio);
+  }
+  document.addEventListener('touchstart', unlockAudio, { once: true });
+  document.addEventListener('pointerdown', unlockAudio, { once: true });
+
   function playPopSound() {
     if (audioCtx.state === 'suspended') audioCtx.resume();
     

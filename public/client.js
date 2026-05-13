@@ -7,6 +7,7 @@
   const $gameScreen    = document.getElementById('game-screen');
   const $joinForm      = document.getElementById('join-form');
   const $usernameInput = document.getElementById('username-input');
+  const $passwordInput = document.getElementById('password-input');
   const $joinAvatar    = document.getElementById('join-avatar');
   const $btnRandom     = document.getElementById('btn-random');
 
@@ -310,11 +311,11 @@
     if (!name) return;
     myUsername = name;
     
-    if (myAvatar === '👤' && name.toLowerCase() !== 'admin') {
+    if (myAvatar === '👤' && !$passwordInput.value) {
       randomizeAvatar();
     }
     
-    socket.emit('join', { username: name, avatar: myAvatar });
+    socket.emit('join', { username: name, avatar: myAvatar, adminPass: $passwordInput.value });
   });
 
   // ── Panel switcher ─────────────────────────────────────────────────────────

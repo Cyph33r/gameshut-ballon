@@ -35,7 +35,11 @@
             autocapitalize="words" required />
           <button type="button" id="btn-random" class="icon-btn" title="Randomise">🎲</button>
         </div>
-        <p class="join-hint">Use <strong>admin</strong> as your nickname to host</p>
+        <label class="field-label" style="margin-top: 15px; font-size: 0.85rem; color: rgba(255,255,255,0.6);">Host Password (Optional)</label>
+        <div class="input-group">
+          <span style="padding: 0 15px; opacity: 0.5;">🔑</span>
+          <input id="password-input" type="password" placeholder="Leave blank if player" autocomplete="off" />
+        </div>
         <button type="submit" class="btn-primary" id="btn-join">Let's Go! 🚀</button>
       </form>
     </div>

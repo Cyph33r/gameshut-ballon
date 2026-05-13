@@ -27,7 +27,7 @@ function serverNow() {
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 const COLORS          = ['red', 'blue', 'yellow', 'green'];
-const GM_USERNAME     = 'admin';
+const ADMIN_PASSWORD  = process.env.ADMIN_PASSWORD || 'gameshut';
 const ANSWER_WINDOW   = 15_000;  // 15s to answer before round auto-closes
 const MAX_TRUST_DIFF  = 2000;    // ms: max allowed drift for client clickTime
 const POINTS_FIRST    = 10;      // first correct answer gets this
@@ -164,7 +164,7 @@ io.on('connection', (socket) => {
     const clean     = String(data.username || '').trim().slice(0, 24) || 'Guest';
     player.username = clean;
     player.avatar   = data.avatar || '👤';
-    player.isGM     = clean.toLowerCase() === GM_USERNAME;
+    player.isGM     = (data.adminPass === ADMIN_PASSWORD);
     player.hasJoined= true;
 
     console.log(`  join: "${clean}" ${player.avatar} isGM=${player.isGM}`);

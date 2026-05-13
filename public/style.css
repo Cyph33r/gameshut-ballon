@@ -145,7 +145,7 @@ html, body {
 #join-avatar { font-size: 2rem; cursor: pointer; user-select: none; transition: transform 0.2s; }
 #join-avatar:hover { transform: scale(1.1) rotate(10deg); }
 
-#username-input {
+#username-input, #password-input {
   flex: 1;
   background: transparent;
   border: none;
@@ -156,7 +156,7 @@ html, body {
   outline: none;
   width: 100%;
 }
-#username-input::placeholder { color: rgba(255,255,255,0.2); }
+#username-input::placeholder, #password-input::placeholder { color: rgba(255,255,255,0.2); }
 
 .icon-btn {
   background: rgba(255,255,255,0.1);
@@ -249,7 +249,7 @@ html, body {
 
 .sentence-form { display: flex; flex-direction: column; gap: 16px; }
 
-#sentence-input {
+#sentence-input, #story-input {
   width: 100%;
   padding: 20px;
   background: rgba(0,0,0,0.2);
@@ -264,9 +264,9 @@ html, body {
   transition: border-color 0.2s;
   line-height: 1.4;
 }
-#sentence-input:focus { border-color: var(--primary); }
-#sentence-input::placeholder { color: rgba(255,255,255,0.25); font-weight: 600; font-size: 1.1rem; }
-#sentence-input:disabled { opacity: 0.5; cursor: not-allowed; }
+#sentence-input:focus, #story-input:focus { border-color: var(--primary); }
+#sentence-input::placeholder, #story-input::placeholder { color: rgba(255,255,255,0.25); font-weight: 600; font-size: 1.1rem; }
+#sentence-input:disabled, #story-input:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .form-label { font-size: 0.9rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-top: 8px; }
 

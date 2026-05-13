@@ -181,7 +181,7 @@ io.on('connection', (socket) => {
     
     player.username = clean;
     player.avatar   = data.avatar || '👤';
-    player.isGM     = (data.adminPass === ADMIN_PASSWORD);
+    player.isGM     = (String(data.adminPass || '').trim() === ADMIN_PASSWORD);
     player.hasJoined= true;
 
     console.log(`  join: "${clean}" ${player.avatar} isGM=${player.isGM}`);

@@ -309,10 +309,10 @@
     e.preventDefault();
     $joinError.classList.add('hidden');
     
-    // Play the silent Audio file to force iOS to unlock HTML5 audio context
-    popAudio.play().catch(() => {});
-    popAudio.pause();
-    popAudio.currentTime = 0;
+    // Play the pop sound to force iOS to unlock HTML5 audio context
+    // We don't pause it immediately, as that breaks iOS Safari. 
+    // It will just play a pop sound when joining, which is good UX anyway!
+    playPopSound();
     
     const name = $usernameInput.value.trim();
     if (!name) return;

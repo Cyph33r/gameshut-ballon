@@ -50,12 +50,33 @@ let roundCloseTimeout = null;
 const players = new Map(); // socketId → player object
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
-function buildLeaderboard() {
-  return [...players.values()]
-    .filter(p => !p.isGM)
-    .map(p => ({ username: p.username, avatar: p.avatar, score: p.score, streak: p.streak }))
-    .sort((a, b) => b.score - a.score)
-    .slice(0, LEADERBOARD_MAX);
+function sendLeaderboardTo(socketId) {
+  const sorted = [...players.values()].filter(p => !p.isGM && p.hasJoined).sort((a,b) => b.score - a.score);
+  const top10 = sorted.slice(0, LEADERBOARD_MAX).map(p => ({
+    username: p.username, avatar: p.avatar, score: p.score, streak: p.streak
+  }));
+  const p = players.get(socketId);
+  if (!p || p.isGM) {
+    io.to(socketId).emit('leaderboard', { top10 });
+  } else {
+    const myRank = sorted.indexOf(p) + 1;
+    io.to(socketId).emit('leaderboard', { top10, myRank, myScore: p.score, totalPlayers: sorted.length });
+  }
+}
+
+function broadcastLeaderboard() {
+  const sorted = [...players.values()].filter(p => !p.isGM && p.hasJoined).sort((a,b) => b.score - a.score);
+  const top10 = sorted.slice(0, LEADERBOARD_MAX).map(p => ({
+    username: p.username, avatar: p.avatar, score: p.score, streak: p.streak
+  }));
+  for (const [id, p] of players) {
+    if (p.isGM) {
+      io.to(id).emit('leaderboard', { top10 });
+    } else {
+      const myRank = sorted.indexOf(p) + 1;
+      io.to(id).emit('leaderboard', { top10, myRank, myScore: p.score, totalPlayers: sorted.length });
+    }
+  }
 }
 
 // ─── Round Lifecycle ─────────────────────────────────────────────────────────
@@ -109,7 +130,7 @@ function closeRound() {
   }
 
   io.emit('round_closed', { roundId: round.id, correctColor: round.correctColor });
-  io.emit('leaderboard', buildLeaderboard());
+  broadcastLeaderboard();
 }
 
 // ─── Socket Handlers ─────────────────────────────────────────────────────────
@@ -120,6 +141,7 @@ io.on('connection', (socket) => {
     username:                    'Guest',
     avatar:                      '👤',
     isGM:                        false,
+    hasJoined:                   false,
     score:                       0,
     streak:                      0,
     clickedThisRound:            false,
@@ -143,12 +165,13 @@ io.on('connection', (socket) => {
     player.username = clean;
     player.avatar   = data.avatar || '👤';
     player.isGM     = clean.toLowerCase() === GM_USERNAME;
+    player.hasJoined= true;
 
     console.log(`  join: "${clean}" ${player.avatar} isGM=${player.isGM}`);
     socket.emit('joined', { username: clean, avatar: player.avatar, isGM: player.isGM });
 
     // Send current leaderboard to newly joined player
-    socket.emit('leaderboard', buildLeaderboard());
+    sendLeaderboardTo(socket.id);
 
     // If a round is currently open, send the player into it
     if (round.isOpen) {

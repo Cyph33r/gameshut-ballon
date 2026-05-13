@@ -211,10 +211,10 @@
     $noClickResult.className = 'no-click-result time-up'; // neutral style
   });
 
-  socket.on('leaderboard', (entries) => {
+  socket.on('leaderboard', (data) => {
     // Only show leaderboard if round is closed, unless you just joined
     if (!currentRoundIsOpen && currentRoundId > 0) {
-      showLeaderboard(entries);
+      showLeaderboard(data);
     }
   });
 
@@ -585,7 +585,8 @@
   }
 
   // ── Leaderboard ────────────────────────────────────────────────────────────
-  function showLeaderboard(entries) {
+  function showLeaderboard(data) {
+    const entries = data.top10;
     $lbList.innerHTML = '';
     const medals = ['🥇','🥈','🥉'];
     
@@ -611,6 +612,25 @@
       `;
       $lbList.appendChild(li);
     });
+
+    // If player is not in top 10, append their rank at the bottom
+    if (!isGM && data.myRank && data.myRank > entries.length) {
+      const li = document.createElement('li');
+      li.className = 'lb-row lb-me';
+      li.style.marginTop = '10px';
+      li.style.borderTop = '2px dashed rgba(255,255,255,0.2)';
+      li.style.paddingTop = '15px';
+      
+      li.innerHTML = `
+        <span class="lb-rank">${data.myRank} <span style="font-size:0.7em; color:#888;">/ ${data.totalPlayers}</span></span>
+        <span class="lb-name">
+          <span class="lb-avatar">${myAvatar}</span> 
+          <span class="lb-user-text">You</span>
+        </span>
+        <span class="lb-pts">${data.myScore}</span>
+      `;
+      $lbList.appendChild(li);
+    }
 
     $lbAdminCta.classList.toggle('hidden', !isGM);
     

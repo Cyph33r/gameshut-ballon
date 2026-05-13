@@ -11,6 +11,7 @@ const server = http.createServer(app);
 const io = new Server(server, {
   cors: { origin: '*' },
   perMessageDeflate: false,
+  transports: ['websocket'],
   // Tune for 150 concurrent players
   pingTimeout: 20000,
   pingInterval: 10000,

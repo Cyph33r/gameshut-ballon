@@ -102,7 +102,10 @@
   const serverNow  = () => monoNow() + timeOffset;
 
   // ── Socket ─────────────────────────────────────────────────────────────────
-  const socket = io();
+  const socket = io({
+    transports: ['websocket'],
+    upgrade: false
+  });
 
   socket.on('connect', () => {
     setConn(true);
@@ -558,27 +561,32 @@
       if (t.dataset.color === data.selectedColor && !data.isCorrect) t.classList.add('wrong');
     });
 
-    $resultBar.classList.remove('hidden');
-
     if (data.isTrap) {
+      $resultBar.classList.remove('hidden');
       $resultBar.className    = 'result-bar wrong-result';
       $resultIcon.textContent = '💥';
       $resultText.textContent = 'It was a TRAP!';
       $resultSub.textContent  = 'There was no hidden colour.';
       $resultPts.textContent  = data.points.toString();
     } else if (!data.isCorrect) {
+      $resultBar.classList.remove('hidden');
       $resultBar.className    = 'result-bar wrong-result';
       $resultIcon.textContent = '❌';
       $resultText.textContent = 'Wrong Balloon!';
       $resultSub.textContent  = `The hidden colour was ${data.correctColor.toUpperCase()}`;
       $resultPts.textContent  = data.points.toString();
     } else {
-      const isFast = data.responseMs < 2000;
-      $resultBar.className    = `result-bar ${data.points >= 8 ? 'great-result' : 'ok-result'}`;
-      $resultIcon.textContent = isFast ? '⚡' : '✅';
-      $resultText.textContent = isFast ? 'Lightning Fast!' : 'Correct!';
-      $resultSub.textContent  = `You guessed in ${(data.responseMs / 1000).toFixed(2)}s`;
-      $resultPts.textContent  = `+${data.points}`;
+      // Correct answer! Hide the global result bar and show the result directly inside the popped balloon.
+      $resultBar.classList.add('hidden');
+      
+      const clickedBtn = document.getElementById(`balloon-${data.selectedColor}`);
+      if (clickedBtn) {
+        const label = clickedBtn.querySelector('.balloon-label');
+        if (label) {
+          const timeSec = (data.responseMs / 1000).toFixed(2);
+          label.innerHTML = `✅ ${data.correctColor.toUpperCase()}<br><span style="font-size:0.85rem; font-weight:normal; text-transform:none; opacity:0.9; text-shadow:none;">+${data.points} pts in ${timeSec}s</span>`;
+        }
+      }
       
       // Pop score pill
       document.getElementById('score-pill').classList.add('pop');
@@ -656,6 +664,11 @@
   function enableAllBalloons() {
     balloonBtns.forEach(t => {
       t.classList.remove('disabled', 'chosen', 'correct', 'wrong');
+      const label = t.querySelector('.balloon-label');
+      if (label) {
+        // Reset the label to simply the Capitalized color name
+        label.innerHTML = t.dataset.color.charAt(0).toUpperCase() + t.dataset.color.slice(1);
+      }
     });
   }
 

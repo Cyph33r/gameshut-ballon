@@ -162,6 +162,22 @@ io.on('connection', (socket) => {
     if (!player) return;
 
     const clean     = String(data.username || '').trim().slice(0, 24) || 'Guest';
+    
+    // Check for duplicate username
+    const requestedNameLower = clean.toLowerCase();
+    let isDuplicate = false;
+    for (const [id, p] of players) {
+      if (id !== socket.id && p.hasJoined && p.username.toLowerCase() === requestedNameLower) {
+        isDuplicate = true;
+        break;
+      }
+    }
+    
+    if (isDuplicate) {
+      socket.emit('join_error', 'That nickname is already taken! Please choose another.');
+      return;
+    }
+    
     player.username = clean;
     player.avatar   = data.avatar || '👤';
     player.isGM     = (data.adminPass === ADMIN_PASSWORD);

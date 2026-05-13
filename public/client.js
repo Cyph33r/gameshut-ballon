@@ -8,6 +8,7 @@
   const $joinForm      = document.getElementById('join-form');
   const $usernameInput = document.getElementById('username-input');
   const $passwordInput = document.getElementById('password-input');
+  const $joinError     = document.getElementById('join-error');
   const $joinAvatar    = document.getElementById('join-avatar');
   const $btnRandom     = document.getElementById('btn-random');
 
@@ -115,6 +116,11 @@
   });
 
   socket.on('welcome', () => {});
+
+  socket.on('join_error', (msg) => {
+    $joinError.textContent = msg;
+    $joinError.classList.remove('hidden');
+  });
 
   socket.on('joined', (data) => {
     isGM = data.isGM;
@@ -301,6 +307,7 @@
 
   $joinForm.addEventListener('submit', (e) => {
     e.preventDefault();
+    $joinError.classList.add('hidden');
     
     // Play the silent Audio file to force iOS to unlock HTML5 audio context
     popAudio.play().catch(() => {});

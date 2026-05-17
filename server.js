@@ -29,7 +29,7 @@ function serverNow() {
 // ─── Constants ───────────────────────────────────────────────────────────────
 const COLORS          = ['red', 'blue', 'yellow', 'green'];
 const ADMIN_PASSWORD  = process.env.ADMIN_PASSWORD;
-const ANSWER_WINDOW   = 1_000;  // 15s to answer before round auto-closes
+const ANSWER_WINDOW   = 16_500;  // 15s to answer + 1.5s reveal delay before round auto-closes
 const MAX_TRUST_DIFF  = 2000;    // ms: max allowed drift for client clickTime
 const POINTS_FIRST    = 10;      // first correct answer gets this
 const POINTS_DECAY    = 1;       // lose 1 point per 100ms slower than first

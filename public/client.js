@@ -512,7 +512,10 @@
   }
 
   function setAdminTilesEnabled(on) {
-    singleColourBtns.forEach(t => { t.disabled = !on; });
+    singleColourBtns.forEach(t => { 
+      t.disabled = !on; 
+      if (!on) t.classList.remove('selected');
+    });
     if ($sentenceInput) $sentenceInput.disabled = !on;
     $btnNextQueued.disabled = !on;
     if (on) {
@@ -600,7 +603,7 @@
   function hideResult() {
     $resultBar.className = 'result-bar hidden';
     $noClickResult.classList.add('hidden');
-    balloonBtns.forEach(t => t.classList.remove('chosen', 'correct', 'wrong'));
+    resetAllBalloons();
   }
 
   // ── Leaderboard ────────────────────────────────────────────────────────────
@@ -664,15 +667,19 @@
   }
 
   // ── Helpers ────────────────────────────────────────────────────────────────
-  function enableAllBalloons() {
+  function resetAllBalloons() {
     balloonBtns.forEach(t => {
-      t.classList.remove('disabled', 'chosen', 'correct', 'wrong');
+      t.classList.remove('chosen', 'correct', 'wrong');
       const label = t.querySelector('.balloon-label');
       if (label) {
-        // Reset the label to simply the Capitalized color name
         label.innerHTML = t.dataset.color.charAt(0).toUpperCase() + t.dataset.color.slice(1);
       }
     });
+  }
+
+  function enableAllBalloons() {
+    resetAllBalloons();
+    balloonBtns.forEach(t => t.classList.remove('disabled'));
   }
 
   function disableAllBalloons() {

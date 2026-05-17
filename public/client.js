@@ -1,6 +1,6 @@
 (() => {
   const SYNC_SAMPLES = 10;
-  const ANSWER_WINDOW = 15_000;
+  const ANSWER_WINDOW = 5_000;
 
   // ── DOM Elements ───────────────────────────────────────────────────────────
   const $joinScreen    = document.getElementById('join-screen');

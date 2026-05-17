@@ -21,29 +21,29 @@ const PORT = process.env.PORT || 3000;
 
 // ─── High-resolution monotonic clock ─────────────────────────────────────────
 const hrtimeOrigin = process.hrtime.bigint();
-const dateOrigin   = Date.now();
+const dateOrigin = Date.now();
 function serverNow() {
   return dateOrigin + Number((process.hrtime.bigint() - hrtimeOrigin) / 1_000_000n);
 }
 
 // ─── Constants ───────────────────────────────────────────────────────────────
-const COLORS          = ['red', 'blue', 'yellow', 'green'];
-const ADMIN_PASSWORD  = process.env.ADMIN_PASSWORD;
-const ANSWER_WINDOW   = 16_500;  // 15s to answer + 1.5s reveal delay before round auto-closes
-const MAX_TRUST_DIFF  = 2000;    // ms: max allowed drift for client clickTime
-const POINTS_FIRST    = 10;      // first correct answer gets this
-const POINTS_DECAY    = 1;       // lose 1 point per 100ms slower than first
-const POINTS_MIN      = 1;       // minimum score for a correct answer
-const POINTS_WRONG    = 0;      // penalty for wrong balloon or trap click
+const COLORS = ['red', 'blue', 'yellow', 'green'];
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
+const ANSWER_WINDOW = 5_000 + 1_500;  // 15s to answer + 1.5s reveal delay before round auto-closes
+const MAX_TRUST_DIFF = 2000;    // ms: max allowed drift for client clickTime
+const POINTS_FIRST = 10;      // first correct answer gets this
+const POINTS_DECAY = 1;       // lose 1 point per 100ms slower than first
+const POINTS_MIN = 1;       // minimum score for a correct answer
+const POINTS_WRONG = 0;      // penalty for wrong balloon or trap click
 const LEADERBOARD_MAX = 20;      // max entries shown
 
 // ─── State ───────────────────────────────────────────────────────────────────
 let round = {
-  id:           0,
-  sentence:     null,   // the full sentence shown to players
+  id: 0,
+  sentence: null,   // the full sentence shown to players
   correctColor: null,   // the colour key, or null for trap rounds
-  revealTime:   null,   // server timestamp when sentence was revealed
-  isOpen:       false,
+  revealTime: null,   // server timestamp when sentence was revealed
+  isOpen: false,
   firstCorrectAt: null, // server timestamp of first correct answer
 };
 
@@ -53,7 +53,7 @@ let storyQueue = [];
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 function sendLeaderboardTo(socketId) {
-  const sorted = [...players.values()].filter(p => !p.isGM && p.hasJoined).sort((a,b) => b.score - a.score);
+  const sorted = [...players.values()].filter(p => !p.isGM && p.hasJoined).sort((a, b) => b.score - a.score);
   const top10 = sorted.slice(0, LEADERBOARD_MAX).map(p => ({
     username: p.username, avatar: p.avatar, score: p.score, streak: p.streak
   }));
@@ -67,7 +67,7 @@ function sendLeaderboardTo(socketId) {
 }
 
 function broadcastLeaderboard() {
-  const sorted = [...players.values()].filter(p => !p.isGM && p.hasJoined).sort((a,b) => b.score - a.score);
+  const sorted = [...players.values()].filter(p => !p.isGM && p.hasJoined).sort((a, b) => b.score - a.score);
   const top10 = sorted.slice(0, LEADERBOARD_MAX).map(p => ({
     username: p.username, avatar: p.avatar, score: p.score, streak: p.streak
   }));
@@ -86,22 +86,22 @@ function startRound(sentence, correctColor) {
   if (roundCloseTimeout) { clearTimeout(roundCloseTimeout); roundCloseTimeout = null; }
 
   round.id++;
-  round.sentence      = sentence;
-  round.correctColor  = correctColor; // null = trap round
-  round.revealTime    = serverNow() + 1500; // shift forward to account for overlay
-  round.isOpen        = true;
+  round.sentence = sentence;
+  round.correctColor = correctColor; // null = trap round
+  round.revealTime = serverNow() + 1500; // shift forward to account for overlay
+  round.isOpen = true;
   round.firstCorrectAt = null;
 
   // Reset per-round click flags
   for (const [, p] of players) {
-    p.clickedThisRound           = false;
+    p.clickedThisRound = false;
     p.answeredCorrectlyThisRound = false;
   }
 
   // Broadcast
   io.emit('round_start', {
-    roundId:    round.id,
-    sentence:   round.sentence,
+    roundId: round.id,
+    sentence: round.sentence,
     revealTime: round.revealTime,
   });
 
@@ -140,14 +140,14 @@ io.on('connection', (socket) => {
   console.log(`[+] ${socket.id} | total: ${io.engine.clientsCount}`);
 
   players.set(socket.id, {
-    username:                    'Guest',
-    avatar:                      '👤',
-    isGM:                        false,
-    hasJoined:                   false,
-    score:                       0,
-    streak:                      0,
-    clickedThisRound:            false,
-    answeredCorrectlyThisRound:  false,
+    username: 'Guest',
+    avatar: '👤',
+    isGM: false,
+    hasJoined: false,
+    score: 0,
+    streak: 0,
+    clickedThisRound: false,
+    answeredCorrectlyThisRound: false,
   });
 
   socket.emit('welcome', { serverTime: serverNow() });
@@ -159,12 +159,12 @@ io.on('connection', (socket) => {
 
   // ── Join ──────────────────────────────────────────────────────────────────
   socket.on('join', (payload) => {
-    const data   = typeof payload === 'string' ? { username: payload, avatar: '👤' } : payload;
+    const data = typeof payload === 'string' ? { username: payload, avatar: '👤' } : payload;
     const player = players.get(socket.id);
     if (!player) return;
 
-    const clean     = String(data.username || '').trim().slice(0, 24) || 'Guest';
-    
+    const clean = String(data.username || '').trim().slice(0, 24) || 'Guest';
+
     // Check for duplicate username
     const requestedNameLower = clean.toLowerCase();
     let isDuplicate = false;
@@ -174,23 +174,23 @@ io.on('connection', (socket) => {
         break;
       }
     }
-    
+
     if (isDuplicate) {
       socket.emit('join_error', 'That nickname is already taken! Please choose another.');
       return;
     }
-    
+
     player.username = clean;
-    player.avatar   = data.avatar || '👤';
-    player.isGM     = (String(data.adminPass || '').trim() === ADMIN_PASSWORD);
-    player.hasJoined= true;
+    player.avatar = data.avatar || '👤';
+    player.isGM = (String(data.adminPass || '').trim() === ADMIN_PASSWORD);
+    player.hasJoined = true;
 
     console.log(`  join: "${clean}" ${player.avatar} isGM=${player.isGM}`);
     socket.emit('joined', { username: clean, avatar: player.avatar, isGM: player.isGM });
 
     // Send current leaderboard to newly joined player
     sendLeaderboardTo(socket.id);
-    
+
     if (player.isGM) {
       socket.emit('queue_update', storyQueue);
     }
@@ -198,8 +198,8 @@ io.on('connection', (socket) => {
     // If a round is currently open, send the player into it
     if (round.isOpen) {
       socket.emit('round_start', {
-        roundId:    round.id,
-        sentence:   round.sentence,
+        roundId: round.id,
+        sentence: round.sentence,
         revealTime: round.revealTime,
       });
     }
@@ -229,7 +229,7 @@ io.on('connection', (socket) => {
     const player = players.get(socket.id);
     if (!player || !player.isGM || !Array.isArray(rounds)) return;
     storyQueue.push(...rounds);
-    
+
     // Broadcast queue to all clients (only GMs render it, but keeping it simple)
     io.emit('queue_update', storyQueue);
   });
@@ -238,10 +238,10 @@ io.on('connection', (socket) => {
     const player = players.get(socket.id);
     if (!player || !player.isGM) return;
     if (round.isOpen || storyQueue.length === 0) return;
-    
+
     const next = storyQueue.shift();
     io.emit('queue_update', storyQueue);
-    
+
     startRound(next.sentence, next.correctColor);
   });
 
@@ -263,9 +263,9 @@ io.on('connection', (socket) => {
   // ── Player click ──────────────────────────────────────────────────────────
   socket.on('click', ({ color, clickTime } = {}) => {
     const player = players.get(socket.id);
-    if (!player || player.isGM)  return;
+    if (!player || player.isGM) return;
     if (player.clickedThisRound) return; // anti-spam: only first click counts
-    if (!round.isOpen)           return;
+    if (!round.isOpen) return;
 
     player.clickedThisRound = true;
 
@@ -288,7 +288,7 @@ io.on('connection', (socket) => {
     // ── Trap round (correctColor === null) ────────────────────────────────
     if (round.correctColor === null) {
       // Any click in a trap round = penalty
-      points    = POINTS_WRONG;
+      points = POINTS_WRONG;
       isCorrect = false;
     }
     // ── Real round ─────────────────────────────────────────────────────────
@@ -303,8 +303,8 @@ io.on('connection', (socket) => {
       } else {
         // Subsequent correct answers — lose 1 point per 100ms slower than first
         const slowMs = Math.max(0, effectiveTime - round.firstCorrectAt);
-        const decay  = Math.floor(slowMs / 100) * POINTS_DECAY;
-        points       = Math.max(POINTS_MIN, POINTS_FIRST - decay);
+        const decay = Math.floor(slowMs / 100) * POINTS_DECAY;
+        points = Math.max(POINTS_MIN, POINTS_FIRST - decay);
       }
 
       // Streak bonus: 3+ correct streak → ×1.2
@@ -313,21 +313,21 @@ io.on('connection', (socket) => {
       }
     } else {
       // Wrong colour clicked
-      points    = POINTS_WRONG;
+      points = POINTS_WRONG;
       isCorrect = false;
     }
 
     player.score += points;
 
     socket.emit('click_result', {
-      roundId:       round.id,
+      roundId: round.id,
       isCorrect,
-      isTrap:        round.correctColor === null,
+      isTrap: round.correctColor === null,
       selectedColor: color,
-      correctColor:  round.correctColor,
+      correctColor: round.correctColor,
       responseMs,
       points,
-      totalScore:    player.score,
+      totalScore: player.score,
     });
   });
 

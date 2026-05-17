@@ -457,9 +457,15 @@
       return;
     }
     
-    roundQueue = roundQueue.concat(validRounds.map(r => ({ sentence: r.sentence, correctColor: r.color })));
+    const newRounds = validRounds.map(r => ({ sentence: r.sentence, correctColor: r.color }));
+    socket.emit('gm_queue_add', newRounds);
+    
     $storyInput.value = '';
     $storyBuilder.classList.add('hidden');
+  });
+
+  socket.on('queue_update', (q) => {
+    roundQueue = q;
     renderQueue();
   });
 
@@ -489,14 +495,11 @@
 
   $btnNextQueued.addEventListener('click', () => {
     if (roundQueue.length === 0 || currentRoundIsOpen) return;
-    const next = roundQueue.shift();
-    socket.emit('gm_round', { sentence: next.sentence, correctColor: next.correctColor });
-    renderQueue();
+    socket.emit('gm_queue_next');
   });
 
   $btnClearQueue.addEventListener('click', () => {
-    roundQueue = [];
-    renderQueue();
+    socket.emit('gm_queue_clear');
   });
 
   $btnForceClose.addEventListener('click', () => {

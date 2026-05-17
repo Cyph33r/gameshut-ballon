@@ -172,6 +172,7 @@ function App() {
             {myPlayer.lastClick?.msg || ''}
           </div>
 
+         
           <div className="player-area">
             <div className="inventory-controls">
               {COLORS.map(color => (

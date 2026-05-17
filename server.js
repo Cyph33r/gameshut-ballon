@@ -28,13 +28,13 @@ function serverNow() {
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 const COLORS          = ['red', 'blue', 'yellow', 'green'];
-const ADMIN_PASSWORD  = process.env.ADMIN_PASSWORD || 'gameshut';
-const ANSWER_WINDOW   = 15_000;  // 15s to answer before round auto-closes
+const ADMIN_PASSWORD  = process.env.ADMIN_PASSWORD;
+const ANSWER_WINDOW   = 1_000;  // 15s to answer before round auto-closes
 const MAX_TRUST_DIFF  = 2000;    // ms: max allowed drift for client clickTime
 const POINTS_FIRST    = 10;      // first correct answer gets this
 const POINTS_DECAY    = 1;       // lose 1 point per 100ms slower than first
 const POINTS_MIN      = 1;       // minimum score for a correct answer
-const POINTS_WRONG    = -5;      // penalty for wrong balloon or trap click
+const POINTS_WRONG    = 0;      // penalty for wrong balloon or trap click
 const LEADERBOARD_MAX = 20;      // max entries shown
 
 // ─── State ───────────────────────────────────────────────────────────────────
@@ -49,6 +49,7 @@ let round = {
 
 let roundCloseTimeout = null;
 const players = new Map(); // socketId → player object
+let storyQueue = [];
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 function sendLeaderboardTo(socketId) {
@@ -189,6 +190,10 @@ io.on('connection', (socket) => {
 
     // Send current leaderboard to newly joined player
     sendLeaderboardTo(socket.id);
+    
+    if (player.isGM) {
+      socket.emit('queue_update', storyQueue);
+    }
 
     // If a round is currently open, send the player into it
     if (round.isOpen) {
@@ -217,6 +222,34 @@ io.on('connection', (socket) => {
     if (round.isOpen) return; // can't start mid-round
 
     startRound(trimmed, color);
+  });
+
+  // ── Story Mode Queue Management ───────────────────────────────────────────
+  socket.on('gm_queue_add', (rounds) => {
+    const player = players.get(socket.id);
+    if (!player || !player.isGM || !Array.isArray(rounds)) return;
+    storyQueue.push(...rounds);
+    
+    // Broadcast queue to all clients (only GMs render it, but keeping it simple)
+    io.emit('queue_update', storyQueue);
+  });
+
+  socket.on('gm_queue_next', () => {
+    const player = players.get(socket.id);
+    if (!player || !player.isGM) return;
+    if (round.isOpen || storyQueue.length === 0) return;
+    
+    const next = storyQueue.shift();
+    io.emit('queue_update', storyQueue);
+    
+    startRound(next.sentence, next.correctColor);
+  });
+
+  socket.on('gm_queue_clear', () => {
+    const player = players.get(socket.id);
+    if (!player || !player.isGM) return;
+    storyQueue = [];
+    io.emit('queue_update', storyQueue);
   });
 
   // ── Admin force-close round ───────────────────────────────────────────────

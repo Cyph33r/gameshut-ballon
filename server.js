@@ -25,7 +25,7 @@ function serverNow() {
 }
 
 // ─── Constants ───────────────────────────────────────────────────────────────
-const COLORS = ['red', 'blue', 'yellow', 'green'];
+const COLORS = ['red', 'yellow', 'orange', 'blue'];
 const ANSWER_WINDOW = 5_000 + 1_500;  // 1.5s delay + 5s window
 const MAX_TRUST_DIFF = 2000;    // ms: max allowed drift for client clickTime
 const POINTS_FIRST = 10;      // first correct answer gets this
@@ -40,6 +40,9 @@ function createGlobalRoomState(hostPassword = 'admin') {
     isLocked: false,
     adminSocketId: null,
     storyQueue: [],
+    storyMeta: null,       // { title, sentences: [{ text, isRound, roundIndex }] }
+    storyRoundIndex: 0,    // which story round we're currently on
+    storyRevealedRounds: [], // [{ sentenceIndex, color }] — past round results
     round: {
       id: 0,
       sentence: null,
@@ -110,11 +113,22 @@ function startRound(sentence, correctColor) {
   }
 
   // Broadcast globally
-  io.emit('round_start', {
+  const roundPayload = {
     roundId: globalRoom.round.id,
     sentence: globalRoom.round.sentence,
     revealTime: globalRoom.round.revealTime,
-  });
+  };
+
+  // Include story progress if a story is active
+  if (globalRoom.storyMeta) {
+    roundPayload.storyProgress = {
+      storyMeta: globalRoom.storyMeta,
+      storyRoundIndex: globalRoom.storyRoundIndex,
+      revealedRounds: [...globalRoom.storyRevealedRounds],
+    };
+  }
+
+  io.emit('round_start', roundPayload);
 
   // Auto-close after ANSWER_WINDOW
   globalRoom.roundCloseTimeout = setTimeout(() => closeRound(), ANSWER_WINDOW);
@@ -140,7 +154,33 @@ function closeRound() {
     }
   }
 
-  io.emit('round_closed', { roundId: globalRoom.round.id, correctColor: globalRoom.round.correctColor });
+  // Record story round result if story is active
+  if (globalRoom.storyMeta) {
+    // Find the sentence index for the current story round
+    const currentRoundIdx = globalRoom.storyRoundIndex;
+    const roundSentences = globalRoom.storyMeta.sentences.filter(s => s.isRound);
+    if (roundSentences[currentRoundIdx]) {
+      globalRoom.storyRevealedRounds.push({
+        sentenceIndex: roundSentences[currentRoundIdx].sentenceIndex,
+        color: globalRoom.round.correctColor,
+      });
+    }
+    globalRoom.storyRoundIndex++;
+  }
+
+  const closedPayload = { roundId: globalRoom.round.id, correctColor: globalRoom.round.correctColor };
+
+  // Include story progress in round_closed
+  if (globalRoom.storyMeta) {
+    closedPayload.storyProgress = {
+      storyMeta: globalRoom.storyMeta,
+      storyRoundIndex: globalRoom.storyRoundIndex,
+      revealedRounds: [...globalRoom.storyRevealedRounds],
+      isStoryComplete: globalRoom.storyRoundIndex >= globalRoom.storyQueue.length + 1, // +1 because we already shifted one
+    };
+  }
+
+  io.emit('round_closed', closedPayload);
   broadcastLeaderboard();
 }
 
@@ -282,10 +322,30 @@ io.on('connection', (socket) => {
   });
 
   // ── Story Mode Queue Management ───────────────────────────────────────────
-  socket.on('gm_queue_add', (rounds) => {
-    if (globalRoom.adminSocketId !== socket.id || !Array.isArray(rounds)) return;
+  socket.on('gm_queue_add', (payload) => {
+    if (globalRoom.adminSocketId !== socket.id) return;
+    
+    // Support both old format (array) and new format ({ rounds, storyMeta })
+    let rounds, storyMeta;
+    if (Array.isArray(payload)) {
+      rounds = payload;
+      storyMeta = null;
+    } else if (payload && Array.isArray(payload.rounds)) {
+      rounds = payload.rounds;
+      storyMeta = payload.storyMeta || null;
+    } else {
+      return;
+    }
 
     globalRoom.storyQueue.push(...rounds);
+    
+    // Store story metadata if provided
+    if (storyMeta) {
+      globalRoom.storyMeta = storyMeta;
+      globalRoom.storyRoundIndex = 0;
+      globalRoom.storyRevealedRounds = [];
+    }
+    
     io.emit('queue_update', globalRoom.storyQueue);
   });
 
@@ -303,6 +363,9 @@ io.on('connection', (socket) => {
     if (globalRoom.adminSocketId !== socket.id) return;
 
     globalRoom.storyQueue = [];
+    globalRoom.storyMeta = null;
+    globalRoom.storyRoundIndex = 0;
+    globalRoom.storyRevealedRounds = [];
     io.emit('queue_update', globalRoom.storyQueue);
   });
 

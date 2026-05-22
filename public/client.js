@@ -84,8 +84,16 @@
   const $queueCount     = document.getElementById('queue-count');
   const $btnNextQueued  = document.getElementById('btn-next-queued');
   const $btnClearQueue  = document.getElementById('btn-clear-queue');
+  const $chkAutoplay    = document.getElementById('chk-autoplay');
+
+  // Display Story View
+  const $displayStoryView    = document.getElementById('display-story-view');
+  const $storyScrollArea     = document.getElementById('story-scroll-area');
+  const $displayStoryTimerWrap = document.getElementById('display-story-timer-wrap');
+  const $displayStoryTimerBar  = document.getElementById('display-story-timer-bar');
 
   // Player
+  const $playerNarrativePrefix = document.getElementById('player-narrative-prefix');
   const $sentenceArea   = document.getElementById('sentence-area');
   const $sentenceDisplay= document.getElementById('sentence-display');
   const $timerWrap      = document.getElementById('timer-wrap');
@@ -130,9 +138,15 @@
   let ttsEnabled         = true;
 
   // Story Mode State
-  let storyDraft         = []; // Array of { sentence, color, wordId }
+  let storyDraft         = []; // Array of { sentence, cleanSentence, color, wordId }
   let activeWordSpan     = null;
-  let roundQueue         = []; // Array of { sentence, color }
+  let roundQueue         = []; // Array of { sentence, correctColor }
+  let autoplayEnabled    = false;
+  let autoplayTimer      = null;
+  let isStoryModeActive  = false; // true when a story queue is actively playing
+
+  // Hint-stripping regex: removes (sounds like X), (like X), etc.
+  const HINT_REGEX = /\s*\([^)]*(?:sounds?\s+like|like|≈)\s+[^)]+\)\s*/gi;
 
   // ── Monotonic clock ────────────────────────────────────────────────────────
   const perfOrigin = performance.now();
@@ -263,19 +277,72 @@
       $sentenceInput.value = '';
       updateCharCounter();
     } else if (isDisplay) {
-      if ($displayLobbyView) $displayLobbyView.style.display = 'none';
-      if ($displayGameView) $displayGameView.style.display = 'flex';
-      $displaySentence.textContent = data.sentence;
-      $displayTimerBar.classList.remove('active');
-      $displayTimerWrap.classList.remove('hidden');
+      // Check if this is a story mode round
+      if (data.storyProgress) {
+        isStoryModeActive = true;
+        // Use story view instead of normal display
+        if ($displayLobbyView) $displayLobbyView.style.display = 'none';
+        if ($displayGameView) $displayGameView.style.display = 'none';
+        if ($displayStoryView) $displayStoryView.classList.remove('hidden');
+        renderStoryView(data.storyProgress, 'active');
+        // Story timer
+        if ($displayStoryTimerBar) {
+          $displayStoryTimerBar.classList.remove('active');
+          $displayStoryTimerWrap.classList.remove('hidden');
+        }
+      } else {
+        isStoryModeActive = false;
+        if ($displayLobbyView) $displayLobbyView.style.display = 'none';
+        if ($displayGameView) $displayGameView.style.display = 'flex';
+        if ($displayStoryView) $displayStoryView.classList.add('hidden');
+        $displaySentence.textContent = data.sentence;
+        $displayTimerBar.classList.remove('active');
+        $displayTimerWrap.classList.remove('hidden');
+      }
     } else {
       hideResult();
+      
+      // Calculate narrative prefix if story mode is active
+      let narrativePrefix = '';
+      if (data.storyProgress) {
+        const { storyMeta, storyRoundIndex } = data.storyProgress;
+        if (storyMeta && storyMeta.sentences) {
+          const sentences = storyMeta.sentences;
+          const roundSentences = sentences.filter(s => s.isRound);
+          const activeRound = roundSentences[storyRoundIndex] || null;
+          if (activeRound) {
+            const activeIdx = activeRound.sentenceIndex;
+            // Find the previous round's sentenceIndex
+            let prevIdx = -1;
+            if (storyRoundIndex > 0 && roundSentences[storyRoundIndex - 1]) {
+              prevIdx = roundSentences[storyRoundIndex - 1].sentenceIndex;
+            }
+            // Collect narrative sentences between prevIdx and activeIdx
+            const prefixParts = [];
+            for (let i = prevIdx + 1; i < activeIdx; i++) {
+              if (!sentences[i].isRound) {
+                prefixParts.push(sentences[i].text);
+              }
+            }
+            narrativePrefix = prefixParts.join(' ');
+          }
+        }
+      }
+      
+      if (narrativePrefix && $playerNarrativePrefix) {
+        $playerNarrativePrefix.textContent = narrativePrefix;
+        $playerNarrativePrefix.classList.remove('hidden');
+      } else if ($playerNarrativePrefix) {
+        $playerNarrativePrefix.textContent = '';
+        $playerNarrativePrefix.classList.add('hidden');
+      }
+
       showSentenceAndEnableTiles(data.sentence);
     }
 
     // Flash overlay
     showOverlay(data.sentence);
-    speak(data.sentence);
+    // TTS removed — host reads the story aloud manually
 
     if (!isGM && !isDisplay) {
       $timerBar.classList.remove('active');
@@ -288,10 +355,17 @@
       }, delay);
     } else if (isDisplay) {
       const delay = Math.max(0, data.revealTime - serverNow());
-      setTimeout(() => {
-        $displayTimerBar.style.animationDuration = `${ANSWER_WINDOW}ms`;
-        $displayTimerBar.classList.add('active');
-      }, delay);
+      if (isStoryModeActive && $displayStoryTimerBar) {
+        setTimeout(() => {
+          $displayStoryTimerBar.style.animationDuration = `${ANSWER_WINDOW}ms`;
+          $displayStoryTimerBar.classList.add('active');
+        }, delay);
+      } else {
+        setTimeout(() => {
+          $displayTimerBar.style.animationDuration = `${ANSWER_WINDOW}ms`;
+          $displayTimerBar.classList.add('active');
+        }, delay);
+      }
     }
 
     // Auto-disable client side after window (server authoritative anyway)
@@ -343,8 +417,23 @@
         $rabTimerBar.classList.remove('active');
       }
       if ($adminModeSection) $adminModeSection.classList.remove('hidden');
+
+      // Auto-play: auto-advance to next queued round after leaderboard delay
+      if (autoplayEnabled && roundQueue.length > 0) {
+        clearTimeout(autoplayTimer);
+        autoplayTimer = setTimeout(() => {
+          socket.emit('gm_queue_next');
+        }, 6000); // 6 second leaderboard display
+      }
     } else if (isDisplay) {
-      $displaySentence.textContent = 'Round Over! Loading leaderboard...';
+      if (isStoryModeActive && data.storyProgress) {
+        // Update story view to show revealed colour
+        renderStoryView(data.storyProgress, 'closed');
+        if ($displayStoryTimerWrap) $displayStoryTimerWrap.classList.add('hidden');
+        if ($displayStoryTimerBar) $displayStoryTimerBar.classList.remove('active');
+      } else {
+        $displaySentence.textContent = 'Round Over! Loading leaderboard...';
+      }
     } else {
       if (pendingClickResult) {
         totalScore = pendingClickResult.totalScore;
@@ -693,8 +782,8 @@
     const text = $storyInput.value.trim();
     if (!text) return;
     
-    // Split into sentences (by . ! ? followed by space or end)
-    const sentences = text.match(/[^.!?]+[.!?]*/g) || [text];
+    // Split into sentences (by . ! ? followed by space or end, handling ellipses)
+    const sentences = text.match(/[^.!?…]+(?:[.!?…]+["']?)/g) || [text];
     
     $storyWordsContainer.innerHTML = '';
     storyDraft = [];
@@ -707,10 +796,14 @@
       const sentenceText = s.trim();
       if (!sentenceText) return;
       
-      storyDraft.push({ sentence: sentenceText, color: undefined, wordId: null });
+      // Store both original (with hints) and clean (without hints) text
+      const cleanText = sentenceText.replace(HINT_REGEX, ' ').replace(/\s+/g, ' ').trim();
+      
+      storyDraft.push({ sentence: cleanText, originalSentence: sentenceText, color: undefined, wordId: null });
       const sentenceIdx = storyDraft.length - 1;
 
       // Split sentence into words and spaces to make words clickable
+      // Use the ORIGINAL text (with hints visible) for the host builder
       const words = sentenceText.split(/(\s+)/);
       
       words.forEach(word => {
@@ -725,6 +818,12 @@
         span.className = 'story-word';
         span.dataset.sIdx = sentenceIdx;
         span.dataset.wId = wId;
+        
+        // Dim hint text in parentheses
+        if (/^\(/.test(word) || /\)$/.test(word) || /sounds?\s+like/i.test(word)) {
+          span.style.opacity = '0.5';
+          span.style.fontStyle = 'italic';
+        }
         
         span.addEventListener('click', () => {
           if (activeWordSpan) activeWordSpan.style.borderBottom = '';
@@ -767,8 +866,25 @@
       return;
     }
     
+    // Build rounds (only sentences with assigned colours)
     const newRounds = validRounds.map(r => ({ sentence: r.sentence, correctColor: r.color }));
-    socket.emit('gm_queue_add', newRounds);
+    
+    // Build storyMeta: full list of ALL sentences with their roles
+    let roundIndex = 0;
+    const storyMetaSentences = storyDraft.map((s, idx) => {
+      if (s.color !== undefined) {
+        return { text: s.sentence, isRound: true, roundIndex: roundIndex++, sentenceIndex: idx };
+      } else {
+        return { text: s.sentence, isRound: false, roundIndex: null, sentenceIndex: idx };
+      }
+    });
+    
+    const storyMeta = {
+      title: 'Story',
+      sentences: storyMetaSentences,
+    };
+    
+    socket.emit('gm_queue_add', { rounds: newRounds, storyMeta });
     
     $storyInput.value = '';
     $storyBuilder.classList.add('hidden');
@@ -810,7 +926,82 @@
 
   $btnClearQueue.addEventListener('click', () => {
     socket.emit('gm_queue_clear');
+    isStoryModeActive = false;
+    clearTimeout(autoplayTimer);
   });
+
+  // ── Auto-Play Toggle ───────────────────────────────────────────────────────
+  if ($chkAutoplay) {
+    $chkAutoplay.addEventListener('click', () => {
+      autoplayEnabled = !autoplayEnabled;
+      $chkAutoplay.classList.toggle('active', autoplayEnabled);
+      $chkAutoplay.setAttribute('aria-checked', autoplayEnabled ? 'true' : 'false');
+      if (!autoplayEnabled) clearTimeout(autoplayTimer);
+    });
+  }
+
+  // ── Display: Progressive Story View Renderer ───────────────────────────────
+  function renderStoryView(storyProgress, phase) {
+    if (!$storyScrollArea) return;
+    
+    const { storyMeta, storyRoundIndex, revealedRounds } = storyProgress;
+    if (!storyMeta || !storyMeta.sentences) return;
+    
+    const sentences = storyMeta.sentences;
+    const revealedMap = new Map(); // sentenceIndex -> color
+    (revealedRounds || []).forEach(r => revealedMap.set(r.sentenceIndex, r.color));
+    
+    // Find the current active round sentence
+    const roundSentences = sentences.filter(s => s.isRound);
+    const activeRound = roundSentences[storyRoundIndex] || null;
+    const activeSentenceIndex = activeRound ? activeRound.sentenceIndex : -1;
+    
+    $storyScrollArea.innerHTML = '';
+    
+    sentences.forEach((s, idx) => {
+      const div = document.createElement('div');
+      div.className = 'story-line';
+      div.dataset.sIdx = idx;
+      
+      // Determine the state of this sentence
+      if (s.sentenceIndex < activeSentenceIndex || (phase === 'closed' && s.sentenceIndex === activeSentenceIndex)) {
+        // Past sentence
+        if (revealedMap.has(s.sentenceIndex)) {
+          // Past round — show with colour dot
+          div.classList.add('past-round');
+          const colorVal = revealedMap.get(s.sentenceIndex);
+          const dotClass = colorVal === null ? 'trap' : colorVal;
+          div.innerHTML = `${s.text} <span class="story-color-dot ${dotClass}"></span>`;
+        } else {
+          // Past narrative
+          div.classList.add('narrative');
+          div.textContent = s.text;
+        }
+      } else if (s.sentenceIndex === activeSentenceIndex && phase === 'active') {
+        // Active round sentence
+        div.classList.add('active');
+        div.textContent = s.text;
+      } else if (s.sentenceIndex < activeSentenceIndex + 1 && !s.isRound) {
+        // Narrative sentence right before/adjacent to the active one — show as visible context
+        div.classList.add('narrative');
+        div.textContent = s.text;
+      } else {
+        // Future — hide
+        div.classList.add('future');
+        div.textContent = s.text;
+      }
+      
+      $storyScrollArea.appendChild(div);
+    });
+    
+    // Auto-scroll to the active sentence
+    const activeEl = $storyScrollArea.querySelector('.story-line.active');
+    if (activeEl) {
+      setTimeout(() => {
+        activeEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 100);
+    }
+  }
 
   $btnForceClose.addEventListener('click', () => {
     socket.emit('gm_close');
@@ -867,6 +1058,10 @@
   function setSentenceLabel(text) {
     $sentenceDisplay.textContent = text;
     $trapHint.classList.add('hidden');
+    if ($playerNarrativePrefix) {
+      $playerNarrativePrefix.textContent = '';
+      $playerNarrativePrefix.classList.add('hidden');
+    }
   }
 
   balloonBtns.forEach(btn => {

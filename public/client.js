@@ -537,7 +537,6 @@
       toast.style.transform = 'translateX(-50%) translateY(-20px)';
       setTimeout(() => toast.remove(), 300);
     }, 2500);
-  });
   }
 
   // ── Join ───────────────────────────────────────────────────────────────────

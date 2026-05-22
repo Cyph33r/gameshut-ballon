@@ -145,7 +145,7 @@ html, body {
 #join-avatar { font-size: 2rem; cursor: pointer; user-select: none; transition: transform 0.2s; }
 #join-avatar:hover { transform: scale(1.1) rotate(10deg); }
 
-#username-input, #password-input {
+#username-input, #password-input, #room-code-input, #host-password-input {
   flex: 1;
   background: transparent;
   border: none;
@@ -156,7 +156,7 @@ html, body {
   outline: none;
   width: 100%;
 }
-#username-input::placeholder, #password-input::placeholder { color: rgba(255,255,255,0.2); }
+#username-input::placeholder, #password-input::placeholder, #room-code-input::placeholder, #host-password-input::placeholder { color: rgba(255,255,255,0.2); }
 
 .icon-btn {
   background: rgba(255,255,255,0.1);

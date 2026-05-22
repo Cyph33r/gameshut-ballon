@@ -27,22 +27,47 @@
       </div>
       <p class="join-tagline">Find the hidden colour — burst the right balloon!</p>
 
-      <form id="join-form">
-        <label class="field-label">Your Nickname</label>
-        <div class="input-group">
-          <div id="join-avatar" title="Click to change avatar">👤</div>
-          <input id="username-input" type="text" placeholder="e.g. Lightning Fox" maxlength="20" autocomplete="off"
-            autocapitalize="words" required />
-          <button type="button" id="btn-random" class="icon-btn" title="Randomise">🎲</button>
-        </div>
-        <label class="field-label" style="margin-top: 15px; font-size: 0.85rem; color: rgba(255,255,255,0.6);">Host Password (Optional)</label>
-        <div class="input-group">
-          <span style="padding: 0 15px; opacity: 0.5;">🔑</span>
-          <input id="password-input" type="password" placeholder="Leave blank if player" autocomplete="off" />
-        </div>
-        <p id="join-error" class="admin-error hidden" style="margin-top: 10px;"></p>
-        <button type="submit" class="btn-primary" id="btn-join" style="margin-top: 15px;">Let's Go! 🚀</button>
-      </form>
+      <div class="join-tabs" style="display: flex; width: 100%; border-bottom: 2px solid var(--panel-border); margin-bottom: 25px;">
+        <button type="button" id="tab-btn-join" class="join-tab active" style="flex: 1; padding: 12px; background: none; border: none; border-bottom: 3px solid var(--primary); color: #fff; font-family: var(--font-disp); font-weight: 800; cursor: pointer; text-transform: uppercase; font-size: 0.9rem; letter-spacing: 1.5px; transition: all 0.2s;">Join Room</button>
+        <button type="button" id="tab-btn-create" class="join-tab" style="flex: 1; padding: 12px; background: none; border: none; border-bottom: 3px solid transparent; color: var(--text-muted); font-family: var(--font-disp); font-weight: 800; cursor: pointer; text-transform: uppercase; font-size: 0.9rem; letter-spacing: 1.5px; transition: all 0.2s;">Create Room</button>
+      </div>
+
+      <div id="join-room-view" style="width: 100%;">
+        <form id="join-form">
+          <label class="field-label">Your Nickname</label>
+          <div class="input-group">
+            <div id="join-avatar" title="Click to change avatar">👤</div>
+            <input id="username-input" type="text" placeholder="e.g. Lightning Fox" maxlength="20" autocomplete="off"
+              autocapitalize="words" required />
+            <button type="button" id="btn-random" class="icon-btn" title="Randomise">🎲</button>
+          </div>
+          <label class="field-label" style="margin-top: 15px;">Room Code</label>
+          <div class="input-group">
+            <span style="padding: 0 15px; opacity: 0.5;">📌</span>
+            <input id="room-code-input" type="text" placeholder="e.g. KXYZ" maxlength="4" style="text-transform: uppercase;" autocomplete="off" required />
+          </div>
+          <label class="field-label" style="margin-top: 15px; font-size: 0.85rem; color: rgba(255,255,255,0.6);">Host Password (Optional)</label>
+          <div class="input-group">
+            <span style="padding: 0 15px; opacity: 0.5;">🔑</span>
+            <input id="password-input" type="password" placeholder="Leave blank if player" autocomplete="off" />
+          </div>
+          <p id="join-error" class="admin-error hidden" style="margin-top: 10px;"></p>
+          <button type="submit" class="btn-primary" id="btn-join" style="margin-top: 15px;">Let's Go! 🚀</button>
+          <button type="button" class="btn-outline" id="btn-join-display" style="margin-top: 10px; width: 100%; border: none; opacity: 0.8;">Open Display View</button>
+        </form>
+      </div>
+
+      <div id="create-room-view" class="hidden" style="width: 100%;">
+        <form id="create-room-form">
+          <p class="join-tagline" style="margin-bottom: 20px;">Start a new multiplayer timing battle!</p>
+          <label class="field-label">Host Password (Optional)</label>
+          <div class="input-group" style="margin-bottom: 20px;">
+            <span style="padding: 0 15px; opacity: 0.5;">🔑</span>
+            <input id="host-password-input" type="password" placeholder="Create a lock password" autocomplete="off" />
+          </div>
+          <button type="submit" class="btn-primary" id="btn-create-room">Create Room 🎮</button>
+        </form>
+      </div>
     </div>
   </div>
 
@@ -55,12 +80,15 @@
       <div class="header-left">
         <span class="header-logo">🎈</span>
         <span id="round-badge">Round <strong id="round-num">—</strong></span>
+        <span id="room-code-badge" style="margin-left: 10px; padding: 4px 10px; border-radius: 6px; font-weight: 800; font-family: var(--font-disp); background: rgba(99, 71, 255, 0.2); border: 1px solid var(--primary); color: #fff; font-size: 0.85rem; letter-spacing: 0.5px;">ROOM: <span id="room-lock-icon">🔓</span> <span id="room-code-text">—</span></span>
         <button id="btn-tts" class="icon-btn" title="Toggle Text-to-Speech"
           style="margin-left: 8px; padding: 4px 8px; font-size: 1rem; background: rgba(255,255,255,0.15);">🔊</button>
       </div>
-      <div id="score-pill" class="score-pill">
+      <div id="score-pill" class="score-pill" style="gap: 12px; align-items: center;">
         <span class="score-icon">⭐</span>
         <span id="total-score">0</span>
+        <button id="btn-sound-toggle" class="icon-btn" title="Toggle Sound FX" style="padding: 4px 8px; font-size: 1rem; background: rgba(255,255,255,0.15); border-radius: 50%;">🔊</button>
+        <button id="btn-leave-room" class="btn-outline" style="padding: 6px 12px; font-size: 0.8rem; border-color: rgba(255,59,92,0.4); color: #ff3b5c;">Leave</button>
       </div>
     </header>
 
@@ -73,14 +101,20 @@
         </div>
         <p class="admin-subtitle">Choose a mode to start the game.</p>
 
-        <div class="admin-tabs" style="display: flex; gap: 10px; margin-bottom: 15px;">
+        <div class="admin-tabs" style="display: flex; gap: 10px; margin-bottom: 10px;">
           <button id="tab-single" class="btn-outline active" style="flex:1;">Single Sentence</button>
           <button id="tab-story" class="btn-outline" style="flex:1;">Story Mode</button>
         </div>
 
+        <div id="admin-lobby-controls" style="display: flex; gap: 10px; margin-bottom: 15px;">
+          <button id="btn-toggle-lock" class="btn-outline" style="flex:1; display:flex; align-items:center; justify-content:center; gap:8px;">
+            <span id="lock-icon">🔓</span> <span id="lock-text">Lobby Open</span>
+          </button>
+        </div>
+
         <form id="sentence-form" class="sentence-form">
           <textarea id="sentence-input"
-            placeholder='e.g. "The villain had an evil grin on his face" → green (grin ≈ green)' maxlength="200"
+            placeholder='e.g. "The villain had an evil grin on his face" → green (grin ≈ green)' maxlength="2000"
             rows="3" autocomplete="off" required></textarea>
           <p class="form-label">Hidden colour in this sentence:</p>
           <div class="colour-picker-grid">
@@ -207,6 +241,30 @@
       <!-- Waiting message (no click yet, round ended) -->
       <div id="no-click-result" class="no-click-result hidden"></div>
 
+    </section>
+
+    <!-- ── DISPLAY PANEL ─────────────────────────────────────────────── -->
+    <section id="display-panel" class="game-panel hidden">
+      <!-- Display lobby view (before game starts) -->
+      <div id="display-lobby-view" class="display-lobby" style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 75vh; gap: 30px; text-align: center;">
+        <h1 style="font-size: 3rem; font-weight: 800; font-family: var(--font-disp); color: #fff; margin: 0; text-shadow: 0 4px 10px rgba(0,0,0,0.3);">🎈 Join the Game! 🎈</h1>
+        <div class="qr-container" style="background: #fff; padding: 20px; border-radius: 24px; box-shadow: 0 20px 50px rgba(99, 71, 255, 0.4); border: 4px solid var(--primary); display: flex; align-items: center; justify-content: center; transition: all 0.3s ease;">
+          <img id="display-qr-img" src="" alt="QR Code" style="width: 250px; height: 250px; border-radius: 8px;">
+        </div>
+        <div class="display-url-box" style="background: rgba(255,255,255,0.06); padding: 15px 30px; border-radius: 100px; border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(10px);">
+          <p style="margin: 0; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 2px; color: var(--text-muted); font-weight: 700; margin-bottom: 5px;">Scan QR or Go to URL</p>
+          <span id="display-join-url" style="font-family: var(--font-disp); font-size: 1.8rem; font-weight: 800; color: #fff; letter-spacing: 0.5px;">—</span>
+        </div>
+      </div>
+
+      <!-- Display gameplay view (during active round) -->
+      <div id="display-game-view" class="display-area hidden" style="text-align: center; margin-top: 10vh; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 60vh;">
+        <h1 style="font-size: 3rem; margin-bottom: 30px; color: #fff; font-family: var(--font-disp); font-weight: 800;">Find the hidden colour!</h1>
+        <div class="sentence-display" id="display-sentence" style="font-size: 2.5rem; line-height: 1.5; max-width: 90%; background: rgba(0,0,0,0.3); padding: 40px; border-radius: 20px;">Waiting for host…</div>
+        <div id="display-timer-wrap" class="timer-wrap hidden" style="margin-top: 50px; height: 15px; width: 80%; max-width: 600px;">
+          <div id="display-timer-bar" class="timer-bar"></div>
+        </div>
+      </div>
     </section>
 
     <!-- ── LEADERBOARD PANEL ─────────────────────────────────────────── -->

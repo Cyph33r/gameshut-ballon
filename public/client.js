@@ -53,6 +53,20 @@
   const $adminRoundControls = document.getElementById('admin-round-controls');
   const $btnForceClose  = document.getElementById('btn-force-close');
 
+  // New dashboard elements
+  const $adminPlayerCount = document.getElementById('admin-player-count');
+  const $adminRoundNum    = document.getElementById('admin-round-num');
+  const $adminLobbyIcon   = document.getElementById('admin-lobby-icon');
+  const $adminLobbyStatus = document.getElementById('admin-lobby-status');
+  const $adminLobbyPill   = document.getElementById('admin-lobby-pill');
+  const $roundActiveBanner = document.getElementById('round-active-banner');
+  const $rabSentencePreview = document.getElementById('rab-sentence-preview');
+  const $rabTimerBar       = document.getElementById('rab-timer-bar');
+  const $adminModeSection  = document.getElementById('admin-mode-section');
+  const $segHighlight      = document.getElementById('seg-highlight');
+  const $charCounter       = document.getElementById('char-counter');
+  const $storyCharCounter  = document.getElementById('story-char-counter');
+
   // Admin Story Mode
   const $tabSingle      = document.getElementById('tab-single');
   const $tabStory       = document.getElementById('tab-story');
@@ -152,18 +166,7 @@
     isDisplay = data.isDisplay;
     showPanel(isGM ? 'admin' : (isDisplay ? 'display' : 'player'));
     
-    const $roomLockIcon = document.getElementById('room-lock-icon');
-    const $lockIcon = document.getElementById('lock-icon');
-    const $lockText = document.getElementById('lock-text');
-    if (data.isLocked) {
-      if ($lockIcon) $lockIcon.textContent = '🔒';
-      if ($lockText) $lockText.textContent = 'Lobby Locked';
-      if ($roomLockIcon) $roomLockIcon.textContent = '🔒';
-    } else {
-      if ($lockIcon) $lockIcon.textContent = '🔓';
-      if ($lockText) $lockText.textContent = 'Lobby Open';
-      if ($roomLockIcon) $roomLockIcon.textContent = '🔓';
-    }
+    updateLockUI(data.isLocked);
 
     if (!isGM && !isDisplay) {
       setSentenceLabel('Waiting for the host to start a round...');
@@ -198,20 +201,34 @@
   });
 
   socket.on('room_lock_update', (data) => {
+    updateLockUI(data.isLocked);
+  });
+
+  function updateLockUI(isLocked) {
     const $roomLockIcon = document.getElementById('room-lock-icon');
     const $lockIcon = document.getElementById('lock-icon');
     const $lockText = document.getElementById('lock-text');
     
-    if (data.isLocked) {
+    if (isLocked) {
       if ($lockIcon) $lockIcon.textContent = '🔒';
       if ($lockText) $lockText.textContent = 'Lobby Locked';
       if ($roomLockIcon) $roomLockIcon.textContent = '🔒';
+      // Toggle switch visual
+      if ($btnToggleLock) $btnToggleLock.classList.add('active');
+      // Stats bar lobby pill
+      if ($adminLobbyIcon) $adminLobbyIcon.textContent = '🔒';
+      if ($adminLobbyStatus) $adminLobbyStatus.textContent = 'Locked';
+      if ($adminLobbyPill) $adminLobbyPill.classList.add('locked');
     } else {
       if ($lockIcon) $lockIcon.textContent = '🔓';
       if ($lockText) $lockText.textContent = 'Lobby Open';
       if ($roomLockIcon) $roomLockIcon.textContent = '🔓';
+      if ($btnToggleLock) $btnToggleLock.classList.remove('active');
+      if ($adminLobbyIcon) $adminLobbyIcon.textContent = '🔓';
+      if ($adminLobbyStatus) $adminLobbyStatus.textContent = 'Open';
+      if ($adminLobbyPill) $adminLobbyPill.classList.remove('locked');
     }
-  });
+  }
 
   // New round started
   socket.on('round_start', (data) => {
@@ -222,11 +239,29 @@
     hasClicked = false;
     pendingClickResult = null;
 
+    // Update stats bar round number
+    if ($adminRoundNum) $adminRoundNum.textContent = data.roundId;
+
     if (isGM) {
-      setAdminStatus(`Round ${data.roundId} — Active! Players are guessing...`, 'active');
+      setAdminStatus('', '');
       setAdminTilesEnabled(false);
       $adminRoundControls.classList.remove('hidden');
+
+      // Show round-active banner, hide mode section
+      if ($roundActiveBanner) {
+        $rabSentencePreview.textContent = data.sentence;
+        $roundActiveBanner.classList.remove('hidden');
+        // Animate the banner timer bar
+        $rabTimerBar.classList.remove('active');
+        const delay = Math.max(0, data.revealTime - serverNow());
+        setTimeout(() => {
+          $rabTimerBar.style.animationDuration = `${ANSWER_WINDOW}ms`;
+          $rabTimerBar.classList.add('active');
+        }, delay);
+      }
+      if ($adminModeSection) $adminModeSection.classList.add('hidden');
       $sentenceInput.value = '';
+      updateCharCounter();
     } else if (isDisplay) {
       if ($displayLobbyView) $displayLobbyView.style.display = 'none';
       if ($displayGameView) $displayGameView.style.display = 'flex';
@@ -300,8 +335,14 @@
 
     if (isGM) {
       setAdminTilesEnabled(true);
-      setAdminStatus('Round over. Check the leaderboard, then enter the next sentence.', '');
+      setAdminStatus('Round over — check the leaderboard, then queue the next one.', '');
       $adminRoundControls.classList.add('hidden');
+      // Hide banner, show mode section
+      if ($roundActiveBanner) {
+        $roundActiveBanner.classList.add('hidden');
+        $rabTimerBar.classList.remove('active');
+      }
+      if ($adminModeSection) $adminModeSection.classList.remove('hidden');
     } else if (isDisplay) {
       $displaySentence.textContent = 'Round Over! Loading leaderboard...';
     } else {
@@ -622,6 +663,11 @@
         return;
       }
       $adminError.classList.add('hidden');
+
+      // Visual selection glow
+      singleColourBtns.forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+
       socket.emit('gm_round', { sentence, correctColor: color });
     });
   });
@@ -632,6 +678,7 @@
     $tabStory.classList.remove('active');
     $sentenceForm.classList.remove('hidden');
     $storyForm.classList.add('hidden');
+    if ($segHighlight) $segHighlight.classList.remove('right');
   });
 
   $tabStory.addEventListener('click', () => {
@@ -639,6 +686,7 @@
     $tabSingle.classList.remove('active');
     $sentenceForm.classList.add('hidden');
     $storyForm.classList.remove('hidden');
+    if ($segHighlight) $segHighlight.classList.add('right');
   });
 
   $btnProcessStory.addEventListener('click', () => {
@@ -783,7 +831,30 @@
     if (on) {
       // Re-render queue to update buttons if needed
       renderQueue();
+      // Clear colour selection glow when re-enabling
+      singleColourBtns.forEach(t => t.classList.remove('selected'));
     }
+  }
+
+  // ── Character Counter ──────────────────────────────────────────────────────
+  function updateCharCounter() {
+    if (!$charCounter || !$sentenceInput) return;
+    const len = $sentenceInput.value.length;
+    $charCounter.textContent = `${len} / 2000`;
+    $charCounter.classList.remove('warning', 'danger');
+    if (len > 1800) $charCounter.classList.add('danger');
+    else if (len > 1500) $charCounter.classList.add('warning');
+  }
+  if ($sentenceInput) {
+    $sentenceInput.addEventListener('input', updateCharCounter);
+  }
+
+  function updateStoryCharCounter() {
+    if (!$storyCharCounter || !$storyInput) return;
+    $storyCharCounter.textContent = $storyInput.value.length;
+  }
+  if ($storyInput) {
+    $storyInput.addEventListener('input', updateStoryCharCounter);
   }
 
   // ── Player: Gameplay ───────────────────────────────────────────────────────
@@ -983,6 +1054,10 @@
   socket.on('player_count', (data) => {
     if ($playerCountBadge) {
       $playerCountBadge.textContent = `👥 ${data.count}`;
+    }
+    // Update admin stats bar
+    if ($adminPlayerCount) {
+      $adminPlayerCount.textContent = data.count;
     }
     if ($waitingAvatars && !currentRoundIsOpen) {
       $waitingAvatars.innerHTML = '';

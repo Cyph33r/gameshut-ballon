@@ -11,7 +11,6 @@ const server = http.createServer(app);
 const io = new Server(server, {
   cors: { origin: '*' },
   perMessageDeflate: false,
-  transports: ['websocket'],
   pingTimeout: 20000,
   pingInterval: 10000,
 });

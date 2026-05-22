@@ -34,11 +34,8 @@ const POINTS_MIN = 1;       // minimum score for a correct answer
 const LEADERBOARD_MAX = 20;      // max entries shown
 
 // ─── State ───────────────────────────────────────────────────────────────────
-const rooms = new Map(); // roomCode (String) -> room state object
-
-function createRoomState(code, hostPassword = '') {
+function createGlobalRoomState(hostPassword = 'admin') {
   return {
-    code,
     hostPassword: hostPassword.trim(),
     isLocked: false,
     adminSocketId: null,
@@ -56,28 +53,15 @@ function createRoomState(code, hostPassword = '') {
   };
 }
 
-function generateRoomCode() {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Avoid confusing chars like O, I, 1, 0
-  let code;
-  do {
-    code = '';
-    for (let i = 0; i < 4; i++) {
-      code += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-  } while (rooms.has(code));
-  return code;
-}
+const globalRoom = createGlobalRoomState(process.env.HOST_PASSWORD || 'admin');
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
-function sendLeaderboardTo(socket, roomCode) {
-  const room = rooms.get(roomCode);
-  if (!room) return;
-
-  const sorted = [...room.players.values()].filter(p => !p.isGM && !p.isDisplay && p.hasJoined).sort((a, b) => b.score - a.score);
+function sendLeaderboardTo(socket) {
+  const sorted = [...globalRoom.players.values()].filter(p => !p.isGM && !p.isDisplay && p.hasJoined).sort((a, b) => b.score - a.score);
   const top10 = sorted.slice(0, LEADERBOARD_MAX).map(p => ({
     username: p.username, avatar: p.avatar, score: p.score, streak: p.streak
   }));
-  const p = room.players.get(socket.id);
+  const p = globalRoom.players.get(socket.id);
   if (!p || p.isGM || p.isDisplay) {
     socket.emit('leaderboard', { top10 });
   } else {
@@ -86,24 +70,19 @@ function sendLeaderboardTo(socket, roomCode) {
   }
 }
 
-function broadcastPlayerCount(roomCode) {
-  const room = rooms.get(roomCode);
-  if (!room) return;
-  const activePlayers = [...room.players.values()].filter(p => !p.isGM && !p.isDisplay && p.hasJoined);
+function broadcastPlayerCount() {
+  const activePlayers = [...globalRoom.players.values()].filter(p => !p.isGM && !p.isDisplay && p.hasJoined);
   const count = activePlayers.length;
   const avatars = activePlayers.slice(0, 20).map(p => ({ avatar: p.avatar, username: p.username }));
-  io.to(roomCode).emit('player_count', { count, avatars });
+  io.emit('player_count', { count, avatars });
 }
 
-function broadcastLeaderboard(roomCode) {
-  const room = rooms.get(roomCode);
-  if (!room) return;
-
-  const sorted = [...room.players.values()].filter(p => !p.isGM && !p.isDisplay && p.hasJoined).sort((a, b) => b.score - a.score);
+function broadcastLeaderboard() {
+  const sorted = [...globalRoom.players.values()].filter(p => !p.isGM && !p.isDisplay && p.hasJoined).sort((a, b) => b.score - a.score);
   const top10 = sorted.slice(0, LEADERBOARD_MAX).map(p => ({
     username: p.username, avatar: p.avatar, score: p.score, streak: p.streak
   }));
-  for (const [id, p] of room.players) {
+  for (const [id, p] of globalRoom.players) {
     if (p.isGM || p.isDisplay) {
       io.to(id).emit('leaderboard', { top10 });
     } else {
@@ -114,59 +93,55 @@ function broadcastLeaderboard(roomCode) {
 }
 
 // ─── Round Lifecycle ─────────────────────────────────────────────────────────
-function startRound(roomCode, sentence, correctColor) {
-  const room = rooms.get(roomCode);
-  if (!room) return;
+function startRound(sentence, correctColor) {
+  if (globalRoom.roundCloseTimeout) { clearTimeout(globalRoom.roundCloseTimeout); globalRoom.roundCloseTimeout = null; }
 
-  if (room.roundCloseTimeout) { clearTimeout(room.roundCloseTimeout); room.roundCloseTimeout = null; }
-
-  room.round.id++;
-  room.round.sentence = sentence;
-  room.round.correctColor = correctColor; // null = trap round
-  room.round.revealTime = serverNow() + 1500; // Account for overlay transition
-  room.round.isOpen = true;
-  room.round.firstCorrectAt = null;
+  globalRoom.round.id++;
+  globalRoom.round.sentence = sentence;
+  globalRoom.round.correctColor = correctColor; // null = trap round
+  globalRoom.round.revealTime = serverNow() + 1500; // Account for overlay transition
+  globalRoom.round.isOpen = true;
+  globalRoom.round.firstCorrectAt = null;
 
   // Reset per-round click flags
-  for (const [, p] of room.players) {
+  for (const [, p] of globalRoom.players) {
     p.clickedThisRound = false;
     p.answeredCorrectlyThisRound = false;
   }
 
-  // Broadcast to room
-  io.to(roomCode).emit('round_start', {
-    roundId: room.round.id,
-    sentence: room.round.sentence,
-    revealTime: room.round.revealTime,
+  // Broadcast globally
+  io.emit('round_start', {
+    roundId: globalRoom.round.id,
+    sentence: globalRoom.round.sentence,
+    revealTime: globalRoom.round.revealTime,
   });
 
   // Auto-close after ANSWER_WINDOW
-  room.roundCloseTimeout = setTimeout(() => closeRound(roomCode), ANSWER_WINDOW);
+  globalRoom.roundCloseTimeout = setTimeout(() => closeRound(), ANSWER_WINDOW);
 }
 
-function closeRound(roomCode) {
-  const room = rooms.get(roomCode);
-  if (!room || !room.round.isOpen) return;
+function closeRound() {
+  if (!globalRoom.round.isOpen) return;
 
-  room.round.isOpen = false;
-  if (room.roundCloseTimeout) { clearTimeout(room.roundCloseTimeout); room.roundCloseTimeout = null; }
+  globalRoom.round.isOpen = false;
+  if (globalRoom.roundCloseTimeout) { clearTimeout(globalRoom.roundCloseTimeout); globalRoom.roundCloseTimeout = null; }
 
   // Update streaks
-  for (const [, p] of room.players) {
+  for (const [, p] of globalRoom.players) {
     if (!p.isGM) {
       if (p.answeredCorrectlyThisRound) {
         p.streak++;
       } else if (p.clickedThisRound) {
         p.streak = 0;
       }
-      if (!p.clickedThisRound && room.round.correctColor !== null) {
+      if (!p.clickedThisRound && globalRoom.round.correctColor !== null) {
         p.streak = 0; // Missed a valid round
       }
     }
   }
 
-  io.to(roomCode).emit('round_closed', { roundId: room.round.id, correctColor: room.round.correctColor });
-  broadcastLeaderboard(roomCode);
+  io.emit('round_closed', { roundId: globalRoom.round.id, correctColor: globalRoom.round.correctColor });
+  broadcastLeaderboard();
 }
 
 // ─── Socket Handlers ─────────────────────────────────────────────────────────
@@ -180,70 +155,22 @@ io.on('connection', (socket) => {
     socket.emit('time_sync_reply', clientSentAt, serverNow());
   });
 
-  // ── Create Room ───────────────────────────────────────────────────────────
-  socket.on('create_room', ({ hostPassword } = {}) => {
-    const roomCode = generateRoomCode();
-    const room = createRoomState(roomCode, hostPassword);
-    
-    // Set socket properties
-    socket.roomCode = roomCode;
-    socket.join(roomCode);
-    
-    room.adminSocketId = socket.id;
-    rooms.set(roomCode, room);
-
-    const hostPlayer = {
-      username: 'Host',
-      avatar: '👑',
-      isGM: true,
-      isDisplay: false,
-      hasJoined: true,
-      score: 0,
-      streak: 0,
-      clickedThisRound: false,
-      answeredCorrectlyThisRound: false,
-    };
-    room.players.set(socket.id, hostPlayer);
-
-    console.log(`[+] Room ${roomCode} created by host (${socket.id})`);
-    socket.emit('joined', {
-      username: 'Host',
-      avatar: '👑',
-      isGM: true,
-      isDisplay: false,
-      roomCode,
-      isLocked: false
-    });
-  });
-
-  // ── Join Room ─────────────────────────────────────────────────────────────
+  // ── Join Game ─────────────────────────────────────────────────────────────
   socket.on('join', (payload) => {
     const data = typeof payload === 'string' ? { username: payload, avatar: '👤' } : payload;
-    const roomCode = String(data.roomCode || '').toUpperCase().trim();
-    
-    if (!roomCode) {
-      socket.emit('join_error', 'Please enter a Room Code!');
-      return;
-    }
-
-    const room = rooms.get(roomCode);
-    if (!room) {
-      socket.emit('join_error', `Room "${roomCode}" not found!`);
-      return;
-    }
 
     const clean = String(data.username || '').trim().slice(0, 24);
     const pass = String(data.hostPassword || '').trim();
 
-    // Check if re-claiming GM role
-    const isReclaimingHost = room.hostPassword && pass === room.hostPassword;
-    const isGM = isReclaimingHost || (room.adminSocketId === socket.id);
+    // Check if claiming or re-claiming GM role
+    const isReclaimingHost = globalRoom.hostPassword && pass === globalRoom.hostPassword;
+    const isGM = isReclaimingHost || (globalRoom.adminSocketId === socket.id);
 
     if (isGM) {
-      room.adminSocketId = socket.id;
+      globalRoom.adminSocketId = socket.id;
       
       // Update or create GM entry in player registry
-      let hostPlayer = [...room.players.values()].find(p => p.isGM);
+      let hostPlayer = [...globalRoom.players.values()].find(p => p.isGM);
       if (!hostPlayer) {
         hostPlayer = {
           username: 'Host',
@@ -257,26 +184,23 @@ io.on('connection', (socket) => {
           answeredCorrectlyThisRound: false,
         };
       }
-      room.players.set(socket.id, hostPlayer);
-      socket.roomCode = roomCode;
-      socket.join(roomCode);
+      globalRoom.players.set(socket.id, hostPlayer);
 
       socket.emit('joined', {
         username: hostPlayer.username,
         avatar: hostPlayer.avatar,
         isGM: true,
         isDisplay: false,
-        roomCode,
-        isLocked: room.isLocked
+        isLocked: globalRoom.isLocked
       });
-      socket.emit('queue_update', room.storyQueue);
-      sendLeaderboardTo(socket, roomCode);
+      socket.emit('queue_update', globalRoom.storyQueue);
+      sendLeaderboardTo(socket);
       return;
     }
 
-    // Check if room is locked to regular players
-    if (room.isLocked && !data.isDisplay) {
-      socket.emit('join_error', 'This room is locked! The game has already started.');
+    // Check if lobby is locked to regular players
+    if (globalRoom.isLocked && !data.isDisplay) {
+      socket.emit('join_error', 'The lobby is locked! The game has already started.');
       return;
     }
 
@@ -286,14 +210,14 @@ io.on('connection', (socket) => {
     if (!data.isDisplay) {
       const requestedNameLower = displayName.toLowerCase();
       let isDuplicate = false;
-      for (const [, p] of room.players) {
+      for (const [, p] of globalRoom.players) {
         if (p.hasJoined && !p.isGM && !p.isDisplay && p.username.toLowerCase() === requestedNameLower) {
           isDuplicate = true;
           break;
         }
       }
       if (isDuplicate) {
-        socket.emit('join_error', 'That nickname is already taken in this room!');
+        socket.emit('join_error', 'That nickname is already taken!');
         return;
       }
     }
@@ -310,50 +234,41 @@ io.on('connection', (socket) => {
       answeredCorrectlyThisRound: false,
     };
 
-    room.players.set(socket.id, player);
-    socket.roomCode = roomCode;
-    socket.join(roomCode);
+    globalRoom.players.set(socket.id, player);
 
-    console.log(`  join: "${displayName}" in room ${roomCode}`);
+    console.log(`  join: "${displayName}"`);
     socket.emit('joined', {
       username: displayName,
       avatar: player.avatar,
       isGM: false,
       isDisplay: player.isDisplay,
-      roomCode,
-      isLocked: room.isLocked
+      isLocked: globalRoom.isLocked
     });
 
-    sendLeaderboardTo(socket, roomCode);
-    broadcastPlayerCount(roomCode);
+    sendLeaderboardTo(socket);
+    broadcastPlayerCount();
 
-    if (room.round.isOpen) {
+    if (globalRoom.round.isOpen) {
       socket.emit('round_start', {
-        roundId: room.round.id,
-        sentence: room.round.sentence,
-        revealTime: room.round.revealTime,
+        roundId: globalRoom.round.id,
+        sentence: globalRoom.round.sentence,
+        revealTime: globalRoom.round.revealTime,
       });
     }
   });
 
   // ── Lock Lobby ────────────────────────────────────────────────────────────
   socket.on('gm_lock_room', () => {
-    const roomCode = socket.roomCode;
-    if (!roomCode) return;
-    const room = rooms.get(roomCode);
-    if (!room || room.adminSocketId !== socket.id) return;
+    if (globalRoom.adminSocketId !== socket.id) return;
 
-    room.isLocked = !room.isLocked;
-    console.log(`[!] Lobby Lock status changed to ${room.isLocked} for Room ${roomCode}`);
-    io.to(roomCode).emit('room_lock_update', { isLocked: room.isLocked });
+    globalRoom.isLocked = !globalRoom.isLocked;
+    console.log(`[!] Lobby Lock status changed to ${globalRoom.isLocked}`);
+    io.emit('room_lock_update', { isLocked: globalRoom.isLocked });
   });
 
   // ── Admin submits a sentence + correct colour ─────────────────────────────
   socket.on('gm_round', ({ sentence, correctColor }) => {
-    const roomCode = socket.roomCode;
-    if (!roomCode) return;
-    const room = rooms.get(roomCode);
-    if (!room || room.adminSocketId !== socket.id) return;
+    if (globalRoom.adminSocketId !== socket.id) return;
 
     const trimmed = String(sentence || '').trim();
     if (!trimmed) return;
@@ -361,64 +276,49 @@ io.on('connection', (socket) => {
     const color = correctColor === null ? null : (COLORS.includes(correctColor) ? correctColor : null);
     if (correctColor !== null && color === null) return;
 
-    if (room.round.isOpen) return;
+    if (globalRoom.round.isOpen) return;
 
-    startRound(roomCode, trimmed, color);
+    startRound(trimmed, color);
   });
 
   // ── Story Mode Queue Management ───────────────────────────────────────────
   socket.on('gm_queue_add', (rounds) => {
-    const roomCode = socket.roomCode;
-    if (!roomCode) return;
-    const room = rooms.get(roomCode);
-    if (!room || room.adminSocketId !== socket.id || !Array.isArray(rounds)) return;
+    if (globalRoom.adminSocketId !== socket.id || !Array.isArray(rounds)) return;
 
-    room.storyQueue.push(...rounds);
-    io.to(roomCode).emit('queue_update', room.storyQueue);
+    globalRoom.storyQueue.push(...rounds);
+    io.emit('queue_update', globalRoom.storyQueue);
   });
 
   socket.on('gm_queue_next', () => {
-    const roomCode = socket.roomCode;
-    if (!roomCode) return;
-    const room = rooms.get(roomCode);
-    if (!room || room.adminSocketId !== socket.id) return;
-    if (room.round.isOpen || room.storyQueue.length === 0) return;
+    if (globalRoom.adminSocketId !== socket.id) return;
+    if (globalRoom.round.isOpen || globalRoom.storyQueue.length === 0) return;
 
-    const next = room.storyQueue.shift();
-    io.to(roomCode).emit('queue_update', room.storyQueue);
+    const next = globalRoom.storyQueue.shift();
+    io.emit('queue_update', globalRoom.storyQueue);
 
-    startRound(roomCode, next.sentence, next.correctColor);
+    startRound(next.sentence, next.correctColor);
   });
 
   socket.on('gm_queue_clear', () => {
-    const roomCode = socket.roomCode;
-    if (!roomCode) return;
-    const room = rooms.get(roomCode);
-    if (!room || room.adminSocketId !== socket.id) return;
+    if (globalRoom.adminSocketId !== socket.id) return;
 
-    room.storyQueue = [];
-    io.to(roomCode).emit('queue_update', room.storyQueue);
+    globalRoom.storyQueue = [];
+    io.emit('queue_update', globalRoom.storyQueue);
   });
 
   // ── Admin force-close round ───────────────────────────────────────────────
   socket.on('gm_close', () => {
-    const roomCode = socket.roomCode;
-    if (!roomCode) return;
-    const room = rooms.get(roomCode);
-    if (!room || room.adminSocketId !== socket.id) return;
-    if (!room.round.isOpen) return;
+    if (globalRoom.adminSocketId !== socket.id) return;
+    if (!globalRoom.round.isOpen) return;
 
-    closeRound(roomCode);
+    closeRound();
   });
 
   // ── Player click ──────────────────────────────────────────────────────────
   socket.on('click', ({ color, clickTime } = {}) => {
-    const roomCode = socket.roomCode;
-    if (!roomCode) return;
-    const room = rooms.get(roomCode);
-    if (!room || !room.round.isOpen) return;
+    if (!globalRoom.round.isOpen) return;
 
-    const player = room.players.get(socket.id);
+    const player = globalRoom.players.get(socket.id);
     if (!player || player.isGM || player.isDisplay) return;
     if (player.clickedThisRound) return; // Only first click registers
 
@@ -432,12 +332,12 @@ io.on('connection', (socket) => {
       }
     }
 
-    const responseMs = Math.max(0, effectiveTime - room.round.revealTime);
+    const responseMs = Math.max(0, effectiveTime - globalRoom.round.revealTime);
     let points = 0;
     let isCorrect = false;
 
     // Trap validation
-    if (room.round.correctColor === null) {
+    if (globalRoom.round.correctColor === null) {
       socket.emit('click_result', {
         success: false,
         scoreGained: 0,
@@ -449,15 +349,15 @@ io.on('connection', (socket) => {
     }
 
     // Color match validation
-    if (color === room.round.correctColor) {
+    if (color === globalRoom.round.correctColor) {
       isCorrect = true;
       player.answeredCorrectlyThisRound = true;
 
-      if (room.round.firstCorrectAt === null) {
-        room.round.firstCorrectAt = effectiveTime;
+      if (globalRoom.round.firstCorrectAt === null) {
+        globalRoom.round.firstCorrectAt = effectiveTime;
         points = POINTS_FIRST;
       } else {
-        const speedDriftMs = Math.max(0, effectiveTime - room.round.firstCorrectAt);
+        const speedDriftMs = Math.max(0, effectiveTime - globalRoom.round.firstCorrectAt);
         const penalties = Math.floor(speedDriftMs / 100);
         points = Math.max(POINTS_MIN, POINTS_FIRST - (penalties * POINTS_DECAY));
       }
@@ -474,37 +374,22 @@ io.on('connection', (socket) => {
     });
 
     if (isCorrect) {
-      broadcastLeaderboard(roomCode);
+      broadcastLeaderboard();
     }
   });
 
   // ── Disconnect ────────────────────────────────────────────────────────────
   socket.on('disconnect', () => {
-    const roomCode = socket.roomCode;
-    if (roomCode) {
-      const room = rooms.get(roomCode);
-      if (room) {
-        if (room.adminSocketId === socket.id) {
-          console.log(`[!] Admin disconnected from room ${roomCode}`);
-          room.adminSocketId = null;
-        }
-
-        room.players.delete(socket.id);
-        console.log(`[-] ${socket.id} disconnected from room ${roomCode}`);
-
-        broadcastLeaderboard(roomCode);
-        broadcastPlayerCount(roomCode);
-
-        // Auto-cleanup room if completely empty
-        if (room.players.size === 0 && room.adminSocketId === null) {
-          console.log(`[!] Cleaned up empty room ${roomCode}`);
-          if (room.roundCloseTimeout) clearTimeout(room.roundCloseTimeout);
-          rooms.delete(roomCode);
-        }
-      }
-    } else {
-      console.log(`[-] Connection closed for unassigned socket ${socket.id}`);
+    if (globalRoom.adminSocketId === socket.id) {
+      console.log(`[!] Admin disconnected`);
+      globalRoom.adminSocketId = null;
     }
+
+    globalRoom.players.delete(socket.id);
+    console.log(`[-] ${socket.id} disconnected | total left: ${globalRoom.players.size}`);
+
+    broadcastLeaderboard();
+    broadcastPlayerCount();
   });
 });
 

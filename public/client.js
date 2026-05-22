@@ -152,9 +152,6 @@
     isDisplay = data.isDisplay;
     showPanel(isGM ? 'admin' : (isDisplay ? 'display' : 'player'));
     
-    const $roomCodeText = document.getElementById('room-code-text');
-    if ($roomCodeText) $roomCodeText.textContent = data.roomCode;
-
     const $roomLockIcon = document.getElementById('room-lock-icon');
     const $lockIcon = document.getElementById('lock-icon');
     const $lockText = document.getElementById('lock-text');
@@ -173,38 +170,30 @@
     } else if (isDisplay) {
       if ($displayLobbyView) $displayLobbyView.style.display = 'flex';
       if ($displayGameView) $displayGameView.style.display = 'none';
-      const shareUrl = `${window.location.origin}${window.location.pathname}?room=${data.roomCode}`;
+      const shareUrl = `${window.location.origin}${window.location.pathname}`;
       if ($displayQrImg) {
         $displayQrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&color=6347ff&data=${encodeURIComponent(shareUrl)}`;
       }
       if ($displayJoinUrl) {
-        $displayJoinUrl.textContent = `${window.location.host}${window.location.pathname}?room=${data.roomCode}`;
+        $displayJoinUrl.textContent = `${window.location.host}${window.location.pathname}`;
       }
       $displaySentence.textContent = 'Waiting for the host to start a round...';
     }
 
     // Save session in local storage for seamless recovery
-    if (data.roomCode) {
-      localStorage.setItem('bb_room_code', data.roomCode);
-      localStorage.setItem('bb_username', data.username || '');
-      localStorage.setItem('bb_avatar', data.avatar || '👤');
-      localStorage.setItem('bb_is_gm', isGM ? 'true' : 'false');
-      localStorage.setItem('bb_is_display', isDisplay ? 'true' : 'false');
+    localStorage.setItem('bb_username', data.username || '');
+    localStorage.setItem('bb_avatar', data.avatar || '👤');
+    localStorage.setItem('bb_is_gm', isGM ? 'true' : 'false');
+    localStorage.setItem('bb_is_display', isDisplay ? 'true' : 'false');
 
-      if (isGM) {
-        const pass = $hostPasswordInput ? $hostPasswordInput.value.trim() : '';
-        if (pass) {
-          localStorage.setItem('bb_host_pass', pass);
-        }
-        const shareUrl = `${window.location.origin}${window.location.pathname}?room=${data.roomCode}`;
-        navigator.clipboard.writeText(shareUrl).then(() => {
-          showToast(`Direct invite link copied! 📋`);
-        }).catch(() => {
-          showToast(`Room: ${data.roomCode} created! 🎈`);
-        });
-      } else {
-        showToast(`Joined Room ${data.roomCode}! 🎈`);
+    if (isGM) {
+      const pass = $hostPasswordInput ? $hostPasswordInput.value.trim() : '';
+      if (pass) {
+        localStorage.setItem('bb_host_pass', pass);
       }
+      showToast(`Logged in as Host! 👑`);
+    } else {
+      showToast(`Joined the game! 🎈`);
     }
   });
 
@@ -568,15 +557,9 @@
   $btnJoinDisplay.addEventListener('click', () => {
     // Play the pop sound to force iOS to unlock HTML5 audio context
     playPopSound();
-    const roomCode = $roomCodeInput.value.trim().toUpperCase();
-    if (!roomCode) {
-      $joinError.textContent = "Please enter a Room Code to spectate!";
-      $joinError.classList.remove('hidden');
-      return;
-    }
     myUsername = "Display Screen";
     myAvatar = "📺";
-    socket.emit('join', { username: myUsername, avatar: myAvatar, roomCode, isDisplay: true });
+    socket.emit('join', { username: myUsername, avatar: myAvatar, isDisplay: true });
   });
 
   $joinForm.addEventListener('submit', (e) => {
@@ -585,7 +568,6 @@
     playPopSound();
     
     const name = $usernameInput.value.trim();
-    const roomCode = $roomCodeInput.value.trim().toUpperCase();
     const hostPassword = $passwordInput.value.trim();
     
     if (!name) return;
@@ -595,52 +577,13 @@
       randomizeAvatar();
     }
     
-    socket.emit('join', { username: name, avatar: myAvatar, roomCode, hostPassword });
+    socket.emit('join', { username: name, avatar: myAvatar, hostPassword });
   });
-
-  // Create room flow
-  if ($createRoomForm) {
-    $createRoomForm.addEventListener('submit', (e) => {
-      e.preventDefault();
-      playPopSound();
-      const hostPassword = $hostPasswordInput.value.trim();
-      socket.emit('create_room', { hostPassword });
-    });
-  }
 
   // Lobby Lock toggle
   if ($btnToggleLock) {
     $btnToggleLock.addEventListener('click', () => {
       socket.emit('gm_lock_room');
-    });
-  }
-
-  // Join tabs switcher
-  if ($tabBtnJoin && $tabBtnCreate) {
-    $tabBtnJoin.addEventListener('click', () => {
-      $tabBtnJoin.classList.add('active');
-      $tabBtnJoin.style.borderBottomColor = 'var(--primary)';
-      $tabBtnJoin.style.color = '#fff';
-
-      $tabBtnCreate.classList.remove('active');
-      $tabBtnCreate.style.borderBottomColor = 'transparent';
-      $tabBtnCreate.style.color = 'var(--text-muted)';
-
-      $joinRoomView.classList.remove('hidden');
-      $createRoomView.classList.add('hidden');
-    });
-
-    $tabBtnCreate.addEventListener('click', () => {
-      $tabBtnCreate.classList.add('active');
-      $tabBtnCreate.style.borderBottomColor = 'var(--primary)';
-      $tabBtnCreate.style.color = '#fff';
-
-      $tabBtnJoin.classList.remove('active');
-      $tabBtnJoin.style.borderBottomColor = 'transparent';
-      $tabBtnJoin.style.color = 'var(--text-muted)';
-
-      $createRoomView.classList.remove('hidden');
-      $joinRoomView.classList.add('hidden');
     });
   }
 
@@ -1029,27 +972,8 @@
   }
 
   // ── Smart Join Screen Setup ──────────────────────────────────────────────────
-  const params = new URLSearchParams(window.location.search);
-  const roomParam = params.get('room');
-  const $roomCodeField = document.getElementById('room-code-field');
-  const $roomLinkBadge = document.getElementById('room-link-badge');
-  const $roomLinkCode = document.getElementById('room-link-code');
   const $hostPasswordField = document.getElementById('host-password-field');
-
-  if (roomParam) {
-    // Joining via direct link — hide room code field, show badge
-    if ($roomCodeInput) $roomCodeInput.value = roomParam.toUpperCase();
-    if ($roomCodeField) $roomCodeField.style.display = 'none';
-    if ($roomLinkBadge) {
-      $roomLinkBadge.classList.remove('hidden');
-      $roomLinkBadge.style.display = 'flex';
-    }
-    if ($roomLinkCode) $roomLinkCode.textContent = roomParam.toUpperCase();
-    if ($usernameInput) $usernameInput.focus();
-  } else {
-    // No direct link — show host password toggle for advanced users
-    if ($hostPasswordField) $hostPasswordField.classList.remove('hidden');
-  }
+  if ($hostPasswordField) $hostPasswordField.classList.remove('hidden');
 
   // ── Player Count & Waiting Lobby ──────────────────────────────────────────
   const $playerCountBadge = document.getElementById('player-count-badge');
@@ -1087,9 +1011,8 @@
   }
 
   // ── Auto-reconnect session recovery ───────────────────────────────────────
-  const savedRoom = localStorage.getItem('bb_room_code');
-  if (savedRoom && !roomParam) {
-    const savedUser = localStorage.getItem('bb_username') || '';
+  const savedUser = localStorage.getItem('bb_username') || '';
+  if (savedUser) {
     const savedAvatar = localStorage.getItem('bb_avatar') || '👤';
     const savedIsGM = localStorage.getItem('bb_is_gm') === 'true';
     const savedIsDisplay = localStorage.getItem('bb_is_display') === 'true';
@@ -1099,7 +1022,6 @@
       socket.emit('join', {
         username: savedUser,
         avatar: savedAvatar,
-        roomCode: savedRoom,
         hostPassword: savedHostPass,
         isGM: savedIsGM,
         isDisplay: savedIsDisplay

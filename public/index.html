@@ -27,11 +27,6 @@
       </div>
       <p class="join-tagline">Find the hidden colour — burst the right balloon!</p>
 
-      <div class="join-tabs" style="display: flex; width: 100%; border-bottom: 2px solid var(--panel-border); margin-bottom: 25px;">
-        <button type="button" id="tab-btn-join" class="join-tab active" style="flex: 1; padding: 12px; background: none; border: none; border-bottom: 3px solid var(--primary); color: #fff; font-family: var(--font-disp); font-weight: 800; cursor: pointer; text-transform: uppercase; font-size: 0.9rem; letter-spacing: 1.5px; transition: all 0.2s;">Join Room</button>
-        <button type="button" id="tab-btn-create" class="join-tab" style="flex: 1; padding: 12px; background: none; border: none; border-bottom: 3px solid transparent; color: var(--text-muted); font-family: var(--font-disp); font-weight: 800; cursor: pointer; text-transform: uppercase; font-size: 0.9rem; letter-spacing: 1.5px; transition: all 0.2s;">Create Room</button>
-      </div>
-
       <div id="join-room-view" style="width: 100%;">
         <form id="join-form">
           <label class="field-label">Your Nickname</label>
@@ -42,44 +37,17 @@
             <button type="button" id="btn-random" class="icon-btn" title="Randomise">🎲</button>
           </div>
 
-          <div id="room-code-field">
-            <label class="field-label" style="margin-top: 15px;">Room Code</label>
-            <div class="input-group">
-              <span style="padding: 0 15px; opacity: 0.5;">📌</span>
-              <input id="room-code-input" type="text" placeholder="e.g. KXYZ" maxlength="4" style="text-transform: uppercase;" autocomplete="off" required />
-            </div>
-          </div>
-
-          <!-- Hidden by default, shown only when URL has no ?room param and user needs host access -->
-          <div id="host-password-field" class="hidden">
+          <div id="host-password-field">
             <label class="field-label" style="margin-top: 15px; font-size: 0.85rem; color: rgba(255,255,255,0.6);">Host Password (Optional)</label>
             <div class="input-group">
               <span style="padding: 0 15px; opacity: 0.5;">🔑</span>
-              <input id="password-input" type="password" placeholder="Leave blank if player" autocomplete="off" />
+              <input id="password-input" type="password" placeholder="Enter if you are the host" autocomplete="off" />
             </div>
           </div>
 
-          <!-- Badge shown when ?room= is in URL -->
-          <div id="room-link-badge" class="hidden" style="margin-top: 15px; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 12px 20px; background: rgba(99,71,255,0.15); border: 1px solid var(--primary); border-radius: var(--radius); font-weight: 800; font-family: var(--font-disp);">
-            <span>🎯</span>
-            <span>Joining Room <span id="room-link-code" style="color: var(--primary); font-size: 1.2rem;">—</span></span>
-          </div>
-
           <p id="join-error" class="admin-error hidden" style="margin-top: 10px;"></p>
-          <button type="submit" class="btn-primary" id="btn-join" style="margin-top: 15px;">Let's Go! 🚀</button>
+          <button type="submit" class="btn-primary" id="btn-join" style="margin-top: 20px;">Let's Go! 🚀</button>
           <button type="button" class="btn-outline" id="btn-join-display" style="margin-top: 10px; width: 100%; border: none; opacity: 0.8;">Open Display View</button>
-        </form>
-      </div>
-
-      <div id="create-room-view" class="hidden" style="width: 100%;">
-        <form id="create-room-form">
-          <p class="join-tagline" style="margin-bottom: 20px;">Start a new multiplayer timing battle!</p>
-          <label class="field-label">Host Password (Optional)</label>
-          <div class="input-group" style="margin-bottom: 20px;">
-            <span style="padding: 0 15px; opacity: 0.5;">🔑</span>
-            <input id="host-password-input" type="password" placeholder="Create a lock password" autocomplete="off" />
-          </div>
-          <button type="submit" class="btn-primary" id="btn-create-room">Create Room 🎮</button>
         </form>
       </div>
     </div>
@@ -94,7 +62,7 @@
       <div class="header-left">
         <span class="header-logo">🎈</span>
         <span id="round-badge">Round <strong id="round-num">—</strong></span>
-        <span id="room-code-badge" style="margin-left: 10px; padding: 4px 10px; border-radius: 6px; font-weight: 800; font-family: var(--font-disp); background: rgba(99, 71, 255, 0.2); border: 1px solid var(--primary); color: #fff; font-size: 0.85rem; letter-spacing: 0.5px;">ROOM: <span id="room-lock-icon">🔓</span> <span id="room-code-text">—</span> · <span id="player-count-badge">👥 0</span></span>
+        <span id="room-code-badge" style="margin-left: 10px; padding: 4px 10px; border-radius: 6px; font-weight: 800; font-family: var(--font-disp); background: rgba(99, 71, 255, 0.2); border: 1px solid var(--primary); color: #fff; font-size: 0.85rem; letter-spacing: 0.5px;"><span id="room-lock-icon">🔓</span> · <span id="player-count-badge">👥 0</span></span>
         <button id="btn-tts" class="icon-btn" title="Toggle Text-to-Speech"
           style="margin-left: 8px; padding: 4px 8px; font-size: 1rem; background: rgba(255,255,255,0.15);">🔊</button>
       </div>

@@ -86,6 +86,15 @@ function sendLeaderboardTo(socket, roomCode) {
   }
 }
 
+function broadcastPlayerCount(roomCode) {
+  const room = rooms.get(roomCode);
+  if (!room) return;
+  const activePlayers = [...room.players.values()].filter(p => !p.isGM && !p.isDisplay && p.hasJoined);
+  const count = activePlayers.length;
+  const avatars = activePlayers.slice(0, 20).map(p => ({ avatar: p.avatar, username: p.username }));
+  io.to(roomCode).emit('player_count', { count, avatars });
+}
+
 function broadcastLeaderboard(roomCode) {
   const room = rooms.get(roomCode);
   if (!room) return;
@@ -316,6 +325,7 @@ io.on('connection', (socket) => {
     });
 
     sendLeaderboardTo(socket, roomCode);
+    broadcastPlayerCount(roomCode);
 
     if (room.round.isOpen) {
       socket.emit('round_start', {
@@ -483,6 +493,7 @@ io.on('connection', (socket) => {
         console.log(`[-] ${socket.id} disconnected from room ${roomCode}`);
 
         broadcastLeaderboard(roomCode);
+        broadcastPlayerCount(roomCode);
 
         // Auto-cleanup room if completely empty
         if (room.players.size === 0 && room.adminSocketId === null) {

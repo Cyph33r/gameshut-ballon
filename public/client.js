@@ -562,6 +562,9 @@
   $btnRandom.addEventListener('click', randomizeProfile);
   $joinAvatar.addEventListener('click', randomizeAvatar);
 
+  // Auto-randomize profile on load for instant fun identity
+  randomizeProfile();
+
   $btnJoinDisplay.addEventListener('click', () => {
     // Play the pop sound to force iOS to unlock HTML5 audio context
     playPopSound();
@@ -857,6 +860,7 @@
       if (btn.classList.contains('disabled') || hasClicked) return;
       hasClicked = true;
       playPopSound(); // Play synthesized pop
+      if (navigator.vibrate) navigator.vibrate(30);
       disableAllBalloons();
       btn.classList.add('chosen');
       socket.emit('click', { color: btn.dataset.color, clickTime: serverNow() });
@@ -876,8 +880,16 @@
   function showResult(data) {
     if (data.isCorrect) {
       playSound('chime');
+      if (navigator.vibrate) navigator.vibrate([50, 30, 50]);
     } else {
       playSound('deflate');
+      if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+      // Shake the balloon grid on wrong answer
+      const grid = document.getElementById('balloon-grid');
+      if (grid) {
+        grid.classList.add('shake');
+        setTimeout(() => grid.classList.remove('shake'), 500);
+      }
     }
     $noClickResult.classList.add('hidden');
     $trapHint.classList.add('hidden');
@@ -1016,21 +1028,67 @@
     $connStatus.className = `conn-strip ${ok ? 'connected' : 'disconnected'}`;
   }
 
-  // Auto-fill query room param on load
+  // ── Smart Join Screen Setup ──────────────────────────────────────────────────
   const params = new URLSearchParams(window.location.search);
   const roomParam = params.get('room');
+  const $roomCodeField = document.getElementById('room-code-field');
+  const $roomLinkBadge = document.getElementById('room-link-badge');
+  const $roomLinkCode = document.getElementById('room-link-code');
+  const $hostPasswordField = document.getElementById('host-password-field');
+
   if (roomParam) {
-    if ($roomCodeInput) {
-      $roomCodeInput.value = roomParam.toUpperCase();
+    // Joining via direct link — hide room code field, show badge
+    if ($roomCodeInput) $roomCodeInput.value = roomParam.toUpperCase();
+    if ($roomCodeField) $roomCodeField.style.display = 'none';
+    if ($roomLinkBadge) {
+      $roomLinkBadge.classList.remove('hidden');
+      $roomLinkBadge.style.display = 'flex';
     }
-    if ($usernameInput) {
-      $usernameInput.focus();
-    }
+    if ($roomLinkCode) $roomLinkCode.textContent = roomParam.toUpperCase();
+    if ($usernameInput) $usernameInput.focus();
+  } else {
+    // No direct link — show host password toggle for advanced users
+    if ($hostPasswordField) $hostPasswordField.classList.remove('hidden');
   }
 
-  // Auto-reconnect session recovery
+  // ── Player Count & Waiting Lobby ──────────────────────────────────────────
+  const $playerCountBadge = document.getElementById('player-count-badge');
+  const $waitingAvatars = document.getElementById('waiting-avatars');
+  const $waitingLobby = document.getElementById('waiting-lobby');
+
+  socket.on('player_count', (data) => {
+    if ($playerCountBadge) {
+      $playerCountBadge.textContent = `👥 ${data.count}`;
+    }
+    if ($waitingAvatars && !currentRoundIsOpen) {
+      $waitingAvatars.innerHTML = '';
+      data.avatars.forEach((p, i) => {
+        const bubble = document.createElement('span');
+        bubble.className = 'avatar-bubble';
+        bubble.title = p.username;
+        bubble.textContent = p.avatar;
+        bubble.style.animationDelay = `${i * 0.05}s`;
+        $waitingAvatars.appendChild(bubble);
+      });
+    }
+  });
+
+  // Hide waiting lobby when round starts, show when round ends
+  socket.on('round_start', () => {
+    if ($waitingLobby) $waitingLobby.style.display = 'none';
+  });
+  socket.on('round_closed', () => {
+    if ($waitingLobby) $waitingLobby.style.display = 'none';
+  });
+
+  // ── Haptic Feedback ───────────────────────────────────────────────────────
+  function vibrate(pattern) {
+    if (navigator.vibrate) navigator.vibrate(pattern);
+  }
+
+  // ── Auto-reconnect session recovery ───────────────────────────────────────
   const savedRoom = localStorage.getItem('bb_room_code');
-  if (savedRoom) {
+  if (savedRoom && !roomParam) {
     const savedUser = localStorage.getItem('bb_username') || '';
     const savedAvatar = localStorage.getItem('bb_avatar') || '👤';
     const savedIsGM = localStorage.getItem('bb_is_gm') === 'true';

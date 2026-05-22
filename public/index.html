@@ -41,16 +41,30 @@
               autocapitalize="words" required />
             <button type="button" id="btn-random" class="icon-btn" title="Randomise">🎲</button>
           </div>
-          <label class="field-label" style="margin-top: 15px;">Room Code</label>
-          <div class="input-group">
-            <span style="padding: 0 15px; opacity: 0.5;">📌</span>
-            <input id="room-code-input" type="text" placeholder="e.g. KXYZ" maxlength="4" style="text-transform: uppercase;" autocomplete="off" required />
+
+          <div id="room-code-field">
+            <label class="field-label" style="margin-top: 15px;">Room Code</label>
+            <div class="input-group">
+              <span style="padding: 0 15px; opacity: 0.5;">📌</span>
+              <input id="room-code-input" type="text" placeholder="e.g. KXYZ" maxlength="4" style="text-transform: uppercase;" autocomplete="off" required />
+            </div>
           </div>
-          <label class="field-label" style="margin-top: 15px; font-size: 0.85rem; color: rgba(255,255,255,0.6);">Host Password (Optional)</label>
-          <div class="input-group">
-            <span style="padding: 0 15px; opacity: 0.5;">🔑</span>
-            <input id="password-input" type="password" placeholder="Leave blank if player" autocomplete="off" />
+
+          <!-- Hidden by default, shown only when URL has no ?room param and user needs host access -->
+          <div id="host-password-field" class="hidden">
+            <label class="field-label" style="margin-top: 15px; font-size: 0.85rem; color: rgba(255,255,255,0.6);">Host Password (Optional)</label>
+            <div class="input-group">
+              <span style="padding: 0 15px; opacity: 0.5;">🔑</span>
+              <input id="password-input" type="password" placeholder="Leave blank if player" autocomplete="off" />
+            </div>
           </div>
+
+          <!-- Badge shown when ?room= is in URL -->
+          <div id="room-link-badge" class="hidden" style="margin-top: 15px; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 12px 20px; background: rgba(99,71,255,0.15); border: 1px solid var(--primary); border-radius: var(--radius); font-weight: 800; font-family: var(--font-disp);">
+            <span>🎯</span>
+            <span>Joining Room <span id="room-link-code" style="color: var(--primary); font-size: 1.2rem;">—</span></span>
+          </div>
+
           <p id="join-error" class="admin-error hidden" style="margin-top: 10px;"></p>
           <button type="submit" class="btn-primary" id="btn-join" style="margin-top: 15px;">Let's Go! 🚀</button>
           <button type="button" class="btn-outline" id="btn-join-display" style="margin-top: 10px; width: 100%; border: none; opacity: 0.8;">Open Display View</button>
@@ -80,7 +94,7 @@
       <div class="header-left">
         <span class="header-logo">🎈</span>
         <span id="round-badge">Round <strong id="round-num">—</strong></span>
-        <span id="room-code-badge" style="margin-left: 10px; padding: 4px 10px; border-radius: 6px; font-weight: 800; font-family: var(--font-disp); background: rgba(99, 71, 255, 0.2); border: 1px solid var(--primary); color: #fff; font-size: 0.85rem; letter-spacing: 0.5px;">ROOM: <span id="room-lock-icon">🔓</span> <span id="room-code-text">—</span></span>
+        <span id="room-code-badge" style="margin-left: 10px; padding: 4px 10px; border-radius: 6px; font-weight: 800; font-family: var(--font-disp); background: rgba(99, 71, 255, 0.2); border: 1px solid var(--primary); color: #fff; font-size: 0.85rem; letter-spacing: 0.5px;">ROOM: <span id="room-lock-icon">🔓</span> <span id="room-code-text">—</span> · <span id="player-count-badge">👥 0</span></span>
         <button id="btn-tts" class="icon-btn" title="Toggle Text-to-Speech"
           style="margin-left: 8px; padding: 4px 8px; font-size: 1rem; background: rgba(255,255,255,0.15);">🔊</button>
       </div>
@@ -194,6 +208,10 @@
       <div class="sentence-area" id="sentence-area">
         <p class="sentence-label">Find the hidden colour word in:</p>
         <div class="sentence-display" id="sentence-display">Waiting for host…</div>
+        <div id="waiting-lobby" style="margin-top: 20px;">
+          <div id="waiting-avatars" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin-bottom: 12px;"></div>
+          <p id="waiting-text" class="waiting-pulse" style="font-size: 0.9rem; color: var(--text-muted); font-weight: 700;">Waiting for the host to start...</p>
+        </div>
         <div id="timer-wrap" class="timer-wrap hidden">
           <div id="timer-bar" class="timer-bar"></div>
         </div>

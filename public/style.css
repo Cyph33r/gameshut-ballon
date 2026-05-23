@@ -1358,20 +1358,80 @@ body::before {
 }
 
 /* ── Player Waiting Lobby ────────────────────────────────────── */
-.waiting-lobby {
-  margin-top: 20px;
-}
-.waiting-avatars {
+.player-lobby {
   display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 6px;
-  margin-bottom: 12px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  min-height: 55vh;
+  gap: 20px;
+  text-align: center;
+  padding: 20px 10px;
+  animation: fade-in 0.4s ease-out;
 }
-.waiting-text {
+.player-lobby-header {
+  font-size: clamp(1.6rem, 5vw, 2.2rem);
+  font-weight: 800;
+  font-family: var(--font-disp);
+  color: #fff;
+  margin: 0;
+  text-shadow: 0 4px 10px rgba(0,0,0,0.3);
+}
+.player-lobby-subtitle {
   font-size: 0.9rem;
   color: var(--text-muted);
   font-weight: 700;
+  margin: 0;
+  opacity: 0.85;
+}
+.player-lobby-players {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  max-width: 95%;
+  margin-top: 15px;
+  transition: all 0.4s ease;
+}
+.player-avatar-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 80px;
+  animation: pop-in 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+  transition: all 0.25s ease;
+}
+.player-avatar-bubble {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  background: rgba(255, 255, 255, 0.07);
+  border: 2px solid rgba(255, 255, 255, 0.12);
+  border-radius: 50%;
+  font-size: 2rem;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.2);
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.player-avatar-card:hover .player-avatar-bubble {
+  transform: scale(1.15) translateY(-4px);
+  border-color: var(--primary);
+  background: rgba(99, 71, 255, 0.12);
+  box-shadow: 0 10px 24px rgba(99, 71, 255, 0.4);
+}
+.player-avatar-name {
+  margin-top: 6px;
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: rgba(255,255,255,0.9);
+  text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+  text-align: center;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* ── Display Lobby View ──────────────────────────────────────── */
@@ -1822,7 +1882,7 @@ body::before {
   .sentence-display {
     font-size: clamp(1rem, 3.5vw, 1.5rem);
   }
-  .waiting-lobby { margin-top: 10px; }
+  .player-lobby { min-height: auto; gap: 10px; padding: 10px; }
   .balloon-grid {
     gap: 8px;
   }

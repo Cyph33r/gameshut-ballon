@@ -14,6 +14,9 @@
 
   const $adminPanel    = document.getElementById('admin-panel');
   const $playerPanel   = document.getElementById('player-panel');
+  const $playerLobbyView = document.getElementById('player-lobby-view');
+  const $playerGameView  = document.getElementById('player-game-view');
+  const $playerLobbyPlayers = document.getElementById('player-lobby-players');
   const $lbPanel       = document.getElementById('lb-panel');
 
   const $roundNum      = document.getElementById('round-num');
@@ -185,6 +188,8 @@
 
     if (!isGM && !isDisplay) {
       setSentenceLabel('Waiting for the host to start a round...');
+      if ($playerLobbyView) $playerLobbyView.classList.remove('hidden');
+      if ($playerGameView) $playerGameView.classList.add('hidden');
     } else if (isDisplay) {
       if ($displayLobbyView) $displayLobbyView.style.display = 'flex';
       if ($displayGameView) $displayGameView.style.display = 'none';
@@ -360,6 +365,8 @@
       }
     } else {
       hideResult();
+      if ($playerLobbyView) $playerLobbyView.classList.add('hidden');
+      if ($playerGameView) $playerGameView.classList.remove('hidden');
       
       if (data.isFiller) {
         $sentenceDisplay.textContent = data.sentence;
@@ -1359,8 +1366,6 @@
 
   // ── Player Count & Waiting Lobby ──────────────────────────────────────────
   const $playerCountBadge = document.getElementById('player-count-badge');
-  const $waitingAvatars = document.getElementById('waiting-avatars');
-  const $waitingLobby = document.getElementById('waiting-lobby');
 
   socket.on('player_count', (data) => {
     if ($playerCountBadge) {
@@ -1370,15 +1375,24 @@
     if ($adminPlayerCount) {
       $adminPlayerCount.textContent = data.count;
     }
-    if ($waitingAvatars && !currentRoundIsOpen) {
-      $waitingAvatars.innerHTML = '';
+    if ($playerLobbyPlayers && !currentRoundIsOpen) {
+      $playerLobbyPlayers.innerHTML = '';
       data.avatars.forEach((p, i) => {
-        const bubble = document.createElement('span');
-        bubble.className = 'avatar-bubble';
-        bubble.title = p.username;
-        bubble.textContent = p.avatar;
-        bubble.style.animationDelay = `${i * 0.05}s`;
-        $waitingAvatars.appendChild(bubble);
+        const card = document.createElement('div');
+        card.className = 'player-avatar-card';
+        card.style.animationDelay = `${i * 0.05}s`;
+        
+        const bubble = document.createElement('div');
+        bubble.className = 'player-avatar-bubble';
+        bubble.textContent = p.avatar || '👤';
+        
+        const name = document.createElement('div');
+        name.className = 'player-avatar-name';
+        name.textContent = p.username || 'Player';
+        
+        card.appendChild(bubble);
+        card.appendChild(name);
+        $playerLobbyPlayers.appendChild(card);
       });
     }
 

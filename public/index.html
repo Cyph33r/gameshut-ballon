@@ -237,47 +237,55 @@
     <!-- ── PLAYER PANEL ─────────────────────────────────────────────── -->
     <section id="player-panel" class="game-panel hidden">
 
-      <!-- Sentence display -->
-      <div class="sentence-area" id="sentence-area">
-        <div id="player-narrative-prefix" class="player-narrative-prefix hidden"></div>
-        <p class="sentence-label">Find the hidden colour word in:</p>
-        <div class="sentence-display" id="sentence-display">Waiting for host…</div>
-        <div id="waiting-lobby" class="waiting-lobby">
-          <div id="waiting-avatars" class="waiting-avatars"></div>
-          <p id="waiting-text" class="waiting-pulse waiting-text">Waiting for the host to start...</p>
-        </div>
-        <div id="timer-wrap" class="timer-wrap hidden">
-          <div id="timer-bar" class="timer-bar"></div>
+      <!-- Player Waiting Lobby (when no round is active) -->
+      <div id="player-lobby-view" class="player-lobby">
+        <h1 class="player-lobby-header">🎈 Lobby 🎈</h1>
+        <p class="player-lobby-subtitle">Waiting for the host to start the round...</p>
+        <div id="player-lobby-players" class="player-lobby-players">
+          <!-- Avatar cards will be dynamically injected here -->
         </div>
       </div>
 
-      <!-- Trap hint -->
-      <div id="trap-hint" class="trap-hint hidden">
-        💡 <strong>Remember:</strong> If there's no hidden colour — don't click anything!
-      </div>
+      <!-- Player Gameplay View (when round is active) -->
+      <div id="player-game-view" class="player-game-view hidden">
+        <!-- Sentence display -->
+        <div class="sentence-area" id="sentence-area">
+          <div id="player-narrative-prefix" class="player-narrative-prefix hidden"></div>
+          <p class="sentence-label">Find the hidden colour word in:</p>
+          <div class="sentence-display" id="sentence-display">Waiting for host…</div>
+          <div id="timer-wrap" class="timer-wrap hidden">
+            <div id="timer-bar" class="timer-bar"></div>
+          </div>
+        </div>
 
-      <!-- 2×2 Balloon Grid -->
-      <div class="balloon-grid" id="balloon-grid">
-        <button class="balloon-btn red    disabled" data-color="red" id="balloon-red" disabled>
-          <div class="balloon-shape"></div>
-          <div class="balloon-string"></div>
-          <span class="balloon-label">Red</span>
-        </button>
-        <button class="balloon-btn blue   disabled" data-color="blue" id="balloon-blue" disabled>
-          <div class="balloon-shape"></div>
-          <div class="balloon-string"></div>
-          <span class="balloon-label">Blue</span>
-        </button>
-        <button class="balloon-btn yellow disabled" data-color="yellow" id="balloon-yellow" disabled>
-          <div class="balloon-shape"></div>
-          <div class="balloon-string"></div>
-          <span class="balloon-label">Yellow</span>
-        </button>
-        <button class="balloon-btn orange disabled" data-color="orange" id="balloon-orange" disabled>
-          <div class="balloon-shape"></div>
-          <div class="balloon-string"></div>
-          <span class="balloon-label">Orange</span>
-        </button>
+        <!-- Trap hint -->
+        <div id="trap-hint" class="trap-hint hidden">
+          💡 <strong>Remember:</strong> If there's no hidden colour — don't click anything!
+        </div>
+
+        <!-- 2×2 Balloon Grid -->
+        <div class="balloon-grid" id="balloon-grid">
+          <button class="balloon-btn red    disabled" data-color="red" id="balloon-red" disabled>
+            <div class="balloon-shape"></div>
+            <div class="balloon-string"></div>
+            <span class="balloon-label">Red</span>
+          </button>
+          <button class="balloon-btn blue   disabled" data-color="blue" id="balloon-blue" disabled>
+            <div class="balloon-shape"></div>
+            <div class="balloon-string"></div>
+            <span class="balloon-label">Blue</span>
+          </button>
+          <button class="balloon-btn yellow disabled" data-color="yellow" id="balloon-yellow" disabled>
+            <div class="balloon-shape"></div>
+            <div class="balloon-string"></div>
+            <span class="balloon-label">Yellow</span>
+          </button>
+          <button class="balloon-btn orange disabled" data-color="orange" id="balloon-orange" disabled>
+            <div class="balloon-shape"></div>
+            <div class="balloon-string"></div>
+            <span class="balloon-label">Orange</span>
+          </button>
+        </div>
       </div>
 
       <!-- Result banner -->

@@ -36,19 +36,22 @@ host.on('joined', (data) => {
   host.emit('gm_reset_session');
 
   // Stagger bot logins so they pop onto the lobby beautifully!
-  console.log('👥 Spawning 6 bots to join the game...');
-  spawnBots(6);
+  console.log('👥 Spawning 30 bots to join the game...');
+  spawnBots(30);
 });
 
 const bots = [];
-const BOT_PRESETS = [
-  { name: 'Happy Tiger 🐯', avatar: 'https://api.dicebear.com/7.x/fun-emoji/svg?seed=HappyTiger' },
-  { name: 'Blue Fox 🦊', avatar: 'https://api.dicebear.com/7.x/fun-emoji/svg?seed=BlueFox' },
-  { name: 'Fast Bear 🐻', avatar: 'https://api.dicebear.com/7.x/fun-emoji/svg?seed=FastBear' },
-  { name: 'Clever Wolf 🐺', avatar: 'https://api.dicebear.com/7.x/fun-emoji/svg?seed=CleverWolf' },
-  { name: 'Brave Owl 🦉', avatar: 'https://api.dicebear.com/7.x/fun-emoji/svg?seed=BraveOwl' },
-  { name: 'Wild Panda 🐼', avatar: 'https://api.dicebear.com/7.x/fun-emoji/svg?seed=WildPanda' }
-];
+const BOT_PRESETS = [];
+const emojis = ['🐯', '🦊', '🐻', '🐺', '🦉', '🐼', '🦁', '🐨', '🐸', '🐙', '🐰', '🐔', '🐧', '🦆', '🐒', '🦄', '🐝', '🐞', '🐢', '🐍', '🐙', '🐡', '🐠', '🐬', '🐳', '🦈', '🐊', '🐆', '🦓', '🐘', '🦛', '🦏', '🐪', '🦒', '🦘', '🦙', '🐏', '🐖', '🦌', '🐎'];
+const names = ['Tiger', 'Fox', 'Bear', 'Wolf', 'Owl', 'Panda', 'Lion', 'Koala', 'Frog', 'Octopus', 'Rabbit', 'Chicken', 'Penguin', 'Duck', 'Monkey', 'Unicorn', 'Bee', 'Ladybug', 'Turtle', 'Snake', 'Octopus', 'Blowfish', 'Fish', 'Dolphin', 'Whale', 'Shark', 'Crocodile', 'Leopard', 'Zebra', 'Elephant', 'Hippo', 'Rhino', 'Camel', 'Giraffe', 'Kangaroo', 'Llama', 'Ram', 'Pig', 'Deer', 'Horse'];
+
+for (let i = 0; i < 40; i++) {
+  BOT_PRESETS.push({
+    name: `${names[i % names.length]} ${emojis[i % emojis.length]}`,
+    avatar: emojis[i % emojis.length]
+  });
+}
+
 
 function spawnBots(count) {
   let botsJoined = 0;
@@ -66,7 +69,7 @@ function spawnBots(count) {
       bot.on('joined', () => {
         botsJoined++;
         console.log(`   🤖 Bot Joined: ${preset.name} (${botsJoined}/${count})`);
-        
+
         if (botsJoined === count) {
           console.log('\n✅ All bots successfully registered! Waiting 5 seconds before queuing the Story...');
           setTimeout(queueStory1, 5000);
@@ -81,7 +84,7 @@ function spawnBots(count) {
 
         // Parse hint in the sentence (e.g. "sounds like red", "sounds like trap")
         const hintMatch = rd.sentence.match(/\((?:sounds?\s+like|like|≈)\s*(red|blue|yellow|orange|trap)/i);
-        
+
         let targetColor = null;
         let isTrap = true;
 
@@ -122,7 +125,7 @@ function spawnBots(count) {
         }, delay);
       });
 
-    }, i * 800); // 800ms stagger between bot logins
+    }, i * 300); // 300ms stagger between bot logins
   }
 }
 
@@ -187,7 +190,7 @@ host.on('round_start', (data) => {
   if (isFiller) {
     console.log(`\n📖 [NARRATIVE SENTENCE] ("${data.sentence}")`);
     console.log('   (Observing display screen - Leaderboard is NOT shown for narrative sentences!)');
-    
+
     // Narrative filler sentences don't have timers or click handlers.
     // Wait 6 seconds for comfortable reading, then auto-advance!
     setTimeout(() => {

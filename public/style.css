@@ -1722,6 +1722,32 @@ body::before {
   text-overflow: ellipsis;
 }
 
+/* ── Dynamic Avatar Sizing overrides for Display Lobby ────────────────── */
+.display-lobby-players.size-medium .display-avatar-card { width: 96px; }
+.display-lobby-players.size-medium .display-avatar-bubble { width: 72px; height: 72px; font-size: 2.2rem; padding: 6px; }
+.display-lobby-players.size-medium .display-avatar-name { font-size: 0.9rem; margin-top: 8px; }
+
+.display-lobby-players.size-small .display-avatar-card { width: 80px; }
+.display-lobby-players.size-small .display-avatar-bubble { width: 60px; height: 60px; font-size: 1.8rem; padding: 5px; border-width: 2px; }
+.display-lobby-players.size-small .display-avatar-name { font-size: 0.8rem; margin-top: 6px; }
+
+.display-lobby-players.size-xsmall .display-avatar-card { width: 64px; }
+.display-lobby-players.size-xsmall .display-avatar-bubble { width: 48px; height: 48px; font-size: 1.4rem; padding: 4px; border-width: 2px; }
+.display-lobby-players.size-xsmall .display-avatar-name { font-size: 0.7rem; margin-top: 4px; }
+
+/* ── Dynamic Avatar Sizing overrides for Player Lobby ─────────────────── */
+.player-lobby-players.size-medium .player-avatar-card { width: 70px; }
+.player-lobby-players.size-medium .player-avatar-bubble { width: 56px; height: 56px; font-size: 1.7rem; padding: 4px; }
+.player-lobby-players.size-medium .player-avatar-name { font-size: 0.75rem; margin-top: 5px; }
+
+.player-lobby-players.size-small .player-avatar-card { width: 60px; }
+.player-lobby-players.size-small .player-avatar-bubble { width: 48px; height: 48px; font-size: 1.4rem; padding: 3px; border-width: 1.5px; }
+.player-lobby-players.size-small .player-avatar-name { font-size: 0.65rem; margin-top: 4px; }
+
+.player-lobby-players.size-xsmall .player-avatar-card { width: 50px; }
+.player-lobby-players.size-xsmall .player-avatar-bubble { width: 40px; height: 40px; font-size: 1.1rem; padding: 2px; border-width: 1.5px; }
+.player-lobby-players.size-xsmall .player-avatar-name { font-size: 0.55rem; margin-top: 3px; }
+
 /* ── Locked lobby styles ─────────────────────────────────────── */
 .display-lobby.lobby-locked #display-lobby-join-info,
 .display-lobby.lobby-locked .display-lobby-join-info {

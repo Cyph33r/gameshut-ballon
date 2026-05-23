@@ -817,83 +817,34 @@
   }
 
   // ── Join ───────────────────────────────────────────────────────────────────
-  const adjectives = ['Happy', 'Blue', 'Fast', 'Clever', 'Brave', 'Wild', 'Cool', 'Epic', 'Magic', 'Sneaky', 'Fierce', 'Mighty', 'Swift', 'Lucky', 'Smart', 'Bold', 'Neon', 'Cosmic', 'Silent', 'Mega', 'Cyber', 'Super', 'Rapid', 'Hyper', 'Flash', 'Shiny', 'Grand', 'Funky', 'Noble', 'Royal'];
-  const nouns = ['Tiger', 'Fox', 'Bear', 'Wolf', 'Owl', 'Panda', 'Lion', 'Hawk', 'Duck', 'Frog', 'Dragon', 'Shark', 'Eagle', 'Cat', 'Dog', 'Seal', 'Koala', 'Whale', 'Puma', 'Cobra', 'Toad', 'Crow', 'Swan', 'Rhino', 'Moose', 'Sloth', 'Gecko', 'Lemur', 'Zebra', 'Sheep'];
-  const emojis = ['🐯', '🦊', '🐻', '🐺', '🦉', '🐼', '🦁', '🦅', '🦆', '🐸', '🐉', '🦈', '🐈', '🐕', '🦭', '🐨', '🐳', '🐍', '🦢', '🦏', '🦥', '🦎', '🦓', '🐑', '🦖', '🦄', '🐙', '🐢', '🐧', '🦍'];
-
-  function generateAnimalAvatarSVG(username) {
-    let animalNoun = 'Fox';
-    let animalEmoji = '🦊';
-    
-    // Scan username to find the animal noun
-    const foundNoun = nouns.find(n => username.toLowerCase().includes(n.toLowerCase()));
-    if (foundNoun) {
-      animalNoun = foundNoun;
-      const idx = nouns.indexOf(foundNoun);
-      animalEmoji = emojis[idx];
-    } else {
-      // Deterministic fallback based on character hash
-      let hash = 0;
-      for (let i = 0; i < username.length; i++) {
-        hash = username.charCodeAt(i) + ((hash << 5) - hash);
-      }
-      const idx = Math.abs(hash) % nouns.length;
-      animalNoun = nouns[idx];
-      animalEmoji = emojis[idx];
-    }
-
-    // Deterministic curated gradients
-    const gradients = [
-      ['#ff4e50', '#f9d423'], // sunset orange
-      ['#e94e77', '#f48fb1'], // pink blush
-      ['#4a00e0', '#8e2de2'], // royal purple
-      ['#00c6ff', '#0072ff'], // neon blue
-      ['#11998e', '#38ef7d'], // emerald green
-      ['#fc4a1a', '#f7b733'], // fire orange
-      ['#12c2e9', '#c471ed', '#f64f59'], // multi color
-      ['#8a2387', '#e94057', '#f27121']  // volcanic purple-orange
-    ];
-    let hashColor = 0;
-    for (let i = 0; i < animalNoun.length; i++) {
-      hashColor = animalNoun.charCodeAt(i) + ((hashColor << 5) - hashColor);
-    }
-    const gradient = gradients[Math.abs(hashColor) % gradients.length];
-    const gradId = `grad-${Math.abs(hashColor)}`;
-
-    // Beautiful SVG definition
-    const svg = `
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
-        <defs>
-          <linearGradient id="${gradId}" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stop-color="${gradient[0]}" />
-            <stop offset="100%" stop-color="${gradient[1]}" />
-          </linearGradient>
-        </defs>
-        <circle cx="50" cy="50" r="48" fill="url(#${gradId})" />
-        <circle cx="50" cy="50" r="44" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-opacity="0.35" />
-        <text x="50" y="66" font-size="44" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" dominant-baseline="middle">${animalEmoji}</text>
-      </svg>
-    `;
-
-    return `data:image/svg+xml;utf8,${encodeURIComponent(svg.trim())}`;
-  }
-
-  function getAvatarUrl(seed) {
-    return generateAnimalAvatarSVG(seed);
-  }
-
-  function renderAvatarHTML(avatar) {
-    if (!avatar) return '👤';
-    if (avatar.startsWith('http') || avatar.includes('/') || avatar.startsWith('data:image/')) {
-      return `<img src="${avatar}" style="width: 100%; height: 100%; object-fit: contain; border-radius: 50%;" />`;
-    }
-    return avatar;
-  }
+  const adjectives = [
+    'Popping', 'Floating', 'Rising', 'Drifting', 'Soaring',
+    'Bouncing', 'Inflated', 'Helium', 'Shiny', 'Glossy',
+    'Neon', 'Glowing', 'Golden', 'Silver', 'Prismatic',
+    'Magic', 'Swift', 'Quick', 'Rapid', 'Turbo',
+    'Mega', 'Super', 'Epic', 'Cosmic', 'Silent',
+    'Flash', 'Grand', 'Funky', 'Noble', 'Royal'
+  ];
+  const nouns = [
+    'Balloon', 'Bubble', 'Cloud', 'Spark', 'Popper',
+    'Wind', 'UFO', 'Kite', 'Parachute', 'Rocket',
+    'Crystal', 'Gem', 'Star', 'Sun', 'Comet',
+    'Fire', 'Water', 'Rainbow', 'Vortex', 'Gear',
+    'Shield', 'Crown', 'Key', 'Palette', 'Target',
+    'Dice', 'Clover', 'Feather', 'Heart', 'Ring'
+  ];
+  const emojis = [
+    '🎈', '🫧', '☁️', '⚡', '💥',
+    '💨', '🛸', '🪁', '🪂', '🚀',
+    '🔮', '💎', '⭐️', '☀️', '☄️',
+    '🔥', '💧', '🌈', '🌀', '⚙️',
+    '🛡️', '👑', '🔑', '🎨', '🎯',
+    '🎲', '🍀', '🪶', '💖', '💍'
+  ];
 
   function randomizeAvatar() {
-    const seed = Math.random().toString(36).substring(7);
-    myAvatar = getAvatarUrl(seed);
-    $joinAvatar.innerHTML = `<img src="${myAvatar}" style="width: 100%; height: 100%; object-fit: contain;" />`;
+    myAvatar = emojis[Math.floor(Math.random() * emojis.length)];
+    $joinAvatar.textContent = myAvatar;
     $joinAvatar.style.animation = 'none';
     $joinAvatar.offsetHeight; // trigger reflow
     $joinAvatar.style.animation = 'score-pop 0.3s ease';
@@ -903,24 +854,14 @@
     const adj = adjectives[Math.floor(Math.random() * adjectives.length)];
     const nounIdx = Math.floor(Math.random() * nouns.length);
     const noun = nouns[nounIdx];
-    const username = `${adj} ${noun}`;
-    $usernameInput.value = username;
+    $usernameInput.value = `${adj} ${noun}`;
 
-    myAvatar = getAvatarUrl(username);
-    $joinAvatar.innerHTML = `<img src="${myAvatar}" style="width: 100%; height: 100%; object-fit: contain;" />`;
+    // Always match the avatar to the selected noun!
+    myAvatar = emojis[nounIdx];
+    $joinAvatar.textContent = myAvatar;
     $joinAvatar.style.animation = 'none';
     $joinAvatar.offsetHeight; // trigger reflow
     $joinAvatar.style.animation = 'score-pop 0.3s ease';
-  }
-
-  if ($usernameInput) {
-    $usernameInput.addEventListener('input', () => {
-      const val = $usernameInput.value.trim();
-      if (val) {
-        myAvatar = getAvatarUrl(val);
-        $joinAvatar.innerHTML = `<img src="${myAvatar}" style="width: 100%; height: 100%; object-fit: contain;" />`;
-      }
-    });
   }
 
   $btnRandom.addEventListener('click', randomizeProfile);
@@ -1078,7 +1019,7 @@
       if (parsedColor !== undefined) {
         storyDraft[sentenceIdx].color = parsedColor;
         div.classList.add(`assigned-${parsedColor}`);
-        
+
         const badge = document.createElement('span');
         badge.className = `sentence-badge ${parsedColor === null ? 'null' : parsedColor}`;
         badge.textContent = parsedColor === null ? 'Trap' : parsedColor;
@@ -1383,7 +1324,7 @@
 
   // ── Preloaded Story Templates ──────────────────────────────────────────────
   const STORY_TEMPLATES = {
-    story1: `It was the morning of the 46th Birthday of Little Alex Horne.&& No one was excited but it was a beautiful day.&& The sky was… clear, the sun was bright and the grass was.. looking even more neatly mowed than usual.&& As is tradition, the party was held at his local Chesham Bowling Green.&& To start the party, Alex read (sounds like red) all his birthday cards.&& One of his birthday cards was from the mayor and had all his favorite fruits on… apples, a bunch of bananas and his favorite of the citrus family, a lovely round… grapefruit.&& Alex heard his phone ring… “Yeah?”, he answered.&& It was his uncle, calling to ask if Alex had opened his small inexpensive gift.&& The signal was not great, so Alex had to yell “Oh (sounds like yellow), yes, I did, thank you.”&& Alex hung up the phone and smiled.&& Just then, a friend walked over wearing a bright jacket that looked like citrus peel; though Alex joked it might have been an or an edge (sounds like orange) of some brighter.&& Suddenly, the wind blew (sounds like blue) across the bowling green.&& This was a trap round (sounds like trap).&& The party was a success.`
+    story1: `It was the morning of the 46th Birthday of Little Alex Horne.&& No one was excited but it was a beautiful day.&& The sky was… clear, the sun was bright and the grass was.. looking even more neatly mowed than usual.&& As is tradition, the party was held at his local Chesham Bowling Green.&& To start the party, Alex read (sounds like red) all his birthday cards.&& One of his birthday cards was from the mayor and had all his favorite fruits on… apples, a bunch of bananas and his favorite of the citrus family, a lovely round… grapefruit.&& Alex heard his phone ring… “Yeah?”, he answered.&& It was his uncle, calling to ask if Alex had opened his small inexpensive gift.&& The signal was not great, so Alex had to yell “Oh (sounds like yellow), yes, I did, thank you.”&& Alex hung up the phone and smiled.&& Just then, a friend walked over wearing a bright jacket that looked like citrus peel; though Alex joked it might have been an or an edge (sounds like orange) of something brighter.&& Suddenly, the wind blew (sounds like blue) across the green and a bowl rolled past; no one knew who it belonged to.&& Everyone gathered as the birthday game began.&& The guests listened closely to proceedings.&& The cake was cut, and loud music filled the space.&& However, the golden moment was the fireworks that ended the night.`
   };
 
   if ($selectStoryTemplate) {
@@ -1528,7 +1469,7 @@
       li.innerHTML = `
         <span class="lb-rank">${medals[i] || i + 1}</span>
         <span class="lb-name">
-          <span class="lb-avatar">${renderAvatarHTML(e.avatar)}</span> 
+          <span class="lb-avatar">${e.avatar || '👤'}</span> 
           <span class="lb-user-text">${e.username}</span>
           ${streakBadge}
           ${rankBadge}
@@ -1549,7 +1490,7 @@
       li.innerHTML = `
         <span class="lb-rank">${data.myRank} <span style="font-size:0.7em; color:#888;">/ ${data.totalPlayers}</span></span>
         <span class="lb-name">
-          <span class="lb-avatar">${renderAvatarHTML(myAvatar)}</span> 
+          <span class="lb-avatar">${myAvatar}</span> 
           <span class="lb-user-text">You</span>
         </span>
         <span class="lb-pts">${data.myScore}</span>
@@ -1607,239 +1548,30 @@
   // ── Player Count & Waiting Lobby ──────────────────────────────────────────
   const $playerCountBadge = document.getElementById('player-count-badge');
 
-  // ── Lobby Bubble Physics Engine ───────────────────────────────────────────
-  let lobbyBubbles = [];
-  let physicsLoopId = null;
-
-  function stopLobbyPhysics() {
-    if (physicsLoopId) {
-      cancelAnimationFrame(physicsLoopId);
-      physicsLoopId = null;
-    }
-    lobbyBubbles = [];
-  }
-
-  function startLobbyPhysics() {
-    if (physicsLoopId) return;
-
-    function loop() {
-      if (hasGameStarted || !isDisplay) {
-        stopLobbyPhysics();
-        return;
-      }
-
-      const container = document.getElementById('display-lobby-players');
-      if (!container) {
-        physicsLoopId = requestAnimationFrame(loop);
-        return;
-      }
-
-      const rect = container.getBoundingClientRect();
-      const width = rect.width;
-      const height = rect.height;
-
-      const elasticity = 0.85;
-      const damping = 0.999;
-      const speedLimit = 2.5;
-
-      const qrEl = document.getElementById('display-lobby-join-info');
-      let qrLeft = 0, qrTop = 0, qrRight = 0, qrBottom = 0, hasQR = false;
-      if (qrEl) {
-        const qrRect = qrEl.getBoundingClientRect();
-        qrLeft = qrRect.left - rect.left;
-        qrTop = qrRect.top - rect.top;
-        qrRight = qrLeft + qrRect.width;
-        qrBottom = qrTop + qrRect.height;
-        hasQR = true;
-      }
-
-      // 1. Update positions, bounce off screen edges & central QR code
-      lobbyBubbles.forEach(b => {
-        b.x += b.vx;
-        b.y += b.vy;
-
-        // Apply a gentle floating drift
-        b.vx = (b.vx + (Math.random() - 0.5) * 0.05) * damping;
-        b.vy = (b.vy + (Math.random() - 0.5) * 0.05) * damping;
-
-        // Border bounce
-        if (b.x - b.radius < 0) {
-          b.x = b.radius;
-          b.vx = -b.vx * elasticity;
-        } else if (b.x + b.radius > width) {
-          b.x = width - b.radius;
-          b.vx = -b.vx * elasticity;
-        }
-
-        if (b.y - b.radius < 0) {
-          b.y = b.radius;
-          b.vy = -b.vy * elasticity;
-        } else if (b.y + b.radius > height) {
-          b.y = height - b.radius;
-          b.vy = -b.vy * elasticity;
-        }
-
-        // Central QR Card Collision
-        if (hasQR) {
-          const closestX = Math.max(qrLeft, Math.min(b.x, qrRight));
-          const closestY = Math.max(qrTop, Math.min(b.y, qrBottom));
-
-          const dx = b.x - closestX;
-          const dy = b.y - closestY;
-          const distSq = dx * dx + dy * dy;
-
-          if (distSq < b.radius * b.radius) {
-            const dist = Math.sqrt(distSq) || 0.1;
-            const nx = dx / dist;
-            const ny = dy / dist;
-
-            // Push out
-            const overlap = b.radius - dist;
-            b.x += nx * overlap;
-            b.y += ny * overlap;
-
-            // Reflect velocity
-            const dot = b.vx * nx + b.vy * ny;
-            if (dot < 0) {
-              b.vx = b.vx - 2 * dot * nx;
-              b.vy = b.vy - 2 * dot * ny;
-            }
-          }
-        }
-      });
-
-      // 2. Elastic collision response between bubbles (Bumping!)
-      for (let i = 0; i < lobbyBubbles.length; i++) {
-        const b1 = lobbyBubbles[i];
-        for (let j = i + 1; j < lobbyBubbles.length; j++) {
-          const b2 = lobbyBubbles[j];
-
-          const dx = b2.x - b1.x;
-          const dy = b2.y - b1.y;
-          const distSq = dx * dx + dy * dy;
-          const minDist = b1.radius + b2.radius;
-
-          if (distSq < minDist * minDist) {
-            const dist = Math.sqrt(distSq) || 0.1;
-            const overlap = minDist - dist;
-
-            const nx = dx / dist;
-            const ny = dy / dist;
-
-            b1.x -= nx * overlap * 0.5;
-            b1.y -= ny * overlap * 0.5;
-            b2.x += nx * overlap * 0.5;
-            b2.y += ny * overlap * 0.5;
-
-            const kx = b1.vx - b2.vx;
-            const ky = b1.vy - b2.vy;
-            const p = 2 * (kx * nx + ky * ny) / (b1.mass + b2.mass);
-
-            if (p > 0) {
-              b1.vx -= p * b2.mass * nx;
-              b1.vy -= p * b2.mass * ny;
-              b2.vx += p * b1.mass * nx;
-              b2.vy += p * b1.mass * ny;
-            }
-          }
-        }
-      }
-
-      // 3. Render updates
-      lobbyBubbles.forEach(b => {
-        const speed = Math.sqrt(b.vx * b.vx + b.vy * b.vy);
-        if (speed > speedLimit) {
-          b.vx = (b.vx / speed) * speedLimit;
-          b.vy = (b.vy / speed) * speedLimit;
-        }
-
-        b.element.style.left = `${b.x - 60}px`;
-        b.element.style.top = `${b.y - 65}px`;
-      });
-
-      physicsLoopId = requestAnimationFrame(loop);
-    }
-
-    physicsLoopId = requestAnimationFrame(loop);
-  }
-
-  function updateDisplayLobby(avatars) {
-    const $displayLobbyPlayers = document.getElementById('display-lobby-players');
-    if (!$displayLobbyPlayers) return;
-
-    if (hasGameStarted) {
-      stopLobbyPhysics();
-      return;
-    }
-
-    const rect = $displayLobbyPlayers.getBoundingClientRect();
-    const width = rect.width || 800;
-    const height = rect.height || 500;
-
-    const currentActiveMap = new Map();
-    avatars.forEach(p => currentActiveMap.set(p.username, p));
-
-    // Remove bubbles for disconnected players
-    lobbyBubbles = lobbyBubbles.filter(b => {
-      if (!currentActiveMap.has(b.username)) {
-        b.element.remove();
-        return false;
-      }
-      return true;
-    });
-
-    // Spawn bubbles for newly connected players
-    const currentBubblesMap = new Set(lobbyBubbles.map(b => b.username));
-    avatars.forEach(p => {
-      if (!currentBubblesMap.has(p.username)) {
-        const card = document.createElement('div');
-        card.className = 'display-avatar-card';
-
-        const bubble = document.createElement('div');
-        bubble.className = 'display-avatar-bubble';
-        bubble.innerHTML = renderAvatarHTML(p.avatar);
-
-        const name = document.createElement('div');
-        name.className = 'display-avatar-name';
-        name.textContent = p.username || 'Player';
-
-        card.appendChild(bubble);
-        card.appendChild(name);
-        $displayLobbyPlayers.appendChild(card);
-
-        // Spawn along corners to prevent initial overlap with the central QR code card
-        let spawnX = 60 + Math.random() * 80;
-        let spawnY = 70 + Math.random() * 80;
-        if (Math.random() < 0.5) spawnX = width - 180 - Math.random() * 80;
-        if (Math.random() < 0.5) spawnY = height - 190 - Math.random() * 80;
-
-        const b = {
-          username: p.username,
-          element: card,
-          x: spawnX,
-          y: spawnY,
-          vx: (Math.random() - 0.5) * 1.5,
-          vy: (Math.random() - 0.5) * 1.5,
-          radius: 55,
-          mass: 1
-        };
-
-        lobbyBubbles.push(b);
-      }
-    });
-
-    startLobbyPhysics();
+  function getLobbySizeClass(count) {
+    if (count > 24) return 'size-xsmall';
+    if (count > 12) return 'size-small';
+    if (count > 6) return 'size-medium';
+    return 'size-standard';
   }
 
   socket.on('player_count', (data) => {
     if ($playerCountBadge) {
       $playerCountBadge.textContent = `👥 ${data.count}`;
     }
+    // Update admin stats bar
     if ($adminPlayerCount) {
       $adminPlayerCount.textContent = data.count;
     }
+    
+    const count = data.avatars.length;
+    const sizeClass = getLobbySizeClass(count);
+
     if ($playerLobbyPlayers && !hasGameStarted && !currentRoundIsOpen) {
       $playerLobbyPlayers.innerHTML = '';
+      $playerLobbyPlayers.classList.remove('size-standard', 'size-medium', 'size-small', 'size-xsmall');
+      $playerLobbyPlayers.classList.add(sizeClass);
+
       data.avatars.forEach((p, i) => {
         const card = document.createElement('div');
         card.className = 'player-avatar-card';
@@ -1847,7 +1579,7 @@
 
         const bubble = document.createElement('div');
         bubble.className = 'player-avatar-bubble';
-        bubble.innerHTML = renderAvatarHTML(p.avatar);
+        bubble.textContent = p.avatar || '👤';
 
         const name = document.createElement('div');
         name.className = 'player-avatar-name';
@@ -1859,10 +1591,43 @@
       });
     }
 
-    // Update display screen lobby avatars with dynamic bubble physics (only before game starts)
+    // Update display screen lobby avatars (only before game starts)
     if (!hasGameStarted) {
-      if (isDisplay) {
-        updateDisplayLobby(data.avatars);
+      const $displayLobbyPlayers = document.getElementById('display-lobby-players');
+      if ($displayLobbyPlayers) {
+        $displayLobbyPlayers.classList.remove('size-standard', 'size-medium', 'size-small', 'size-xsmall');
+        $displayLobbyPlayers.classList.add(sizeClass);
+
+        // Remove existing avatar cards, leaving the join-info block intact
+        const existingCards = $displayLobbyPlayers.querySelectorAll('.display-avatar-card');
+        existingCards.forEach(card => card.remove());
+
+        const avatarsCount = data.avatars.length;
+        const mid = Math.floor(avatarsCount / 2);
+
+        const $displayLobbyJoinInfo = document.getElementById('display-lobby-join-info');
+        if ($displayLobbyJoinInfo) {
+          $displayLobbyJoinInfo.style.order = mid;
+        }
+
+        data.avatars.forEach((p, i) => {
+          const card = document.createElement('div');
+          card.className = 'display-avatar-card';
+          card.style.animationDelay = `${i * 0.05}s`;
+          card.style.order = i < mid ? i : i + 1;
+
+          const bubble = document.createElement('div');
+          bubble.className = 'display-avatar-bubble';
+          bubble.textContent = p.avatar || '👤';
+
+          const name = document.createElement('div');
+          name.className = 'display-avatar-name';
+          name.textContent = p.username || 'Player';
+
+          card.appendChild(bubble);
+          card.appendChild(name);
+          $displayLobbyPlayers.appendChild(card);
+        });
       }
     }
   });

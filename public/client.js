@@ -782,8 +782,8 @@
     const text = $storyInput.value.trim();
     if (!text) return;
     
-    // Split into sentences (by . ! ? followed by space or end, handling ellipses)
-    const sentences = text.match(/[^.!?…]+(?:[.!?…]+["']?)/g) || [text];
+    // Split into sentences by && delimiter
+    const sentences = text.split('&&').map(s => s.trim()).filter(s => s.length > 0);
     
     $storyWordsContainer.innerHTML = '';
     storyDraft = [];

@@ -99,6 +99,26 @@ function broadcastLeaderboard() {
     const rankChange = prevRank > 0 ? prevRank - currentRank : 0; // positive = moved up
     return { username: p.username, avatar: p.avatar, score: p.score, streak: p.streak, rankChange };
   });
+
+  // Log leaderboard standings to the server console / Render logs
+  console.log(`\n================ [📊 LEADERBOARD STANDINGS - ${new Date().toISOString()}] ================`);
+  console.log(`Active Round ID: ${globalRoom.round.id} | Total Players: ${sorted.length}`);
+  if (top10.length === 0) {
+    console.log(`  (No players registered on the leaderboard yet)`);
+  } else {
+    top10.forEach((p, i) => {
+      const rank = i + 1;
+      let changeIndicator = '';
+      if (p.rankChange > 0) {
+        changeIndicator = ` ▲${p.rankChange}`;
+      } else if (p.rankChange < 0) {
+        changeIndicator = ` ▼${Math.abs(p.rankChange)}`;
+      }
+      console.log(`  #${rank} ${p.avatar} ${p.username}: ${p.score} pts (Streak: ${p.streak})${changeIndicator}`);
+    });
+  }
+  console.log(`============================================================\n`);
+
   for (const [id, p] of globalRoom.players) {
     if (p.isGM || p.isDisplay) {
       io.to(id).emit('leaderboard', { top10 });

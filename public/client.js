@@ -76,6 +76,7 @@
   const $tabStory = document.getElementById('tab-story');
   const $storyForm = document.getElementById('story-form');
   const $storyInput = document.getElementById('story-input');
+  const $selectStoryTemplate = document.getElementById('select-story-template');
   const $btnProcessStory = document.getElementById('btn-process-story');
   const $storyBuilder = document.getElementById('story-builder');
   const $storyWordsContainer = document.getElementById('story-words-container');
@@ -1284,6 +1285,23 @@
   }
   if ($storyInput) {
     $storyInput.addEventListener('input', updateStoryCharCounter);
+  }
+
+  // ── Preloaded Story Templates ──────────────────────────────────────────────
+  const STORY_TEMPLATES = {
+    story1: `It was the morning of the 46th Birthday of Little Alex Horne.&& No one was excited but it was a beautiful day.&& The sky was clear, the sun was bright and the grass was looking even more neatly mowed than usual.&& As is tradition, the party was held at his local Chesham Bowling Green.&& To start the party, Alex read all his birthday cards.&& One of his birthday cards was from the mayor and had all his favorite fruits on it — apples, a bunch of bananas and his favorite of the citrus family, a lovely round grapefruit.&& Alex heard his phone ring.&& “Yeah?” he answered.&& It was his uncle, calling to ask if Alex had opened his small inexpensive gift.&& The signal was not great, so Alex had to yell “Oh yes, I did, thank you.”&& Alex hung up the phone and smiled.&& Just then, a friend walked over wearing a bright jacket that looked like citrus peel; though Alex joked it might have been an edge of something brighter.&& Suddenly, the wind blew across the green and a bowl rolled past; no one knew who it belonged to.&& Everyone gathered as the birthday game began.&& The guests listened closely to proceedings.&& The cake was cut, and loud music filled the space.&& However, the golden moment was the fireworks that ended the night.`
+  };
+
+  if ($selectStoryTemplate) {
+    $selectStoryTemplate.addEventListener('change', () => {
+      const templateKey = $selectStoryTemplate.value;
+      if (templateKey && STORY_TEMPLATES[templateKey]) {
+        $storyInput.value = STORY_TEMPLATES[templateKey];
+      } else {
+        $storyInput.value = '';
+      }
+      updateStoryCharCounter();
+    });
   }
 
   // ── Player: Gameplay ───────────────────────────────────────────────────────

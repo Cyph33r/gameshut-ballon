@@ -169,6 +169,13 @@
 
           <!-- ── Story Mode Form ───────────────────────────────────── -->
           <div id="story-form" class="sentence-form hidden">
+            <div style="margin-bottom: 12px;">
+              <label class="form-label" style="display: block; margin-bottom: 6px;">Load Preloaded Story Template</label>
+              <select id="select-story-template" class="admin-select" style="width: 100%; padding: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: var(--radius); color: #fff; font-family: var(--font-main); font-weight: 600; cursor: pointer; outline: none; transition: all 0.2s;">
+                <option value="" style="background: #222; color: #aaa;">-- Select a persistent story template --</option>
+                <option value="story1" style="background: #222;">Story 1: Little Alex Horne's 46th Birthday 🎈</option>
+              </select>
+            </div>
             <div class="textarea-wrap">
               <textarea id="story-input" placeholder="Paste a multi-sentence story here..." rows="4"
                 autocomplete="off"></textarea>

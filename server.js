@@ -391,6 +391,50 @@ io.on('connection', (socket) => {
     closeRound();
   });
 
+  // ── Admin reset session ───────────────────────────────────────────────────
+  socket.on('gm_reset_session', () => {
+    if (globalRoom.adminSocketId !== socket.id) return;
+
+    // Close any active round silently
+    if (globalRoom.round.isOpen) {
+      globalRoom.round.isOpen = false;
+      if (globalRoom.roundCloseTimeout) { clearTimeout(globalRoom.roundCloseTimeout); globalRoom.roundCloseTimeout = null; }
+    }
+
+    // Reset round counter
+    globalRoom.round.id = 0;
+    globalRoom.round.sentence = null;
+    globalRoom.round.correctColor = null;
+    globalRoom.round.revealTime = null;
+    globalRoom.round.firstCorrectAt = null;
+
+    // Clear queue and story state
+    globalRoom.storyQueue = [];
+    globalRoom.storyMeta = null;
+    globalRoom.storyRoundIndex = 0;
+    globalRoom.storyActiveSentenceIndex = -1;
+    globalRoom.storyRevealedRounds = [];
+
+    // Unlock lobby
+    globalRoom.isLocked = false;
+
+    // Reset all player scores and streaks
+    for (const [, p] of globalRoom.players) {
+      p.score = 0;
+      p.streak = 0;
+      p.clickedThisRound = false;
+      p.answeredCorrectlyThisRound = false;
+    }
+
+    console.log('[!] Session reset by admin');
+
+    // Broadcast reset to all clients
+    io.emit('session_reset');
+    io.emit('queue_update', globalRoom.storyQueue);
+    io.emit('room_lock_update', { isLocked: false });
+    broadcastPlayerCount();
+  });
+
   // ── Player click ──────────────────────────────────────────────────────────
   socket.on('click', ({ color, clickTime } = {}) => {
     if (!globalRoom.round.isOpen) return;

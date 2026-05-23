@@ -55,6 +55,7 @@
   const $adminStatus    = document.getElementById('admin-status');
   const $adminRoundControls = document.getElementById('admin-round-controls');
   const $btnForceClose  = document.getElementById('btn-force-close');
+  const $btnResetSession = document.getElementById('btn-reset-session');
 
   // New dashboard elements
   const $adminPlayerCount = document.getElementById('admin-player-count');
@@ -137,6 +138,7 @@
   let overlayTimer    = null;
   let closeTimer      = null;
   let currentRoundIsOpen = false;
+  let hasGameStarted     = false;
   let pendingClickResult = null;
   let ttsEnabled         = true;
 
@@ -188,11 +190,21 @@
 
     if (!isGM && !isDisplay) {
       setSentenceLabel('Waiting for the host to start a round...');
-      if ($playerLobbyView) $playerLobbyView.classList.remove('hidden');
-      if ($playerGameView) $playerGameView.classList.add('hidden');
+      if (!hasGameStarted) {
+        if ($playerLobbyView) $playerLobbyView.classList.remove('hidden');
+        if ($playerGameView) $playerGameView.classList.add('hidden');
+      } else {
+        if ($playerLobbyView) $playerLobbyView.classList.add('hidden');
+        if ($playerGameView) $playerGameView.classList.remove('hidden');
+      }
     } else if (isDisplay) {
-      if ($displayLobbyView) $displayLobbyView.style.display = 'flex';
-      if ($displayGameView) $displayGameView.style.display = 'none';
+      if (!hasGameStarted) {
+        if ($displayLobbyView) $displayLobbyView.style.display = 'flex';
+        if ($displayGameView) $displayGameView.style.display = 'none';
+      } else {
+        if ($displayLobbyView) $displayLobbyView.style.display = 'none';
+        if ($displayGameView) $displayGameView.style.display = 'flex';
+      }
       const shareUrl = `${window.location.origin}${window.location.pathname}`;
       if ($displayQrImg) {
         $displayQrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&color=6347ff&data=${encodeURIComponent(shareUrl)}`;
@@ -222,6 +234,46 @@
 
   socket.on('room_lock_update', (data) => {
     updateLockUI(data.isLocked);
+  });
+
+  socket.on('session_reset', () => {
+    hasGameStarted = false;
+    currentRoundId = 0;
+    currentRoundIsOpen = false;
+    hasClicked = false;
+    pendingClickResult = null;
+    isStoryModeActive = false;
+
+    totalScore = 0;
+    if ($totalScore) $totalScore.textContent = '0';
+    if ($roundNum) $roundNum.textContent = '—';
+    if ($adminRoundNum) $adminRoundNum.textContent = '0';
+
+    clearTimeout(autoplayTimer);
+
+    if (isGM) {
+      if ($roundActiveBanner) $roundActiveBanner.classList.add('hidden');
+      if ($adminModeSection) $adminModeSection.classList.remove('hidden');
+      setAdminStatus('Session reset by admin. Ready to start new rounds.', '');
+      setAdminTilesEnabled(true);
+      if ($adminRoundControls) $adminRoundControls.classList.add('hidden');
+    }
+
+    showPanel(isGM ? 'admin' : (isDisplay ? 'display' : 'player'));
+
+    if (!isGM && !isDisplay) {
+      setSentenceLabel('Waiting for the host to start a round...');
+      if ($playerLobbyView) $playerLobbyView.classList.remove('hidden');
+      if ($playerGameView) $playerGameView.classList.add('hidden');
+      hideResult();
+    } else if (isDisplay) {
+      if ($displayLobbyView) $displayLobbyView.style.display = 'flex';
+      if ($displayGameView) $displayGameView.style.display = 'none';
+      if ($displayStoryView) $displayStoryView.classList.add('hidden');
+      if ($displaySentence) $displaySentence.textContent = 'Waiting for the host to start a round...';
+    }
+
+    showToast('Game session has been reset! 🔄');
   });
 
   function updateLockUI(isLocked) {
@@ -275,6 +327,7 @@
     showPanel(isGM ? 'admin' : (isDisplay ? 'display' : 'player'));
     currentRoundId = data.roundId;
     currentRoundIsOpen = !data.isFiller;
+    hasGameStarted = true;
     $roundNum.textContent = data.roundId;
     hasClicked = false;
     pendingClickResult = null;
@@ -1130,6 +1183,14 @@
     }
   });
 
+  if ($btnResetSession) {
+    $btnResetSession.addEventListener('click', () => {
+      if (confirm('Are you sure you want to reset the session? This will clear all scores, rounds, and return all players to the lobby.')) {
+        socket.emit('gm_reset_session');
+      }
+    });
+  }
+
   function setAdminStatus(msg, cls) {
     $adminStatus.textContent = msg;
     $adminStatus.className   = `admin-status ${cls}`;
@@ -1375,7 +1436,7 @@
     if ($adminPlayerCount) {
       $adminPlayerCount.textContent = data.count;
     }
-    if ($playerLobbyPlayers && !currentRoundIsOpen) {
+    if ($playerLobbyPlayers && !hasGameStarted && !currentRoundIsOpen) {
       $playerLobbyPlayers.innerHTML = '';
       data.avatars.forEach((p, i) => {
         const card = document.createElement('div');
@@ -1396,48 +1457,42 @@
       });
     }
 
-    // Update display screen lobby avatars
-    const $displayLobbyPlayers = document.getElementById('display-lobby-players');
-    if ($displayLobbyPlayers) {
-      // Remove existing avatar cards, leaving the join-info block intact
-      const existingCards = $displayLobbyPlayers.querySelectorAll('.display-avatar-card');
-      existingCards.forEach(card => card.remove());
+    // Update display screen lobby avatars (only before game starts)
+    if (!hasGameStarted) {
+      const $displayLobbyPlayers = document.getElementById('display-lobby-players');
+      if ($displayLobbyPlayers) {
+        // Remove existing avatar cards, leaving the join-info block intact
+        const existingCards = $displayLobbyPlayers.querySelectorAll('.display-avatar-card');
+        existingCards.forEach(card => card.remove());
 
-      const avatarsCount = data.avatars.length;
-      const mid = Math.floor(avatarsCount / 2);
+        const avatarsCount = data.avatars.length;
+        const mid = Math.floor(avatarsCount / 2);
 
-      const $displayLobbyJoinInfo = document.getElementById('display-lobby-join-info');
-      if ($displayLobbyJoinInfo) {
-        $displayLobbyJoinInfo.style.order = mid;
+        const $displayLobbyJoinInfo = document.getElementById('display-lobby-join-info');
+        if ($displayLobbyJoinInfo) {
+          $displayLobbyJoinInfo.style.order = mid;
+        }
+
+        data.avatars.forEach((p, i) => {
+          const card = document.createElement('div');
+          card.className = 'display-avatar-card';
+          card.style.animationDelay = `${i * 0.05}s`;
+          card.style.order = i < mid ? i : i + 1;
+          
+          const bubble = document.createElement('div');
+          bubble.className = 'display-avatar-bubble';
+          bubble.textContent = p.avatar || '👤';
+          
+          const name = document.createElement('div');
+          name.className = 'display-avatar-name';
+          name.textContent = p.username || 'Player';
+          
+          card.appendChild(bubble);
+          card.appendChild(name);
+          $displayLobbyPlayers.appendChild(card);
+        });
       }
-
-      data.avatars.forEach((p, i) => {
-        const card = document.createElement('div');
-        card.className = 'display-avatar-card';
-        card.style.animationDelay = `${i * 0.05}s`;
-        card.style.order = i < mid ? i : i + 1;
-        
-        const bubble = document.createElement('div');
-        bubble.className = 'display-avatar-bubble';
-        bubble.textContent = p.avatar || '👤';
-        
-        const name = document.createElement('div');
-        name.className = 'display-avatar-name';
-        name.textContent = p.username || 'Player';
-        
-        card.appendChild(bubble);
-        card.appendChild(name);
-        $displayLobbyPlayers.appendChild(card);
-      });
     }
-  });
-
-  // Hide waiting lobby when round starts, show when round ends
-  socket.on('round_start', () => {
-    if ($waitingLobby) $waitingLobby.style.display = 'none';
-  });
-  socket.on('round_closed', () => {
-    if ($waitingLobby) $waitingLobby.style.display = 'none';
   });
 
   // ── Haptic Feedback ───────────────────────────────────────────────────────

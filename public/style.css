@@ -1036,7 +1036,11 @@ body::before {
   animation: lb-in 0.4s ease both;
 }
 
-.lb-row.lb-me { background: rgba(99, 71, 255, 0.2); border-color: var(--primary); }
+.lb-row.lb-me {
+  background: linear-gradient(90deg, rgba(99, 71, 255, 0.25), rgba(255, 64, 129, 0.15)) !important;
+  border: 1.5px solid var(--primary) !important;
+  box-shadow: 0 0 15px rgba(99, 71, 255, 0.35) !important;
+}
 
 @keyframes lb-in {
   0%   { transform: translateX(-20px); opacity: 0; }

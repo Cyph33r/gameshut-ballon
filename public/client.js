@@ -187,6 +187,8 @@
   socket.on('joined', (data) => {
     isGM = data.isGM;
     isDisplay = data.isDisplay;
+    myUsername = data.username || myUsername;
+    myAvatar = data.avatar || myAvatar;
     showPanel(isGM ? 'admin' : (isDisplay ? 'display' : 'player'));
 
     updateLockUI(data.isLocked);

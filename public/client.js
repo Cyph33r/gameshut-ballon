@@ -748,13 +748,15 @@
   // Auto-randomize profile on load for instant fun identity
   randomizeProfile();
 
-  $btnJoinDisplay.addEventListener('click', () => {
-    // Play the pop sound to force iOS to unlock HTML5 audio context
-    playPopSound();
-    myUsername = "Display Screen";
-    myAvatar = "📺";
-    socket.emit('join', { username: myUsername, avatar: myAvatar, isDisplay: true });
-  });
+  if ($btnJoinDisplay) {
+    $btnJoinDisplay.addEventListener('click', () => {
+      // Play the pop sound to force iOS to unlock HTML5 audio context
+      playPopSound();
+      myUsername = "Display Screen";
+      myAvatar = "📺";
+      socket.emit('join', { username: myUsername, avatar: myAvatar, isDisplay: true });
+    });
+  }
 
   $joinForm.addEventListener('submit', (e) => {
     e.preventDefault();
@@ -1374,23 +1376,39 @@
     if (navigator.vibrate) navigator.vibrate(pattern);
   }
 
-  // ── Auto-reconnect session recovery ───────────────────────────────────────
-  const savedUser = sessionStorage.getItem('bb_username') || '';
-  if (savedUser) {
-    const savedAvatar = sessionStorage.getItem('bb_avatar') || '👤';
-    const savedIsGM = sessionStorage.getItem('bb_is_gm') === 'true';
-    const savedIsDisplay = sessionStorage.getItem('bb_is_display') === 'true';
-    const savedHostPass = sessionStorage.getItem('bb_host_pass') || '';
+  // ── Auto-reconnect session recovery & Query Parameter Router ───────────────
+  const urlParams = new URLSearchParams(window.location.search);
+  const isDisplayUrl = urlParams.has('display') || urlParams.get('mode') === 'display';
+
+  if (isDisplayUrl) {
+    myUsername = "Display Screen";
+    myAvatar = "📺";
 
     socket.on('connect', () => {
       socket.emit('join', {
-        username: savedUser,
-        avatar: savedAvatar,
-        hostPassword: savedHostPass,
-        isGM: savedIsGM,
-        isDisplay: savedIsDisplay
+        username: myUsername,
+        avatar: myAvatar,
+        isDisplay: true
       });
     });
+  } else {
+    const savedUser = sessionStorage.getItem('bb_username') || '';
+    if (savedUser) {
+      const savedAvatar = sessionStorage.getItem('bb_avatar') || '👤';
+      const savedIsGM = sessionStorage.getItem('bb_is_gm') === 'true';
+      const savedIsDisplay = sessionStorage.getItem('bb_is_display') === 'true';
+      const savedHostPass = sessionStorage.getItem('bb_host_pass') || '';
+
+      socket.on('connect', () => {
+        socket.emit('join', {
+          username: savedUser,
+          avatar: savedAvatar,
+          hostPassword: savedHostPass,
+          isGM: savedIsGM,
+          isDisplay: savedIsDisplay
+        });
+      });
+    }
   }
 
 })();

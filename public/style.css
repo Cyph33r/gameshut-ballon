@@ -1379,11 +1379,11 @@ body::before {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  min-height: 75vh;
-  gap: 30px;
+  justify-content: flex-start;
+  min-height: 80vh;
+  gap: 24px;
   text-align: center;
-  padding: 30px 20px;
+  padding: 4vh 20px;
 }
 .display-lobby-header {
   font-size: clamp(1.8rem, 4vw, 3rem);
@@ -1397,7 +1397,7 @@ body::before {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 30px;
+  gap: 20px;
   transition: all 0.4s ease;
 }
 .qr-container {
@@ -1442,9 +1442,10 @@ body::before {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 20px;
-  max-width: 85%;
-  margin-top: 10px;
+  align-items: center;
+  gap: 24px;
+  max-width: 90%;
+  margin-top: 15px;
   transition: all 0.4s ease;
 }
 

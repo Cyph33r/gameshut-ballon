@@ -1385,11 +1385,23 @@
     // Update display screen lobby avatars
     const $displayLobbyPlayers = document.getElementById('display-lobby-players');
     if ($displayLobbyPlayers) {
-      $displayLobbyPlayers.innerHTML = '';
+      // Remove existing avatar cards, leaving the join-info block intact
+      const existingCards = $displayLobbyPlayers.querySelectorAll('.display-avatar-card');
+      existingCards.forEach(card => card.remove());
+
+      const avatarsCount = data.avatars.length;
+      const mid = Math.floor(avatarsCount / 2);
+
+      const $displayLobbyJoinInfo = document.getElementById('display-lobby-join-info');
+      if ($displayLobbyJoinInfo) {
+        $displayLobbyJoinInfo.style.order = mid;
+      }
+
       data.avatars.forEach((p, i) => {
         const card = document.createElement('div');
         card.className = 'display-avatar-card';
         card.style.animationDelay = `${i * 0.05}s`;
+        card.style.order = i < mid ? i : i + 1;
         
         const bubble = document.createElement('div');
         bubble.className = 'display-avatar-bubble';

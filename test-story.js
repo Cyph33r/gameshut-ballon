@@ -50,8 +50,10 @@ host.on('joined', (data) => {
     };
     
     const rounds = [
-      { sentence: 'Alex read all his birthday cards.', correctColor: 'red' },
-      { sentence: 'The wind blew across the green.', correctColor: 'blue' },
+      { sentence: 'It was a beautiful day.', correctColor: null, isRound: false, sentenceIndex: 0 },
+      { sentence: 'Alex read all his birthday cards.', correctColor: 'red', isRound: true, sentenceIndex: 1 },
+      { sentence: 'The sky was clear and bright.', correctColor: null, isRound: false, sentenceIndex: 2 },
+      { sentence: 'The wind blew across the green.', correctColor: 'blue', isRound: true, sentenceIndex: 3 },
     ];
     
     host.emit('gm_queue_add', { rounds, storyMeta });
@@ -60,39 +62,45 @@ host.on('joined', (data) => {
 
 host.on('queue_update', (q) => {
   console.log(`📋 Queue updated: ${q.length} rounds`);
-  if (q.length === 2) {
-    // Start the first round
-    console.log('▶ Starting first queued round...');
+  if (q.length === 4) {
+    console.log('▶ Starting first queued filler sentence...');
     host.emit('gm_queue_next');
   }
 });
 
-let roundsCompleted = 0;
+let activeRoundsCompleted = 0;
 
 host.on('round_start', (data) => {
-  console.log(`✅ Round ${data.roundId} started: "${data.sentence}"`);
+  console.log(`✅ Sentence ${data.roundId} started: "${data.sentence}" (Filler: ${data.isFiller})`);
   if (data.storyProgress) {
-    console.log(`   📖 Story progress: round ${data.storyProgress.storyRoundIndex}, revealed: ${data.storyProgress.revealedRounds.length}`);
-  } else {
-    console.error('❌ No storyProgress in round_start!');
+    console.log(`   📖 Story progress active idx: ${data.storyProgress.storyActiveSentenceIndex}, revealed: ${data.storyProgress.revealedRounds.length}`);
+  }
+  
+  if (data.isFiller) {
+    // It's a filler sentence! Since filler sentences don't have timers or click handlers,
+    // the host is free to click "Next" immediately to advance!
+    setTimeout(() => {
+      console.log('▶ Starting next queued round/filler...');
+      host.emit('gm_queue_next');
+    }, 500);
   }
 });
 
 host.on('round_closed', (data) => {
-  roundsCompleted++;
-  console.log(`✅ Round ${data.roundId} closed. Correct: ${data.correctColor}`);
+  activeRoundsCompleted++;
+  console.log(`✅ Active Round ${data.roundId} closed. Correct: ${data.correctColor}`);
   if (data.storyProgress) {
     console.log(`   📖 Revealed rounds: ${data.storyProgress.revealedRounds.length}, story complete: ${data.storyProgress.isStoryComplete}`);
   }
   
-  if (roundsCompleted === 1) {
-    // Start round 2
+  if (activeRoundsCompleted === 1) {
+    // Start next queued item (which is sentence index 2: clear sky - a filler sentence!)
     setTimeout(() => {
-      console.log('▶ Starting second queued round...');
+      console.log('▶ Advancing to next sentence...');
       host.emit('gm_queue_next');
     }, 500);
-  } else if (roundsCompleted === 2) {
-    console.log('\n🎉 Story mode test passed!');
+  } else if (activeRoundsCompleted === 2) {
+    console.log('\n🎉 Progressive full-story E2E test passed!');
     setTimeout(() => process.exit(0), 500);
   }
 });

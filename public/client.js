@@ -249,7 +249,7 @@
   socket.on('round_start', (data) => {
     showPanel(isGM ? 'admin' : (isDisplay ? 'display' : 'player'));
     currentRoundId = data.roundId;
-    currentRoundIsOpen = true;
+    currentRoundIsOpen = !data.isFiller;
     $roundNum.textContent = data.roundId;
     hasClicked = false;
     pendingClickResult = null;
@@ -266,13 +266,46 @@
       if ($roundActiveBanner) {
         $rabSentencePreview.textContent = data.sentence;
         $roundActiveBanner.classList.remove('hidden');
-        // Animate the banner timer bar
-        $rabTimerBar.classList.remove('active');
-        const delay = Math.max(0, data.revealTime - serverNow());
-        setTimeout(() => {
-          $rabTimerBar.style.animationDuration = `${ANSWER_WINDOW}ms`;
-          $rabTimerBar.classList.add('active');
-        }, delay);
+        
+        const $rabStatusText = $roundActiveBanner.querySelector('.rab-status-text');
+        const $rabPulseDot = $roundActiveBanner.querySelector('.rab-pulse-dot');
+        const $rabTimerWrap = $roundActiveBanner.querySelector('.rab-timer-wrap');
+        
+        if (data.isFiller) {
+          $roundActiveBanner.classList.add('filler-mode');
+          if ($rabStatusText) $rabStatusText.textContent = 'Story Progression';
+          if ($rabPulseDot) $rabPulseDot.style.background = '#6347ff'; // purple pulse for story progress
+          if ($rabTimerWrap) $rabTimerWrap.classList.add('hidden');
+          if ($btnForceClose) {
+            $btnForceClose.textContent = '▶ Next Sentence';
+            $btnForceClose.className = 'rab-end-btn next-filler-btn';
+          }
+          
+          // Auto-play for filler sentences: GM automatically sends gm_queue_next after a read-friendly delay
+          if (autoplayEnabled && roundQueue.length > 0) {
+            clearTimeout(autoplayTimer);
+            autoplayTimer = setTimeout(() => {
+              socket.emit('gm_queue_next');
+            }, 6000); // 6 seconds to read filler, then auto-advance
+          }
+        } else {
+          $roundActiveBanner.classList.remove('filler-mode');
+          if ($rabStatusText) $rabStatusText.textContent = 'Round in Progress';
+          if ($rabPulseDot) $rabPulseDot.style.background = ''; // restore green pulse
+          if ($rabTimerWrap) $rabTimerWrap.classList.remove('hidden');
+          if ($btnForceClose) {
+            $btnForceClose.textContent = '⏹ End Round Early';
+            $btnForceClose.className = 'rab-end-btn';
+          }
+          
+          // Animate the banner timer bar
+          $rabTimerBar.classList.remove('active');
+          const delay = Math.max(0, data.revealTime - serverNow());
+          setTimeout(() => {
+            $rabTimerBar.style.animationDuration = `${ANSWER_WINDOW}ms`;
+            $rabTimerBar.classList.add('active');
+          }, delay);
+        }
       }
       if ($adminModeSection) $adminModeSection.classList.add('hidden');
       $sentenceInput.value = '';
@@ -286,10 +319,15 @@
         if ($displayGameView) $displayGameView.style.display = 'none';
         if ($displayStoryView) $displayStoryView.classList.remove('hidden');
         renderStoryView(data.storyProgress, 'active');
+        
         // Story timer
         if ($displayStoryTimerBar) {
           $displayStoryTimerBar.classList.remove('active');
-          $displayStoryTimerWrap.classList.remove('hidden');
+          if (data.isFiller) {
+            $displayStoryTimerWrap.classList.add('hidden');
+          } else {
+            $displayStoryTimerWrap.classList.remove('hidden');
+          }
         }
       } else {
         isStoryModeActive = false;
@@ -303,42 +341,58 @@
     } else {
       hideResult();
       
-      // Calculate narrative prefix if story mode is active
-      let narrativePrefix = '';
-      if (data.storyProgress) {
-        const { storyMeta, storyRoundIndex } = data.storyProgress;
-        if (storyMeta && storyMeta.sentences) {
-          const sentences = storyMeta.sentences;
-          const roundSentences = sentences.filter(s => s.isRound);
-          const activeRound = roundSentences[storyRoundIndex] || null;
-          if (activeRound) {
-            const activeIdx = activeRound.sentenceIndex;
-            // Find the previous round's sentenceIndex
-            let prevIdx = -1;
-            if (storyRoundIndex > 0 && roundSentences[storyRoundIndex - 1]) {
-              prevIdx = roundSentences[storyRoundIndex - 1].sentenceIndex;
-            }
-            // Collect narrative sentences between prevIdx and activeIdx
-            const prefixParts = [];
-            for (let i = prevIdx + 1; i < activeIdx; i++) {
-              if (!sentences[i].isRound) {
-                prefixParts.push(sentences[i].text);
+      if (data.isFiller) {
+        $sentenceDisplay.textContent = data.sentence;
+        $trapHint.classList.add('hidden');
+        disableAllBalloons();
+        $timerWrap.classList.add('hidden');
+        if ($playerNarrativePrefix) {
+          $playerNarrativePrefix.textContent = '';
+          $playerNarrativePrefix.classList.add('hidden');
+        }
+      } else {
+        // Calculate narrative prefix if story mode is active
+        let narrativePrefix = '';
+        if (data.storyProgress) {
+          const { storyMeta, storyActiveSentenceIndex } = data.storyProgress;
+          if (storyMeta && storyMeta.sentences) {
+            const sentences = storyMeta.sentences;
+            const roundSentences = sentences.filter(s => s.isRound);
+            
+            // Find current round index in roundSentences based on storyActiveSentenceIndex
+            const activeIdx = storyActiveSentenceIndex;
+            const storyRoundIndex = roundSentences.findIndex(s => s.sentenceIndex === activeIdx);
+            
+            if (storyRoundIndex !== -1) {
+              const activeRound = roundSentences[storyRoundIndex];
+              const activeSentenceIdx = activeRound.sentenceIndex;
+              // Find the previous round's sentenceIndex
+              let prevIdx = -1;
+              if (storyRoundIndex > 0 && roundSentences[storyRoundIndex - 1]) {
+                prevIdx = roundSentences[storyRoundIndex - 1].sentenceIndex;
               }
+              // Collect narrative sentences between prevIdx and activeSentenceIdx
+              const prefixParts = [];
+              for (let i = prevIdx + 1; i < activeSentenceIdx; i++) {
+                if (!sentences[i].isRound) {
+                  prefixParts.push(sentences[i].text);
+                }
+              }
+              narrativePrefix = prefixParts.join(' ');
             }
-            narrativePrefix = prefixParts.join(' ');
           }
         }
-      }
-      
-      if (narrativePrefix && $playerNarrativePrefix) {
-        $playerNarrativePrefix.textContent = narrativePrefix;
-        $playerNarrativePrefix.classList.remove('hidden');
-      } else if ($playerNarrativePrefix) {
-        $playerNarrativePrefix.textContent = '';
-        $playerNarrativePrefix.classList.add('hidden');
-      }
+        
+        if (narrativePrefix && $playerNarrativePrefix) {
+          $playerNarrativePrefix.textContent = narrativePrefix;
+          $playerNarrativePrefix.classList.remove('hidden');
+        } else if ($playerNarrativePrefix) {
+          $playerNarrativePrefix.textContent = '';
+          $playerNarrativePrefix.classList.add('hidden');
+        }
 
-      showSentenceAndEnableTiles(data.sentence);
+        showSentenceAndEnableTiles(data.sentence);
+      }
     }
 
     // Flash overlay
@@ -346,21 +400,28 @@
     // TTS removed — host reads the story aloud manually
 
     if (!isGM && !isDisplay) {
-      $timerBar.classList.remove('active');
-      $timerWrap.classList.remove('hidden');
-      // Sync animation to revealTime
-      const delay = Math.max(0, data.revealTime - serverNow());
-      setTimeout(() => {
-        $timerBar.style.animationDuration = `${ANSWER_WINDOW}ms`;
-        $timerBar.classList.add('active');
-      }, delay);
+      if (data.isFiller) {
+        $timerBar.classList.remove('active');
+        $timerWrap.classList.add('hidden');
+      } else {
+        $timerBar.classList.remove('active');
+        $timerWrap.classList.remove('hidden');
+        // Sync animation to revealTime
+        const delay = Math.max(0, data.revealTime - serverNow());
+        setTimeout(() => {
+          $timerBar.style.animationDuration = `${ANSWER_WINDOW}ms`;
+          $timerBar.classList.add('active');
+        }, delay);
+      }
     } else if (isDisplay) {
       const delay = Math.max(0, data.revealTime - serverNow());
       if (isStoryModeActive && $displayStoryTimerBar) {
-        setTimeout(() => {
-          $displayStoryTimerBar.style.animationDuration = `${ANSWER_WINDOW}ms`;
-          $displayStoryTimerBar.classList.add('active');
-        }, delay);
+        if (!data.isFiller) {
+          setTimeout(() => {
+            $displayStoryTimerBar.style.animationDuration = `${ANSWER_WINDOW}ms`;
+            $displayStoryTimerBar.classList.add('active');
+          }, delay);
+        }
       } else {
         setTimeout(() => {
           $displayTimerBar.style.animationDuration = `${ANSWER_WINDOW}ms`;
@@ -371,13 +432,15 @@
 
     // Auto-disable client side after window (server authoritative anyway)
     clearTimeout(closeTimer);
-    const timeUntilClose = Math.max(0, data.revealTime + ANSWER_WINDOW - serverNow());
-    closeTimer = setTimeout(() => {
-      disableAllBalloons();
-    }, timeUntilClose);
+    if (!data.isFiller) {
+      const timeUntilClose = Math.max(0, data.revealTime + ANSWER_WINDOW - serverNow());
+      closeTimer = setTimeout(() => {
+        disableAllBalloons();
+      }, timeUntilClose);
+    }
 
     // Play tick warning sounds at ANSWER_WINDOW - 2000 and ANSWER_WINDOW - 1000
-    if (!isGM) {
+    if (!isGM && !data.isFiller) {
       const delay = Math.max(0, data.revealTime - serverNow());
       setTimeout(() => {
         playSound('tick');
@@ -873,14 +936,13 @@
   });
 
   $btnQueueStory.addEventListener('click', () => {
-    const validRounds = storyDraft.filter(r => r.color !== undefined);
-    if (validRounds.length === 0) {
-      alert("No words were assigned a colour!");
-      return;
-    }
-    
-    // Build rounds (only sentences with assigned colours)
-    const newRounds = validRounds.map(r => ({ sentence: r.sentence, correctColor: r.color }));
+    // Process and queue the entire story (all sentences)
+    const storyQueueItems = storyDraft.map((s, idx) => ({
+      sentence: s.sentence,
+      correctColor: s.color !== undefined ? s.color : null,
+      isRound: s.color !== undefined,
+      sentenceIndex: idx
+    }));
     
     // Build storyMeta: full list of ALL sentences with their roles
     let roundIndex = 0;
@@ -897,7 +959,7 @@
       sentences: storyMetaSentences,
     };
     
-    socket.emit('gm_queue_add', { rounds: newRounds, storyMeta });
+    socket.emit('gm_queue_add', { rounds: storyQueueItems, storyMeta });
     
     $storyInput.value = '';
     $storyBuilder.classList.add('hidden');
@@ -920,8 +982,15 @@
     
     roundQueue.forEach((r, idx) => {
       const li = document.createElement('li');
+      let badgeHtml = '';
+      if (r.isRound) {
+        badgeHtml = `<span class="q-color ${r.correctColor === null ? 'null' : r.correctColor}">${r.correctColor === null ? 'Trap' : r.correctColor}</span>`;
+      } else {
+        badgeHtml = `<span class="q-color narrative-badge" style="background:#333; color:#aaa; border: 1px dashed #555; font-weight:normal; text-transform:none;">Narrative</span>`;
+      }
+      
       li.innerHTML = `<span style="flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-right:10px;">${idx + 1}. ${r.sentence}</span>
-                      <span class="q-color ${r.correctColor}">${r.correctColor === null ? 'Trap' : r.correctColor}</span>`;
+                      ${badgeHtml}`;
       $queueList.appendChild(li);
     });
 
@@ -957,17 +1026,14 @@
   function renderStoryView(storyProgress, phase) {
     if (!$storyScrollArea) return;
     
-    const { storyMeta, storyRoundIndex, revealedRounds } = storyProgress;
+    const { storyMeta, storyActiveSentenceIndex, revealedRounds } = storyProgress;
     if (!storyMeta || !storyMeta.sentences) return;
     
     const sentences = storyMeta.sentences;
     const revealedMap = new Map(); // sentenceIndex -> color
     (revealedRounds || []).forEach(r => revealedMap.set(r.sentenceIndex, r.color));
     
-    // Find the current active round sentence
-    const roundSentences = sentences.filter(s => s.isRound);
-    const activeRound = roundSentences[storyRoundIndex] || null;
-    const activeSentenceIndex = activeRound ? activeRound.sentenceIndex : -1;
+    const activeSentenceIndex = storyActiveSentenceIndex;
     
     $storyScrollArea.innerHTML = '';
     
@@ -977,7 +1043,7 @@
       div.dataset.sIdx = idx;
       
       // Determine the state of this sentence
-      if (s.sentenceIndex < activeSentenceIndex || (phase === 'closed' && s.sentenceIndex === activeSentenceIndex)) {
+      if (s.sentenceIndex < activeSentenceIndex) {
         // Past sentence
         if (revealedMap.has(s.sentenceIndex)) {
           // Past round — show with colour dot
@@ -990,14 +1056,25 @@
           div.classList.add('narrative');
           div.textContent = s.text;
         }
-      } else if (s.sentenceIndex === activeSentenceIndex && phase === 'active') {
-        // Active round sentence
-        div.classList.add('active');
-        div.textContent = s.text;
-      } else if (s.sentenceIndex < activeSentenceIndex + 1 && !s.isRound) {
-        // Narrative sentence right before/adjacent to the active one — show as visible context
-        div.classList.add('narrative');
-        div.textContent = s.text;
+      } else if (s.sentenceIndex === activeSentenceIndex) {
+        // Active sentence (could be round or narrative filler)
+        if (s.isRound) {
+          if (phase === 'closed') {
+            // Past round display
+            div.classList.add('past-round');
+            const colorVal = revealedMap.get(s.sentenceIndex);
+            const dotClass = colorVal === null ? 'trap' : colorVal;
+            div.innerHTML = `${s.text} <span class="story-color-dot ${dotClass}"></span>`;
+          } else {
+            // Active round display
+            div.classList.add('active');
+            div.textContent = s.text;
+          }
+        } else {
+          // Active narrative filler sentence!
+          div.classList.add('narrative-active');
+          div.textContent = s.text;
+        }
       } else {
         // Future — hide
         div.classList.add('future');
@@ -1008,7 +1085,7 @@
     });
     
     // Auto-scroll to the active sentence
-    const activeEl = $storyScrollArea.querySelector('.story-line.active');
+    const activeEl = $storyScrollArea.querySelector('.story-line.active') || $storyScrollArea.querySelector('.story-line.narrative-active');
     if (activeEl) {
       setTimeout(() => {
         activeEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -1017,7 +1094,11 @@
   }
 
   $btnForceClose.addEventListener('click', () => {
-    socket.emit('gm_close');
+    if ($btnForceClose.classList.contains('next-filler-btn')) {
+      socket.emit('gm_queue_next');
+    } else {
+      socket.emit('gm_close');
+    }
   });
 
   function setAdminStatus(msg, cls) {

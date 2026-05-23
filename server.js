@@ -219,9 +219,31 @@ io.on('connection', (socket) => {
     const pass = String(data.hostPassword || '').trim();
 
     // Check if claiming or re-claiming GM role
-    const isPasswordCorrect = globalRoom.hostPassword && pass === globalRoom.hostPassword;
-    const isNoPasswordGM = !globalRoom.hostPassword && (data.isGM || data.hostPassword === '');
-    const isGM = isPasswordCorrect || isNoPasswordGM || (globalRoom.adminSocketId === socket.id);
+    let isGM = false;
+
+    if (globalRoom.hostPassword) {
+      // If a password is set on the server:
+      const isAttemptingGM = pass !== '' || data.isGM;
+      if (isAttemptingGM) {
+        if (pass === globalRoom.hostPassword) {
+          isGM = true;
+        } else {
+          socket.emit('join_error', 'Incorrect host password!');
+          return;
+        }
+      }
+    } else {
+      // If no password is set on the server:
+      const isAttemptingGM = pass !== '' || data.isGM;
+      if (isAttemptingGM && (globalRoom.adminSocketId === null || data.isGM)) {
+        isGM = true;
+      }
+    }
+
+    // Fallback if they are already the connected admin socket
+    if (globalRoom.adminSocketId === socket.id) {
+      isGM = true;
+    }
 
     if (isGM) {
       globalRoom.adminSocketId = socket.id;

@@ -991,6 +991,28 @@
         }
       });
 
+      // Automatic color hint parsing
+      let parsedColor = undefined;
+      const hintMatch = s.match(/\((?:sounds?\s+like|like|≈)\s*(red|blue|yellow|orange|trap|null)/i);
+      if (hintMatch) {
+        const matchedStr = hintMatch[1].toLowerCase();
+        if (matchedStr === 'trap' || matchedStr === 'null') {
+          parsedColor = null;
+        } else {
+          parsedColor = matchedStr;
+        }
+      }
+
+      if (parsedColor !== undefined) {
+        storyDraft[sentenceIdx].color = parsedColor;
+        div.classList.add(`assigned-${parsedColor}`);
+        
+        const badge = document.createElement('span');
+        badge.className = `sentence-badge ${parsedColor === null ? 'null' : parsedColor}`;
+        badge.textContent = parsedColor === null ? 'Trap' : parsedColor;
+        div.appendChild(badge);
+      }
+
       div.addEventListener('click', () => {
         const alreadyActive = div.classList.contains('active');
 
@@ -1289,7 +1311,7 @@
 
   // ── Preloaded Story Templates ──────────────────────────────────────────────
   const STORY_TEMPLATES = {
-    story1: `It was the morning of the 46th Birthday of Little Alex Horne.&& No one was excited but it was a beautiful day.&& The sky was clear, the sun was bright and the grass was looking even more neatly mowed than usual.&& As is tradition, the party was held at his local Chesham Bowling Green.&& To start the party, Alex read all his birthday cards.&& One of his birthday cards was from the mayor and had all his favorite fruits on it — apples, a bunch of bananas and his favorite of the citrus family, a lovely round grapefruit.&& Alex heard his phone ring.&& “Yeah?” he answered.&& It was his uncle, calling to ask if Alex had opened his small inexpensive gift.&& The signal was not great, so Alex had to yell “Oh yes, I did, thank you.”&& Alex hung up the phone and smiled.&& Just then, a friend walked over wearing a bright jacket that looked like citrus peel; though Alex joked it might have been an edge of something brighter.&& Suddenly, the wind blew across the green and a bowl rolled past; no one knew who it belonged to.&& Everyone gathered as the birthday game began.&& The guests listened closely to proceedings.&& The cake was cut, and loud music filled the space.&& However, the golden moment was the fireworks that ended the night.`
+    story1: `It was the morning of the 46th Birthday of Little Alex Horne.&& No one was excited but it was a beautiful day.&& The sky was… clear, the sun was bright and the grass was.. looking even more neatly mowed than usual.&& As is tradition, the party was held at his local Chesham Bowling Green.&& To start the party, Alex read (sounds like red) all his birthday cards.&& One of his birthday cards was from the mayor and had all his favorite fruits on… apples, a bunch of bananas and his favorite of the citrus family, a lovely round… grapefruit.&& Alex heard his phone ring… “Yeah?”, he answered.&& It was his uncle, calling to ask if Alex had opened his small inexpensive gift.&& The signal was not great, so Alex had to yell “Oh (sounds like yellow), yes, I did, thank you.”&& Alex hung up the phone and smiled.&& Just then, a friend walked over wearing a bright jacket that looked like citrus peel; though Alex joked it might have been an or an edge (sounds like orange) of something brighter.&& Suddenly, the wind blew (sounds like blue) across the green and a bowl rolled past; no one knew who it belonged to.&& Everyone gathered as the birthday game began.&& The guests listened closely to proceedings.&& The cake was cut, and loud music filled the space.&& However, the golden moment was the fireworks that ended the night.`
   };
 
   if ($selectStoryTemplate) {

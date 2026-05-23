@@ -1445,6 +1445,49 @@
     $lbList.innerHTML = '';
     const medals = ['🥇', '🥈', '🥉'];
 
+    // Update Personal Verification Card for Mobile Players
+    const $lbPersonalCard = document.getElementById('lb-personal-card');
+    if ($lbPersonalCard && !isGM && !isDisplay) {
+      $lbPersonalCard.classList.remove('hidden');
+
+      const $lbPersonalAvatar = document.getElementById('lb-personal-avatar');
+      const $lbPersonalName = document.getElementById('lb-personal-name');
+      const $lbPersonalRank = document.getElementById('lb-personal-rank');
+      const $lbPersonalScore = document.getElementById('lb-personal-score');
+
+      const myTop10Idx = entries.findIndex(e => e.username === myUsername);
+      const myRank = myTop10Idx !== -1 ? (myTop10Idx + 1) : (data.myRank || null);
+      const myScore = myTop10Idx !== -1 ? entries[myTop10Idx].score : (data.myScore !== undefined ? data.myScore : totalScore);
+
+      if (myRank !== null) {
+        if ($lbPersonalAvatar) {
+          $lbPersonalAvatar.textContent = myAvatar || '👤';
+          $lbPersonalAvatar.className = `lb-personal-bubble ${getBalloonColorClass(myUsername)}`;
+        }
+        if ($lbPersonalName) {
+          $lbPersonalName.textContent = myUsername;
+        }
+        if ($lbPersonalScore) {
+          $lbPersonalScore.textContent = myScore;
+        }
+
+        const isWinner = myRank === 1;
+        if ($lbPersonalRank) {
+          if (isWinner) {
+            $lbPersonalRank.textContent = `👑 Champions Winner! #1`;
+            $lbPersonalCard.classList.add('winner');
+          } else {
+            $lbPersonalRank.textContent = `Your Rank: #${myRank}`;
+            $lbPersonalCard.classList.remove('winner');
+          }
+        }
+      } else {
+        $lbPersonalCard.classList.add('hidden');
+      }
+    } else if ($lbPersonalCard) {
+      $lbPersonalCard.classList.add('hidden');
+    }
+
     $lbRoundInfo.textContent = `After Round ${currentRoundId}`;
 
     entries.forEach((e, i) => {
@@ -1548,6 +1591,17 @@
   // ── Player Count & Waiting Lobby ──────────────────────────────────────────
   const $playerCountBadge = document.getElementById('player-count-badge');
 
+  const balloonColors = ['red', 'blue', 'yellow', 'orange', 'green', 'purple', 'pink'];
+  function getBalloonColorClass(username) {
+    let hash = 0;
+    const str = username || '';
+    for (let i = 0; i < str.length; i++) {
+      hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const idx = Math.abs(hash) % balloonColors.length;
+    return `balloon-${balloonColors[idx]}`;
+  }
+
   function getLobbySizeClass(count) {
     if (count > 24) return 'size-xsmall';
     if (count > 12) return 'size-small';
@@ -1578,14 +1632,18 @@
         card.style.animationDelay = `${i * 0.05}s`;
 
         const bubble = document.createElement('div');
-        bubble.className = 'player-avatar-bubble';
+        bubble.className = `player-avatar-bubble ${getBalloonColorClass(p.username)}`;
         bubble.textContent = p.avatar || '👤';
+
+        const string = document.createElement('div');
+        string.className = 'balloon-string';
 
         const name = document.createElement('div');
         name.className = 'player-avatar-name';
         name.textContent = p.username || 'Player';
 
         card.appendChild(bubble);
+        card.appendChild(string);
         card.appendChild(name);
         $playerLobbyPlayers.appendChild(card);
       });
@@ -1632,14 +1690,18 @@
           card.style.animationDelay = `${i * 0.05}s`;
 
           const bubble = document.createElement('div');
-          bubble.className = 'display-avatar-bubble';
+          bubble.className = `display-avatar-bubble ${getBalloonColorClass(p.username)}`;
           bubble.textContent = p.avatar || '👤';
+
+          const string = document.createElement('div');
+          string.className = 'balloon-string';
 
           const name = document.createElement('div');
           name.className = 'display-avatar-name';
           name.textContent = p.username || 'Player';
 
           card.appendChild(bubble);
+          card.appendChild(string);
           card.appendChild(name);
 
           // Distribute players symmetrically: even index left, odd index right

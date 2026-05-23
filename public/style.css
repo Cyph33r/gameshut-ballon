@@ -2203,3 +2203,207 @@ body::before {
   .story-line.active { font-size: 2.4rem; }
 }
 
+/* ══════════════════════════════════════════════════════════════════
+   BALLOON THEMED AVATARS
+══════════════════════════════════════════════════════════════════ */
+.display-avatar-bubble, .player-avatar-bubble {
+  position: relative;
+  overflow: visible !important; /* Allow balloon knots to show */
+  border-radius: 50% 50% 50% 50% / 45% 45% 55% 55% !important; /* Subtle balloon oval shape */
+  box-shadow: inset -6px -6px 12px rgba(0,0,0,0.3), 0 8px 20px rgba(0,0,0,0.3) !important;
+  border: 1.5px solid rgba(255,255,255,0.2) !important;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* Glossy highlight on top-left */
+.display-avatar-bubble::before, .player-avatar-bubble::before {
+  content: '';
+  position: absolute;
+  top: 10%;
+  left: 15%;
+  width: 25%;
+  height: 15%;
+  background: rgba(255, 255, 255, 0.45);
+  border-radius: 50%;
+  transform: rotate(-15deg);
+  pointer-events: none;
+}
+
+/* Knot at the bottom */
+.display-avatar-bubble::after, .player-avatar-bubble::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 10px;
+  height: 6px;
+  background: inherit;
+  clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+  z-index: -1;
+  transition: all 0.3s ease;
+}
+
+/* Balloon colors radial gradients */
+.balloon-red { background: radial-gradient(circle at 35% 35%, #ff5252, #d32f2f) !important; }
+.balloon-blue { background: radial-gradient(circle at 35% 35%, #40c4ff, #1976d2) !important; }
+.balloon-yellow { background: radial-gradient(circle at 35% 35%, #ffd740, #f57c00) !important; }
+.balloon-orange { background: radial-gradient(circle at 35% 35%, #ffab40, #e65100) !important; }
+.balloon-green { background: radial-gradient(circle at 35% 35%, #69f0ae, #2e7d32) !important; }
+.balloon-purple { background: radial-gradient(circle at 35% 35%, #e040fb, #7b1fa2) !important; }
+.balloon-pink { background: radial-gradient(circle at 35% 35%, #ff4081, #c2185b) !important; }
+
+/* Balloon string */
+.balloon-string {
+  width: 2px;
+  height: 18px;
+  background: rgba(255, 255, 255, 0.25);
+  margin-top: 1px;
+  margin-bottom: 2px;
+  border-radius: 1px;
+  animation: sway 2s ease-in-out infinite alternate;
+  transform-origin: top center;
+}
+
+@keyframes sway {
+  0% { transform: rotate(-8deg); }
+  100% { transform: rotate(8deg); }
+}
+
+/* Hover scales up string too */
+.display-avatar-card:hover .balloon-string,
+.player-avatar-card:hover .balloon-string {
+  background: rgba(255, 255, 255, 0.45);
+  height: 22px;
+}
+
+/* Dynamic string scaling matching tiers */
+.size-medium .balloon-string { height: 14px; }
+.size-small .balloon-string { height: 10px; }
+.size-xsmall .balloon-string { height: 6px; }
+
+/* ── Personal Rank / Winner Verification Card ──────────────────────── */
+.lb-personal-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 20px;
+  padding: 15px 20px;
+  margin-bottom: 20px;
+  backdrop-filter: blur(10px);
+  animation: pop-in 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+}
+
+.lb-personal-card.winner {
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.15), rgba(255, 165, 0, 0.25));
+  border: 2px solid rgba(255, 215, 0, 0.5);
+  box-shadow: 0 0 30px rgba(255, 215, 0, 0.4), inset 0 0 15px rgba(255, 215, 0, 0.2);
+}
+
+.lb-personal-left {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.lb-personal-bubble {
+  width: 48px;
+  height: 48px;
+  border-radius: 50% 50% 50% 50% / 45% 45% 55% 55% !important;
+  box-shadow: inset -3px -3px 6px rgba(0,0,0,0.3), 0 4px 10px rgba(0,0,0,0.3) !important;
+  border: 1px solid rgba(255,255,255,0.2) !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.6rem;
+  position: relative;
+}
+
+.lb-personal-bubble::before {
+  content: '';
+  position: absolute;
+  top: 10%;
+  left: 15%;
+  width: 25%;
+  height: 15%;
+  background: rgba(255, 255, 255, 0.45);
+  border-radius: 50%;
+  transform: rotate(-15deg);
+  pointer-events: none;
+}
+
+.lb-personal-bubble::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 6px;
+  height: 4px;
+  background: inherit;
+  clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+  z-index: -1;
+}
+
+.lb-personal-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.lb-personal-name {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #fff;
+}
+
+.lb-personal-card.winner .lb-personal-name {
+  color: #ffd700;
+  text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+}
+
+.lb-personal-rank {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.lb-personal-card.winner .lb-personal-rank {
+  color: #fff;
+  background: linear-gradient(90deg, #ffd700, #ffa500);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-weight: 900;
+}
+
+.lb-personal-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.lb-personal-score {
+  font-size: 1.8rem;
+  font-weight: 900;
+  color: #fff;
+  font-family: var(--font-disp);
+}
+
+.lb-personal-card.winner .lb-personal-score {
+  color: #ffd700;
+  text-shadow: 0 0 15px rgba(255, 215, 0, 0.4);
+}
+
+.lb-personal-score-label {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+

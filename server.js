@@ -60,6 +60,7 @@ function createGlobalRoomState(hostPassword) {
     },
     roundCloseTimeout: null,
     players: new Map(), // socketId -> player object
+    scoresHistory: new Map(), // username (lowercase) -> player object
   };
 }
 
@@ -286,42 +287,63 @@ io.on('connection', (socket) => {
       return;
     }
 
+    const displayName = data.isDisplay ? "Display Screen" : (clean || 'Guest');
+    const requestedNameLower = displayName.toLowerCase();
+    const isRejoining = !data.isDisplay && globalRoom.scoresHistory.has(requestedNameLower);
+
     // Check if lobby is locked to regular players
-    if (globalRoom.isLocked && !data.isDisplay) {
+    if (globalRoom.isLocked && !data.isDisplay && !isRejoining) {
       socket.emit('join_error', 'The lobby is locked! The game has already started.');
       return;
     }
 
-    const displayName = data.isDisplay ? "Display Screen" : (clean || 'Guest');
-
-    // Username uniqueness checking for non-displays
+    // Username uniqueness checking / old socket eviction
     if (!data.isDisplay) {
-      const requestedNameLower = displayName.toLowerCase();
-      let isDuplicate = false;
-      for (const [, p] of globalRoom.players) {
+      let existingSocketId = null;
+      for (const [id, p] of globalRoom.players) {
         if (p.hasJoined && !p.isGM && !p.isDisplay && p.username.toLowerCase() === requestedNameLower) {
-          isDuplicate = true;
+          existingSocketId = id;
           break;
         }
       }
-      if (isDuplicate) {
-        socket.emit('join_error', 'That nickname is already taken!');
-        return;
+
+      if (existingSocketId) {
+        if (isRejoining) {
+          console.log(`[!] Evicting stale socket ${existingSocketId} for rejoining player ${displayName}`);
+          const oldSocket = io.sockets.sockets.get(existingSocketId);
+          if (oldSocket) {
+            oldSocket.disconnect();
+          }
+          globalRoom.players.delete(existingSocketId);
+        } else {
+          socket.emit('join_error', 'That nickname is already taken!');
+          return;
+        }
       }
     }
 
-    const player = {
-      username: displayName,
-      avatar: data.isDisplay ? '📺' : (data.avatar || '👤'),
-      isGM: false,
-      isDisplay: !!data.isDisplay,
-      hasJoined: true,
-      score: 0,
-      streak: 0,
-      previousRank: 0,
-      clickedThisRound: false,
-      answeredCorrectlyThisRound: false,
-    };
+    let player;
+    if (isRejoining) {
+      player = globalRoom.scoresHistory.get(requestedNameLower);
+      console.log(`[+] Rejoining player "${displayName}" restored. Score: ${player.score}, Streak: ${player.streak}`);
+    } else {
+      player = {
+        username: displayName,
+        avatar: data.isDisplay ? '📺' : (data.avatar || '👤'),
+        isGM: false,
+        isDisplay: !!data.isDisplay,
+        hasJoined: true,
+        score: 0,
+        streak: 0,
+        previousRank: 0,
+        clickedThisRound: false,
+        answeredCorrectlyThisRound: false,
+      };
+
+      if (!player.isGM && !player.isDisplay) {
+        globalRoom.scoresHistory.set(requestedNameLower, player);
+      }
+    }
 
     globalRoom.players.set(socket.id, player);
 
@@ -457,12 +479,21 @@ io.on('connection', (socket) => {
     // Unlock lobby
     globalRoom.isLocked = false;
 
-    // Reset all player scores and streaks
+    // Clear scores history
+    globalRoom.scoresHistory.clear();
+
+    // Reset all player scores and streaks, and re-populate scoresHistory
+    // so connected players can still rejoin after a reload when lobby is locked
     for (const [, p] of globalRoom.players) {
       p.score = 0;
       p.streak = 0;
+      p.previousRank = 0;
       p.clickedThisRound = false;
       p.answeredCorrectlyThisRound = false;
+
+      if (!p.isGM && !p.isDisplay && p.hasJoined) {
+        globalRoom.scoresHistory.set(p.username.toLowerCase(), p);
+      }
     }
 
     console.log('[!] Session reset by admin');

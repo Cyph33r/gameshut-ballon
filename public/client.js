@@ -197,16 +197,16 @@
       $displaySentence.textContent = 'Waiting for the host to start a round...';
     }
 
-    // Save session in local storage for seamless recovery
-    localStorage.setItem('bb_username', data.username || '');
-    localStorage.setItem('bb_avatar', data.avatar || '👤');
-    localStorage.setItem('bb_is_gm', isGM ? 'true' : 'false');
-    localStorage.setItem('bb_is_display', isDisplay ? 'true' : 'false');
+    // Save session in session storage for seamless recovery
+    sessionStorage.setItem('bb_username', data.username || '');
+    sessionStorage.setItem('bb_avatar', data.avatar || '👤');
+    sessionStorage.setItem('bb_is_gm', isGM ? 'true' : 'false');
+    sessionStorage.setItem('bb_is_display', isDisplay ? 'true' : 'false');
 
     if (isGM) {
       const pass = $hostPasswordInput ? $hostPasswordInput.value.trim() : '';
       if (pass) {
-        localStorage.setItem('bb_host_pass', pass);
+        sessionStorage.setItem('bb_host_pass', pass);
       }
       showToast(`Logged in as Host! 👑`);
     } else {
@@ -520,7 +520,7 @@
 
   if ($btnLeaveRoom) {
     $btnLeaveRoom.addEventListener('click', () => {
-      localStorage.clear();
+      sessionStorage.clear();
       window.location.reload();
     });
   }
@@ -1281,12 +1281,12 @@
   }
 
   // ── Auto-reconnect session recovery ───────────────────────────────────────
-  const savedUser = localStorage.getItem('bb_username') || '';
+  const savedUser = sessionStorage.getItem('bb_username') || '';
   if (savedUser) {
-    const savedAvatar = localStorage.getItem('bb_avatar') || '👤';
-    const savedIsGM = localStorage.getItem('bb_is_gm') === 'true';
-    const savedIsDisplay = localStorage.getItem('bb_is_display') === 'true';
-    const savedHostPass = localStorage.getItem('bb_host_pass') || '';
+    const savedAvatar = sessionStorage.getItem('bb_avatar') || '👤';
+    const savedIsGM = sessionStorage.getItem('bb_is_gm') === 'true';
+    const savedIsDisplay = sessionStorage.getItem('bb_is_display') === 'true';
+    const savedHostPass = sessionStorage.getItem('bb_host_pass') || '';
 
     socket.on('connect', () => {
       socket.emit('join', {

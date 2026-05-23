@@ -138,7 +138,9 @@
   let resyncInterval = null;
   let overlayTimer = null;
   let closeTimer = null;
+  let lbShowTimer = null;
   let currentRoundIsOpen = false;
+  let currentRoundIsFiller = false;
   let hasGameStarted = false;
   let pendingClickResult = null;
   let ttsEnabled = true;
@@ -325,9 +327,13 @@
 
   // New round started
   socket.on('round_start', (data) => {
+    // Cancel any pending leaderboard panel switch from a previous round
+    if (lbShowTimer) { clearTimeout(lbShowTimer); lbShowTimer = null; }
+
     showPanel(isGM ? 'admin' : (isDisplay ? 'display' : 'player'));
     currentRoundId = data.roundId;
     currentRoundIsOpen = !data.isFiller;
+    currentRoundIsFiller = !!data.isFiller;
     hasGameStarted = true;
     $roundNum.textContent = data.roundId;
     hasClicked = false;
@@ -535,6 +541,7 @@
 
   socket.on('round_closed', (data) => {
     currentRoundIsOpen = false;
+    currentRoundIsFiller = false;
     clearTimeout(closeTimer);
     disableAllBalloons();
 
@@ -609,8 +616,8 @@
   });
 
   socket.on('leaderboard', (data) => {
-    // Only show leaderboard if round is closed, unless you just joined
-    if (!currentRoundIsOpen && currentRoundId > 0) {
+    // Only show leaderboard if round is closed and NOT a narrative filler
+    if (!currentRoundIsOpen && !currentRoundIsFiller && currentRoundId > 0) {
       showLeaderboard(data);
     }
   });
@@ -1476,10 +1483,12 @@
 
     $lbAdminCta.classList.toggle('hidden', !isGM);
 
-    // Auto switch to LB if player or display
+    // Auto switch to LB if player or display (skip if a filler is already playing)
     if (!isGM) {
-      setTimeout(() => {
-        if (!currentRoundIsOpen) showPanel('lb');
+      if (lbShowTimer) clearTimeout(lbShowTimer);
+      lbShowTimer = setTimeout(() => {
+        if (!currentRoundIsOpen && !currentRoundIsFiller) showPanel('lb');
+        lbShowTimer = null;
       }, 3000); // 3 seconds after round ends
     } else {
       showPanel('lb');

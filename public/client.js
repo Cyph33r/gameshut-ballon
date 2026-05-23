@@ -484,8 +484,8 @@
       }
     }
 
-    // Flash overlay only for active color rounds
-    if (!data.isFiller) {
+    // Flash overlay only for active color rounds (bypass for playing players to avoid disruption)
+    if (!data.isFiller && (isGM || isDisplay)) {
       showOverlay(data.sentence);
     }
     // TTS removed — host reads the story aloud manually

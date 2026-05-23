@@ -590,6 +590,10 @@
       if (pendingClickResult) {
         totalScore = pendingClickResult.totalScore;
         $totalScore.textContent = totalScore;
+        // Normalize server fields for showResult
+        pendingClickResult.isTrap = !!pendingClickResult.isTrapTriggered;
+        pendingClickResult.points = pendingClickResult.scoreGained;
+        pendingClickResult.correctColor = data.correctColor; // from round_closed
         showResult(pendingClickResult);
         pendingClickResult = null;
       } else if (!hasClicked) {
@@ -1399,7 +1403,7 @@
       $resultBar.className = 'result-bar wrong-result';
       $resultIcon.textContent = '💥';
       $resultText.textContent = 'It was a TRAP!';
-      $resultSub.textContent = 'There was no hidden colour.';
+      $resultSub.textContent = 'There was no hidden colour — you lose 5 points!';
       $resultPts.textContent = data.points.toString();
     } else if (!data.isCorrect) {
       $resultBar.classList.remove('hidden');
@@ -1450,12 +1454,23 @@
         ? `<span class="lb-streak" title="${e.streak} correct in a row!">🔥 ${e.streak}</span>`
         : '';
 
+      // Rank change indicator
+      let rankBadge = '';
+      if (e.rankChange > 0) {
+        rankBadge = `<span class="lb-rank-change lb-rank-up" title="Moved up ${e.rankChange}">▲${e.rankChange}</span>`;
+      } else if (e.rankChange < 0) {
+        rankBadge = `<span class="lb-rank-change lb-rank-down" title="Moved down ${Math.abs(e.rankChange)}">▼${Math.abs(e.rankChange)}</span>`;
+      } else if (e.rankChange === 0 && e.score > 0) {
+        // No change, show nothing (stable position)
+      }
+
       li.innerHTML = `
         <span class="lb-rank">${medals[i] || i + 1}</span>
         <span class="lb-name">
           <span class="lb-avatar">${e.avatar || '👤'}</span> 
           <span class="lb-user-text">${e.username}</span>
           ${streakBadge}
+          ${rankBadge}
         </span>
         <span class="lb-pts">${e.score}</span>
       `;

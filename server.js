@@ -68,9 +68,12 @@ const globalRoom = createGlobalRoomState(process.env.ADMIN_PASSWORD || process.e
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 function sendLeaderboardTo(socket) {
   const sorted = [...globalRoom.players.values()].filter(p => !p.isGM && !p.isDisplay && p.hasJoined).sort((a, b) => b.score - a.score);
-  const top10 = sorted.slice(0, LEADERBOARD_MAX).map(p => ({
-    username: p.username, avatar: p.avatar, score: p.score, streak: p.streak
-  }));
+  const top10 = sorted.slice(0, LEADERBOARD_MAX).map((p, i) => {
+    const currentRank = i + 1;
+    const prevRank = p.previousRank || 0;
+    const rankChange = prevRank > 0 ? prevRank - currentRank : 0; // positive = moved up
+    return { username: p.username, avatar: p.avatar, score: p.score, streak: p.streak, rankChange };
+  });
   const p = globalRoom.players.get(socket.id);
   if (!p || p.isGM || p.isDisplay) {
     socket.emit('leaderboard', { top10 });
@@ -89,9 +92,12 @@ function broadcastPlayerCount() {
 
 function broadcastLeaderboard() {
   const sorted = [...globalRoom.players.values()].filter(p => !p.isGM && !p.isDisplay && p.hasJoined).sort((a, b) => b.score - a.score);
-  const top10 = sorted.slice(0, LEADERBOARD_MAX).map(p => ({
-    username: p.username, avatar: p.avatar, score: p.score, streak: p.streak
-  }));
+  const top10 = sorted.slice(0, LEADERBOARD_MAX).map((p, i) => {
+    const currentRank = i + 1;
+    const prevRank = p.previousRank || 0;
+    const rankChange = prevRank > 0 ? prevRank - currentRank : 0; // positive = moved up
+    return { username: p.username, avatar: p.avatar, score: p.score, streak: p.streak, rankChange };
+  });
   for (const [id, p] of globalRoom.players) {
     if (p.isGM || p.isDisplay) {
       io.to(id).emit('leaderboard', { top10 });
@@ -100,6 +106,8 @@ function broadcastLeaderboard() {
       io.to(id).emit('leaderboard', { top10, myRank, myScore: p.score, totalPlayers: sorted.length });
     }
   }
+  // Update previousRank for all sorted players
+  sorted.forEach((p, i) => { p.previousRank = i + 1; });
 }
 
 // ─── Round Lifecycle ─────────────────────────────────────────────────────────
@@ -259,6 +267,7 @@ io.on('connection', (socket) => {
           hasJoined: true,
           score: 0,
           streak: 0,
+          previousRank: 0,
           clickedThisRound: false,
           answeredCorrectlyThisRound: false,
         };
@@ -309,6 +318,7 @@ io.on('connection', (socket) => {
       hasJoined: true,
       score: 0,
       streak: 0,
+      previousRank: 0,
       clickedThisRound: false,
       answeredCorrectlyThisRound: false,
     };
@@ -488,9 +498,13 @@ io.on('connection', (socket) => {
 
     // Trap validation
     if (globalRoom.round.correctColor === null) {
+      player.score -= 5;
       socket.emit('click_result', {
         success: false,
-        scoreGained: 0,
+        scoreGained: -5,
+        totalScore: player.score,
+        responseMs,
+        selectedColor: color,
         isCorrect: false,
         isTrapTriggered: true,
         reason: 'wrong_trap',
@@ -518,6 +532,9 @@ io.on('connection', (socket) => {
     socket.emit('click_result', {
       success: isCorrect,
       scoreGained: points,
+      totalScore: player.score,
+      responseMs,
+      selectedColor: color,
       isCorrect: isCorrect,
       isTrapTriggered: false,
       reason: isCorrect ? 'correct' : 'wrong',

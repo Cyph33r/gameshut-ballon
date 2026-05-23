@@ -4,9 +4,30 @@ const URL = process.env.URL || 'https://gameshut-ballon.onrender.com';
 const NUM_CLIENTS = 100;
 
 const COLORS = ['red', 'yellow', 'orange', 'blue'];
-const adjectives = ['Happy', 'Blue', 'Fast', 'Clever', 'Brave', 'Wild', 'Cool', 'Epic', 'Magic', 'Sneaky', 'Fierce', 'Mighty', 'Swift', 'Lucky', 'Smart', 'Bold', 'Neon', 'Cosmic', 'Silent', 'Mega', 'Cyber', 'Super', 'Rapid', 'Hyper', 'Flash', 'Shiny', 'Grand', 'Funky', 'Noble', 'Royal'];
-const nouns = ['Tiger', 'Fox', 'Bear', 'Wolf', 'Owl', 'Panda', 'Lion', 'Hawk', 'Duck', 'Frog', 'Dragon', 'Shark', 'Eagle', 'Cat', 'Dog', 'Seal', 'Koala', 'Whale', 'Puma', 'Cobra', 'Toad', 'Crow', 'Swan', 'Rhino', 'Moose', 'Sloth', 'Gecko', 'Lemur', 'Zebra', 'Sheep'];
-const emojis = ['🐯', '🦊', '🐻', '🐺', '🦉', '🐼', '🦁', '🦅', '🦆', '🐸', '🐉', '🦈', '🐈', '🐕', '🦭', '🐨', '🐳', '🐍', '🦢', '🦏', '🦥', '🦎', '🦓', '🐑', '🦖', '🦄', '🐙', '🐢', '🐧', '🦍'];
+const adjectives = [
+  'Popping', 'Floating', 'Rising', 'Drifting', 'Soaring', 
+  'Bouncing', 'Inflated', 'Helium', 'Shiny', 'Glossy', 
+  'Neon', 'Glowing', 'Golden', 'Silver', 'Prismatic', 
+  'Magic', 'Swift', 'Quick', 'Rapid', 'Turbo', 
+  'Mega', 'Super', 'Epic', 'Cosmic', 'Silent', 
+  'Flash', 'Grand', 'Funky', 'Noble', 'Royal'
+];
+const nouns = [
+  'Balloon', 'Bubble', 'Cloud', 'Spark', 'Popper', 
+  'Wind', 'UFO', 'Kite', 'Parachute', 'Rocket', 
+  'Crystal', 'Gem', 'Star', 'Sun', 'Comet', 
+  'Fire', 'Water', 'Rainbow', 'Vortex', 'Gear', 
+  'Shield', 'Crown', 'Key', 'Palette', 'Target', 
+  'Dice', 'Clover', 'Feather', 'Heart', 'Ring'
+];
+const emojis = [
+  '🎈', '🫧', '☁️', '⚡', '💥', 
+  '💨', '🛸', '🪁', '🪂', '🚀', 
+  '🔮', '💎', '⭐️', '☀️', '☄️', 
+  '🔥', '💧', '🌈', '🌀', '⚙️', 
+  '🛡️', '👑', '🔑', '🎨', '🎯', 
+  '🎲', '🍀', '🪶', '💖', '💍'
+];
 
 const clients = [];
 
@@ -23,9 +44,10 @@ for (let i = 0; i < NUM_CLIENTS; i++) {
     clients.push(socket);
 
     const adj = adjectives[Math.floor(Math.random() * adjectives.length)];
-    const noun = nouns[Math.floor(Math.random() * nouns.length)];
+    const nounIdx = Math.floor(Math.random() * nouns.length);
+    const noun = nouns[nounIdx];
     const username = `${adj} ${noun} ${i + 1}`;
-    const avatar = emojis[Math.floor(Math.random() * emojis.length)];
+    const avatar = emojis[nounIdx];
 
     socket.on('connect', () => {
       socket.emit('join', { username, avatar });

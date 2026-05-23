@@ -3,37 +3,37 @@
   const ANSWER_WINDOW = 5_000;
 
   // ── DOM Elements ───────────────────────────────────────────────────────────
-  const $joinScreen    = document.getElementById('join-screen');
-  const $gameScreen    = document.getElementById('game-screen');
-  const $joinForm      = document.getElementById('join-form');
+  const $joinScreen = document.getElementById('join-screen');
+  const $gameScreen = document.getElementById('game-screen');
+  const $joinForm = document.getElementById('join-form');
   const $usernameInput = document.getElementById('username-input');
   const $passwordInput = document.getElementById('password-input');
-  const $joinError     = document.getElementById('join-error');
-  const $joinAvatar    = document.getElementById('join-avatar');
-  const $btnRandom     = document.getElementById('btn-random');
+  const $joinError = document.getElementById('join-error');
+  const $joinAvatar = document.getElementById('join-avatar');
+  const $btnRandom = document.getElementById('btn-random');
 
-  const $adminPanel    = document.getElementById('admin-panel');
-  const $playerPanel   = document.getElementById('player-panel');
+  const $adminPanel = document.getElementById('admin-panel');
+  const $playerPanel = document.getElementById('player-panel');
   const $playerLobbyView = document.getElementById('player-lobby-view');
-  const $playerGameView  = document.getElementById('player-game-view');
+  const $playerGameView = document.getElementById('player-game-view');
   const $playerLobbyPlayers = document.getElementById('player-lobby-players');
-  const $lbPanel       = document.getElementById('lb-panel');
+  const $lbPanel = document.getElementById('lb-panel');
 
-  const $roundNum      = document.getElementById('round-num');
-  const $totalScore    = document.getElementById('total-score');
-  const $btnTts        = document.getElementById('btn-tts');
+  const $roundNum = document.getElementById('round-num');
+  const $totalScore = document.getElementById('total-score');
+  const $btnTts = document.getElementById('btn-tts');
   const $btnSoundToggle = document.getElementById('btn-sound-toggle');
-  const $btnLeaveRoom   = document.getElementById('btn-leave-room');
+  const $btnLeaveRoom = document.getElementById('btn-leave-room');
 
-  const $btnJoinDisplay= document.getElementById('btn-join-display');
-  const $displayPanel  = document.getElementById('display-panel');
+  const $btnJoinDisplay = document.getElementById('btn-join-display');
+  const $displayPanel = document.getElementById('display-panel');
   const $displaySentence = document.getElementById('display-sentence');
   const $displayTimerWrap = document.getElementById('display-timer-wrap');
-  const $displayTimerBar  = document.getElementById('display-timer-bar');
+  const $displayTimerBar = document.getElementById('display-timer-bar');
   const $displayLobbyView = document.getElementById('display-lobby-view');
-  const $displayGameView  = document.getElementById('display-game-view');
-  const $displayQrImg     = document.getElementById('display-qr-img');
-  const $displayJoinUrl   = document.getElementById('display-join-url');
+  const $displayGameView = document.getElementById('display-game-view');
+  const $displayQrImg = document.getElementById('display-qr-img');
+  const $displayJoinUrl = document.getElementById('display-join-url');
 
   const $roomCodeInput = document.getElementById('room-code-input');
   const $btnCreateRoom = document.getElementById('btn-create-room');
@@ -48,108 +48,108 @@
   const $btnToggleLock = document.getElementById('btn-toggle-lock');
 
   // Admin
-  const $sentenceForm   = document.getElementById('sentence-form');
-  const $sentenceInput  = document.getElementById('sentence-input');
-  const singleColourBtns= Array.from($sentenceForm.querySelectorAll('.colour-btn'));
-  const $adminError     = document.getElementById('admin-error');
-  const $adminStatus    = document.getElementById('admin-status');
+  const $sentenceForm = document.getElementById('sentence-form');
+  const $sentenceInput = document.getElementById('sentence-input');
+  const singleColourBtns = Array.from($sentenceForm.querySelectorAll('.colour-btn'));
+  const $adminError = document.getElementById('admin-error');
+  const $adminStatus = document.getElementById('admin-status');
   const $adminRoundControls = document.getElementById('admin-round-controls');
-  const $btnForceClose  = document.getElementById('btn-force-close');
+  const $btnForceClose = document.getElementById('btn-force-close');
   const $btnResetSession = document.getElementById('btn-reset-session');
 
   // New dashboard elements
   const $adminPlayerCount = document.getElementById('admin-player-count');
-  const $adminRoundNum    = document.getElementById('admin-round-num');
-  const $adminLobbyIcon   = document.getElementById('admin-lobby-icon');
+  const $adminRoundNum = document.getElementById('admin-round-num');
+  const $adminLobbyIcon = document.getElementById('admin-lobby-icon');
   const $adminLobbyStatus = document.getElementById('admin-lobby-status');
-  const $adminLobbyPill   = document.getElementById('admin-lobby-pill');
+  const $adminLobbyPill = document.getElementById('admin-lobby-pill');
   const $roundActiveBanner = document.getElementById('round-active-banner');
   const $rabSentencePreview = document.getElementById('rab-sentence-preview');
-  const $rabTimerBar       = document.getElementById('rab-timer-bar');
-  const $adminModeSection  = document.getElementById('admin-mode-section');
-  const $segHighlight      = document.getElementById('seg-highlight');
-  const $charCounter       = document.getElementById('char-counter');
-  const $storyCharCounter  = document.getElementById('story-char-counter');
+  const $rabTimerBar = document.getElementById('rab-timer-bar');
+  const $adminModeSection = document.getElementById('admin-mode-section');
+  const $segHighlight = document.getElementById('seg-highlight');
+  const $charCounter = document.getElementById('char-counter');
+  const $storyCharCounter = document.getElementById('story-char-counter');
 
   // Admin Story Mode
-  const $tabSingle      = document.getElementById('tab-single');
-  const $tabStory       = document.getElementById('tab-story');
-  const $storyForm      = document.getElementById('story-form');
-  const $storyInput     = document.getElementById('story-input');
-  const $btnProcessStory= document.getElementById('btn-process-story');
-  const $storyBuilder   = document.getElementById('story-builder');
+  const $tabSingle = document.getElementById('tab-single');
+  const $tabStory = document.getElementById('tab-story');
+  const $storyForm = document.getElementById('story-form');
+  const $storyInput = document.getElementById('story-input');
+  const $btnProcessStory = document.getElementById('btn-process-story');
+  const $storyBuilder = document.getElementById('story-builder');
   const $storyWordsContainer = document.getElementById('story-words-container');
-  const $storyPalette   = document.getElementById('story-palette');
-  const $btnQueueStory  = document.getElementById('btn-queue-story');
-  const storyPaletteBtns= Array.from($storyPalette.querySelectorAll('.colour-btn'));
-  
-  const $queueCard      = document.getElementById('queue-card');
-  const $queueList      = document.getElementById('queue-list');
-  const $queueCount     = document.getElementById('queue-count');
-  const $btnNextQueued  = document.getElementById('btn-next-queued');
-  const $btnClearQueue  = document.getElementById('btn-clear-queue');
-  const $chkAutoplay    = document.getElementById('chk-autoplay');
+  const $storyPalette = document.getElementById('story-palette');
+  const $btnQueueStory = document.getElementById('btn-queue-story');
+  const storyPaletteBtns = Array.from($storyPalette.querySelectorAll('.colour-btn'));
+
+  const $queueCard = document.getElementById('queue-card');
+  const $queueList = document.getElementById('queue-list');
+  const $queueCount = document.getElementById('queue-count');
+  const $btnNextQueued = document.getElementById('btn-next-queued');
+  const $btnClearQueue = document.getElementById('btn-clear-queue');
+  const $chkAutoplay = document.getElementById('chk-autoplay');
 
   // Display Story View
-  const $displayStoryView    = document.getElementById('display-story-view');
-  const $storyScrollArea     = document.getElementById('story-scroll-area');
+  const $displayStoryView = document.getElementById('display-story-view');
+  const $storyScrollArea = document.getElementById('story-scroll-area');
   const $displayStoryTimerWrap = document.getElementById('display-story-timer-wrap');
-  const $displayStoryTimerBar  = document.getElementById('display-story-timer-bar');
+  const $displayStoryTimerBar = document.getElementById('display-story-timer-bar');
 
   // Player
   const $playerNarrativePrefix = document.getElementById('player-narrative-prefix');
-  const $sentenceArea   = document.getElementById('sentence-area');
-  const $sentenceDisplay= document.getElementById('sentence-display');
-  const $timerWrap      = document.getElementById('timer-wrap');
-  const $timerBar       = document.getElementById('timer-bar');
-  const $trapHint       = document.getElementById('trap-hint');
-  const balloonBtns     = Array.from(document.querySelectorAll('.balloon-btn'));
-  
-  const $resultBar      = document.getElementById('result-bar');
-  const $resultIcon     = document.getElementById('result-icon');
-  const $resultText     = document.getElementById('result-text');
-  const $resultSub      = document.getElementById('result-sub');
-  const $resultPts      = document.getElementById('result-pts');
-  const $noClickResult  = document.getElementById('no-click-result');
+  const $sentenceArea = document.getElementById('sentence-area');
+  const $sentenceDisplay = document.getElementById('sentence-display');
+  const $timerWrap = document.getElementById('timer-wrap');
+  const $timerBar = document.getElementById('timer-bar');
+  const $trapHint = document.getElementById('trap-hint');
+  const balloonBtns = Array.from(document.querySelectorAll('.balloon-btn'));
+
+  const $resultBar = document.getElementById('result-bar');
+  const $resultIcon = document.getElementById('result-icon');
+  const $resultText = document.getElementById('result-text');
+  const $resultSub = document.getElementById('result-sub');
+  const $resultPts = document.getElementById('result-pts');
+  const $noClickResult = document.getElementById('no-click-result');
 
   // Leaderboard
-  const $lbList         = document.getElementById('lb-list');
-  const $lbRoundInfo    = document.getElementById('lb-round-info');
-  const $lbAdminCta     = document.getElementById('lb-admin-cta');
-  const $btnNextRound   = document.getElementById('btn-next-round');
+  const $lbList = document.getElementById('lb-list');
+  const $lbRoundInfo = document.getElementById('lb-round-info');
+  const $lbAdminCta = document.getElementById('lb-admin-cta');
+  const $btnNextRound = document.getElementById('btn-next-round');
 
   // Overlay
-  const $overlay        = document.getElementById('overlay');
-  const $ovSentence     = document.getElementById('ov-sentence');
+  const $overlay = document.getElementById('overlay');
+  const $ovSentence = document.getElementById('ov-sentence');
 
   // Connection
-  const $connStatus     = document.getElementById('conn-status');
+  const $connStatus = document.getElementById('conn-status');
 
   // ── State ──────────────────────────────────────────────────────────────────
-  let timeOffset      = 0;
-  let isGM            = false;
-  let isDisplay       = false;
-  let hasClicked      = false;
-  let currentRoundId  = 0;
-  let totalScore      = 0;
-  let myUsername      = '';
-  let myAvatar        = '👤';
-  let resyncInterval  = null;
-  let overlayTimer    = null;
-  let closeTimer      = null;
+  let timeOffset = 0;
+  let isGM = false;
+  let isDisplay = false;
+  let hasClicked = false;
+  let currentRoundId = 0;
+  let totalScore = 0;
+  let myUsername = '';
+  let myAvatar = '👤';
+  let resyncInterval = null;
+  let overlayTimer = null;
+  let closeTimer = null;
   let currentRoundIsOpen = false;
-  let hasGameStarted     = false;
+  let hasGameStarted = false;
   let pendingClickResult = null;
-  let ttsEnabled         = true;
+  let ttsEnabled = true;
 
   // Story Mode State
-  let storyDraft         = []; // Array of { sentence, cleanSentence, color, wordId }
-  let activeWordSpan     = null;
-  let activeSentenceRow  = null;
-  let roundQueue         = []; // Array of { sentence, correctColor }
-  let autoplayEnabled    = false;
-  let autoplayTimer      = null;
-  let isStoryModeActive  = false; // true when a story queue is actively playing
+  let storyDraft = []; // Array of { sentence, cleanSentence, color, wordId }
+  let activeWordSpan = null;
+  let activeSentenceRow = null;
+  let roundQueue = []; // Array of { sentence, correctColor }
+  let autoplayEnabled = false;
+  let autoplayTimer = null;
+  let isStoryModeActive = false; // true when a story queue is actively playing
 
   // Hint-stripping regex: removes (sounds like X), (like X), etc.
   const HINT_REGEX = /\s*\([^)]*(?:sounds?\s+like|like|≈)\s+[^)]+\)\s*/gi;
@@ -157,8 +157,8 @@
   // ── Monotonic clock ────────────────────────────────────────────────────────
   const perfOrigin = performance.now();
   const dateOrigin = Date.now();
-  const monoNow    = () => dateOrigin + (performance.now() - perfOrigin);
-  const serverNow  = () => monoNow() + timeOffset;
+  const monoNow = () => dateOrigin + (performance.now() - perfOrigin);
+  const serverNow = () => monoNow() + timeOffset;
 
   // ── Socket ─────────────────────────────────────────────────────────────────
   const socket = io();
@@ -174,7 +174,7 @@
     setConn(false);
   });
 
-  socket.on('welcome', () => {});
+  socket.on('welcome', () => { });
 
   socket.on('join_error', (msg) => {
     $joinError.textContent = msg;
@@ -185,7 +185,7 @@
     isGM = data.isGM;
     isDisplay = data.isDisplay;
     showPanel(isGM ? 'admin' : (isDisplay ? 'display' : 'player'));
-    
+
     updateLockUI(data.isLocked);
 
     if (!isGM && !isDisplay) {
@@ -210,7 +210,7 @@
         $displayQrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&color=6347ff&data=${encodeURIComponent(shareUrl)}`;
       }
       if ($displayJoinUrl) {
-        $displayJoinUrl.textContent = `${window.location.host}${window.location.pathname}`;
+        $displayJoinUrl.textContent = 'bit.ly/balloon-burst';
       }
       $displaySentence.textContent = 'Waiting for the host to start a round...';
     }
@@ -280,11 +280,11 @@
     const $roomLockIcon = document.getElementById('room-lock-icon');
     const $lockIcon = document.getElementById('lock-icon');
     const $lockText = document.getElementById('lock-text');
-    
+
     // Display screen elements
     const $displayLobbyView = document.getElementById('display-lobby-view');
     const $displayLobbyHeader = document.getElementById('display-lobby-header');
-    
+
     if (isLocked) {
       if ($lockIcon) $lockIcon.textContent = '🔒';
       if ($lockText) $lockText.textContent = 'Lobby Locked';
@@ -295,7 +295,7 @@
       if ($adminLobbyIcon) $adminLobbyIcon.textContent = '🔒';
       if ($adminLobbyStatus) $adminLobbyStatus.textContent = 'Locked';
       if ($adminLobbyPill) $adminLobbyPill.classList.add('locked');
-      
+
       // Update display screen lobby
       if ($displayLobbyView) {
         $displayLobbyView.classList.add('lobby-locked');
@@ -311,7 +311,7 @@
       if ($adminLobbyIcon) $adminLobbyIcon.textContent = '🔓';
       if ($adminLobbyStatus) $adminLobbyStatus.textContent = 'Open';
       if ($adminLobbyPill) $adminLobbyPill.classList.remove('locked');
-      
+
       // Update display screen lobby
       if ($displayLobbyView) {
         $displayLobbyView.classList.remove('lobby-locked');
@@ -344,11 +344,11 @@
       if ($roundActiveBanner) {
         $rabSentencePreview.textContent = data.sentence;
         $roundActiveBanner.classList.remove('hidden');
-        
+
         const $rabStatusText = $roundActiveBanner.querySelector('.rab-status-text');
         const $rabPulseDot = $roundActiveBanner.querySelector('.rab-pulse-dot');
         const $rabTimerWrap = $roundActiveBanner.querySelector('.rab-timer-wrap');
-        
+
         if (data.isFiller) {
           $roundActiveBanner.classList.add('filler-mode');
           if ($rabStatusText) $rabStatusText.textContent = 'Story Progression';
@@ -358,7 +358,7 @@
             $btnForceClose.textContent = '▶ Next Sentence';
             $btnForceClose.className = 'rab-end-btn next-filler-btn';
           }
-          
+
           // Auto-play for filler sentences: GM automatically sends gm_queue_next after a read-friendly delay
           if (autoplayEnabled && roundQueue.length > 0) {
             clearTimeout(autoplayTimer);
@@ -375,7 +375,7 @@
             $btnForceClose.textContent = '⏹ End Round Early';
             $btnForceClose.className = 'rab-end-btn';
           }
-          
+
           // Animate the banner timer bar
           $rabTimerBar.classList.remove('active');
           const delay = Math.max(0, data.revealTime - serverNow());
@@ -397,7 +397,7 @@
         if ($displayGameView) $displayGameView.style.display = 'none';
         if ($displayStoryView) $displayStoryView.classList.remove('hidden');
         renderStoryView(data.storyProgress, 'active');
-        
+
         // Story timer
         if ($displayStoryTimerBar) {
           $displayStoryTimerBar.classList.remove('active');
@@ -420,7 +420,7 @@
       hideResult();
       if ($playerLobbyView) $playerLobbyView.classList.add('hidden');
       if ($playerGameView) $playerGameView.classList.remove('hidden');
-      
+
       if (data.isFiller) {
         $sentenceDisplay.textContent = data.sentence;
         $trapHint.classList.add('hidden');
@@ -438,11 +438,11 @@
           if (storyMeta && storyMeta.sentences) {
             const sentences = storyMeta.sentences;
             const roundSentences = sentences.filter(s => s.isRound);
-            
+
             // Find current round index in roundSentences based on storyActiveSentenceIndex
             const activeIdx = storyActiveSentenceIndex;
             const storyRoundIndex = roundSentences.findIndex(s => s.sentenceIndex === activeIdx);
-            
+
             if (storyRoundIndex !== -1) {
               const activeRound = roundSentences[storyRoundIndex];
               const activeSentenceIdx = activeRound.sentenceIndex;
@@ -462,7 +462,7 @@
             }
           }
         }
-        
+
         if (narrativePrefix && $playerNarrativePrefix) {
           $playerNarrativePrefix.textContent = narrativePrefix;
           $playerNarrativePrefix.classList.remove('hidden');
@@ -525,7 +525,7 @@
       setTimeout(() => {
         playSound('tick');
       }, delay + ANSWER_WINDOW - 2000);
-      
+
       setTimeout(() => {
         playSound('tick');
       }, delay + ANSWER_WINDOW - 1000);
@@ -536,7 +536,7 @@
     currentRoundIsOpen = false;
     clearTimeout(closeTimer);
     disableAllBalloons();
-    
+
     $timerWrap.classList.add('hidden');
     $timerBar.classList.remove('active');
     if ($displayTimerWrap) {
@@ -629,11 +629,11 @@
         setTimeout(() => socket.emit('time_sync', monoNow()), 50);
       } else {
         socket.off('time_sync_reply', handler);
-        const minRtt   = Math.min(...rtts);
+        const minRtt = Math.min(...rtts);
         const filtered = offsets.filter((_, i) => rtts[i] <= minRtt * 2);
-        const clean    = filtered.length >= 3 ? filtered : offsets;
-        timeOffset     = clean.reduce((a, b) => a + b, 0) / clean.length;
-        const avgRtt   = rtts.reduce((a, b) => a + b, 0) / rtts.length;
+        const clean = filtered.length >= 3 ? filtered : offsets;
+        timeOffset = clean.reduce((a, b) => a + b, 0) / clean.length;
+        const avgRtt = rtts.reduce((a, b) => a + b, 0) / rtts.length;
         setConn(true, Math.round(avgRtt / 2), Math.round(Math.abs(timeOffset)));
         clearInterval(resyncInterval);
         resyncInterval = setInterval(runTimeSync, 30_000);
@@ -709,7 +709,7 @@
         gain.gain.linearRampToValueAtTime(0.01, now + 0.15);
         osc.start(now);
         osc.stop(now + 0.15);
-      } 
+      }
       else if (type === 'chime') {
         const notes = [523.25, 659.25, 783.99]; // C5, E5, G5
         notes.forEach((freq, idx) => {
@@ -725,7 +725,7 @@
           osc.start(now + idx * 0.08);
           osc.stop(now + idx * 0.08 + 0.3);
         });
-      } 
+      }
       else if (type === 'deflate') {
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
@@ -803,9 +803,30 @@
   }
 
   // ── Join ───────────────────────────────────────────────────────────────────
-  const adjectives = ['Happy','Blue','Fast','Clever','Brave','Wild','Cool','Epic','Magic','Sneaky','Fierce','Mighty','Swift','Lucky','Smart','Bold','Neon','Cosmic','Silent','Mega','Cyber','Super','Rapid','Hyper','Flash','Shiny','Grand','Funky','Noble','Royal'];
-  const nouns = ['Tiger','Fox','Bear','Wolf','Owl','Panda','Lion','Hawk','Duck','Frog','Dragon','Shark','Eagle','Cat','Dog','Seal','Koala','Whale','Puma','Cobra','Toad','Crow','Swan','Rhino','Moose','Sloth','Gecko','Lemur','Zebra','Sheep'];
-  const emojis = ['🐯','🦊','🐻','🐺','🦉','🐼','🦁','🦅','🦆','🐸','🐉','🦈','🐈','🐕','🦭','🐨','🐳','🐍','🦢','🦏','🦥','🦎','🦓','🐑','🦖','🦄','🐙','🐢','🐧','🦍'];
+  const adjectives = [
+    'Popping', 'Floating', 'Rising', 'Drifting', 'Soaring',
+    'Bouncing', 'Inflated', 'Helium', 'Shiny', 'Glossy',
+    'Neon', 'Glowing', 'Golden', 'Silver', 'Prismatic',
+    'Magic', 'Swift', 'Quick', 'Rapid', 'Turbo',
+    'Mega', 'Super', 'Epic', 'Cosmic', 'Silent',
+    'Flash', 'Grand', 'Funky', 'Noble', 'Royal'
+  ];
+  const nouns = [
+    'Balloon', 'Bubble', 'Cloud', 'Spark', 'Popper',
+    'Wind', 'UFO', 'Kite', 'Parachute', 'Rocket',
+    'Crystal', 'Gem', 'Star', 'Sun', 'Comet',
+    'Fire', 'Water', 'Rainbow', 'Vortex', 'Gear',
+    'Shield', 'Crown', 'Key', 'Palette', 'Target',
+    'Dice', 'Clover', 'Feather', 'Heart', 'Ring'
+  ];
+  const emojis = [
+    '🎈', '🫧', '☁️', '⚡', '💥',
+    '💨', '🛸', '🪁', '🪂', '🚀',
+    '🔮', '💎', '⭐️', '☀️', '☄️',
+    '🔥', '💧', '🌈', '🌀', '⚙️',
+    '🛡️', '👑', '🔑', '🎨', '🎯',
+    '🎲', '🍀', '🪶', '💖', '💍'
+  ];
 
   function randomizeAvatar() {
     myAvatar = emojis[Math.floor(Math.random() * emojis.length)];
@@ -817,11 +838,18 @@
 
   function randomizeProfile() {
     const adj = adjectives[Math.floor(Math.random() * adjectives.length)];
-    const noun = nouns[Math.floor(Math.random() * nouns.length)];
+    const nounIdx = Math.floor(Math.random() * nouns.length);
+    const noun = nouns[nounIdx];
     $usernameInput.value = `${adj} ${noun}`;
-    randomizeAvatar();
+
+    // Always match the avatar to the selected noun!
+    myAvatar = emojis[nounIdx];
+    $joinAvatar.textContent = myAvatar;
+    $joinAvatar.style.animation = 'none';
+    $joinAvatar.offsetHeight; // trigger reflow
+    $joinAvatar.style.animation = 'score-pop 0.3s ease';
   }
-  
+
   $btnRandom.addEventListener('click', randomizeProfile);
   $joinAvatar.addEventListener('click', randomizeAvatar);
 
@@ -842,17 +870,17 @@
     e.preventDefault();
     $joinError.classList.add('hidden');
     playPopSound();
-    
+
     const name = $usernameInput.value.trim();
     const hostPassword = $passwordInput.value.trim();
-    
+
     if (!name) return;
     myUsername = name;
-    
+
     if (myAvatar === '👤' && !hostPassword) {
       randomizeAvatar();
     }
-    
+
     socket.emit('join', { username: name, avatar: myAvatar, hostPassword });
   });
 
@@ -868,12 +896,12 @@
     $joinScreen.classList.add('hidden');
     $gameScreen.classList.remove('hidden');
     [$adminPanel, $playerPanel, $lbPanel, $displayPanel].forEach(p => {
-      if(p) p.classList.add('hidden');
+      if (p) p.classList.add('hidden');
     });
-    
-    if (which === 'admin')  $adminPanel.classList.remove('hidden');
+
+    if (which === 'admin') $adminPanel.classList.remove('hidden');
     if (which === 'player') $playerPanel.classList.remove('hidden');
-    if (which === 'lb')     $lbPanel.classList.remove('hidden');
+    if (which === 'lb') $lbPanel.classList.remove('hidden');
     if (which === 'display') $displayPanel.classList.remove('hidden');
   }
 
@@ -891,7 +919,7 @@
     btn.addEventListener('click', () => {
       const sentence = $sentenceInput.value.trim();
       const color = btn.dataset.color === 'null' ? null : btn.dataset.color;
-      
+
       if (!sentence) {
         $adminError.classList.remove('hidden');
         $sentenceInput.focus();
@@ -927,10 +955,10 @@
   $btnProcessStory.addEventListener('click', () => {
     const text = $storyInput.value.trim();
     if (!text) return;
-    
+
     // Split into sentences by && delimiter
     const sentences = text.split('&&').map(s => s.trim()).filter(s => s.length > 0);
-    
+
     $storyWordsContainer.innerHTML = '';
     storyDraft = [];
     $storyPalette.classList.add('hidden');
@@ -940,13 +968,13 @@
     sentences.forEach((s, sentenceIdx) => {
       // Store both original (with hints) and clean (without hints) text
       const cleanText = s.replace(HINT_REGEX, ' ').replace(/\s+/g, ' ').trim();
-      
+
       storyDraft.push({ sentence: cleanText, originalSentence: s, color: undefined });
 
       const div = document.createElement('div');
       div.className = 'story-sentence-row';
       div.dataset.sIdx = sentenceIdx;
-      
+
       // Render text: dim the hint text for host
       const textParts = s.split(/(\([^)]+\))/g);
       textParts.forEach(part => {
@@ -961,14 +989,14 @@
           div.appendChild(document.createTextNode(part));
         }
       });
-      
+
       div.addEventListener('click', () => {
         const alreadyActive = div.classList.contains('active');
-        
+
         // Clear all active classes
         const allRows = $storyWordsContainer.querySelectorAll('.story-sentence-row');
         allRows.forEach(r => r.classList.remove('active'));
-        
+
         if (alreadyActive) {
           activeSentenceRow = null;
           $storyPalette.classList.add('hidden');
@@ -978,7 +1006,7 @@
           $storyPalette.classList.remove('hidden');
         }
       });
-      
+
       $storyWordsContainer.appendChild(div);
     });
 
@@ -990,26 +1018,26 @@
       if (!activeSentenceRow) return;
       const sIdx = activeSentenceRow.dataset.sIdx;
       const color = btn.dataset.color === 'null' ? null : btn.dataset.color;
-      
+
       storyDraft[sIdx].color = color;
-      
+
       // Update row class
       activeSentenceRow.className = 'story-sentence-row';
       if (color !== undefined) {
         activeSentenceRow.classList.add(`assigned-${color}`);
       }
-      
+
       // Update badge display inside the row
       const existingBadge = activeSentenceRow.querySelector('.sentence-badge');
       if (existingBadge) existingBadge.remove();
-      
+
       if (color !== undefined) {
         const badge = document.createElement('span');
         badge.className = `sentence-badge ${color === null ? 'null' : color}`;
         badge.textContent = color === null ? 'Trap' : color;
         activeSentenceRow.appendChild(badge);
       }
-      
+
       // Clear active selection state
       activeSentenceRow.classList.remove('active');
       activeSentenceRow = null;
@@ -1025,7 +1053,7 @@
       isRound: s.color !== undefined,
       sentenceIndex: idx
     }));
-    
+
     // Build storyMeta: full list of ALL sentences with their roles
     let roundIndex = 0;
     const storyMetaSentences = storyDraft.map((s, idx) => {
@@ -1035,14 +1063,14 @@
         return { text: s.sentence, isRound: false, roundIndex: null, sentenceIndex: idx };
       }
     });
-    
+
     const storyMeta = {
       title: 'Story',
       sentences: storyMetaSentences,
     };
-    
+
     socket.emit('gm_queue_add', { rounds: storyQueueItems, storyMeta });
-    
+
     $storyInput.value = '';
     $storyBuilder.classList.add('hidden');
   });
@@ -1058,10 +1086,10 @@
     } else {
       $queueCard.classList.add('hidden');
     }
-    
+
     $queueCount.textContent = roundQueue.length;
     $queueList.innerHTML = '';
-    
+
     roundQueue.forEach((r, idx) => {
       const li = document.createElement('li');
       let badgeHtml = '';
@@ -1070,7 +1098,7 @@
       } else {
         badgeHtml = `<span class="q-color narrative-badge" style="background:#333; color:#aaa; border: 1px dashed #555; font-weight:normal; text-transform:none;">Narrative</span>`;
       }
-      
+
       li.innerHTML = `<span style="flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-right:10px;">${idx + 1}. ${r.sentence}</span>
                       ${badgeHtml}`;
       $queueList.appendChild(li);
@@ -1107,23 +1135,23 @@
   // ── Display: Progressive Story View Renderer ───────────────────────────────
   function renderStoryView(storyProgress, phase) {
     if (!$storyScrollArea) return;
-    
+
     const { storyMeta, storyActiveSentenceIndex, revealedRounds } = storyProgress;
     if (!storyMeta || !storyMeta.sentences) return;
-    
+
     const sentences = storyMeta.sentences;
     const revealedMap = new Map(); // sentenceIndex -> color
     (revealedRounds || []).forEach(r => revealedMap.set(r.sentenceIndex, r.color));
-    
+
     const activeSentenceIndex = storyActiveSentenceIndex;
-    
+
     $storyScrollArea.innerHTML = '';
-    
+
     sentences.forEach((s, idx) => {
       const div = document.createElement('div');
       div.className = 'story-line';
       div.dataset.sIdx = idx;
-      
+
       // Determine the state of this sentence
       if (s.sentenceIndex < activeSentenceIndex) {
         // Past sentence
@@ -1162,10 +1190,10 @@
         div.classList.add('future');
         div.textContent = s.text;
       }
-      
+
       $storyScrollArea.appendChild(div);
     });
-    
+
     // Auto-scroll to the active sentence
     const activeEl = $storyScrollArea.querySelector('.story-line.active') || $storyScrollArea.querySelector('.story-line.narrative-active');
     if (activeEl) {
@@ -1193,12 +1221,12 @@
 
   function setAdminStatus(msg, cls) {
     $adminStatus.textContent = msg;
-    $adminStatus.className   = `admin-status ${cls}`;
+    $adminStatus.className = `admin-status ${cls}`;
   }
 
   function setAdminTilesEnabled(on) {
-    singleColourBtns.forEach(t => { 
-      t.disabled = !on; 
+    singleColourBtns.forEach(t => {
+      t.disabled = !on;
       if (!on) t.classList.remove('selected');
     });
     if ($sentenceInput) $sentenceInput.disabled = !on;
@@ -1295,22 +1323,22 @@
 
     if (data.isTrap) {
       $resultBar.classList.remove('hidden');
-      $resultBar.className    = 'result-bar wrong-result';
+      $resultBar.className = 'result-bar wrong-result';
       $resultIcon.textContent = '💥';
       $resultText.textContent = 'It was a TRAP!';
-      $resultSub.textContent  = 'There was no hidden colour.';
-      $resultPts.textContent  = data.points.toString();
+      $resultSub.textContent = 'There was no hidden colour.';
+      $resultPts.textContent = data.points.toString();
     } else if (!data.isCorrect) {
       $resultBar.classList.remove('hidden');
-      $resultBar.className    = 'result-bar wrong-result';
+      $resultBar.className = 'result-bar wrong-result';
       $resultIcon.textContent = '❌';
       $resultText.textContent = 'Wrong Balloon!';
-      $resultSub.textContent  = `The hidden colour was ${data.correctColor.toUpperCase()}`;
-      $resultPts.textContent  = data.points.toString();
+      $resultSub.textContent = `The hidden colour was ${data.correctColor.toUpperCase()}`;
+      $resultPts.textContent = data.points.toString();
     } else {
       // Correct answer! Hide the global result bar and show the result directly inside the popped balloon.
       $resultBar.classList.add('hidden');
-      
+
       const clickedBtn = document.getElementById(`balloon-${data.selectedColor}`);
       if (clickedBtn) {
         const label = clickedBtn.querySelector('.balloon-label');
@@ -1319,7 +1347,7 @@
           label.innerHTML = `✅ ${data.correctColor.toUpperCase()}<br><span style="font-size:0.85rem; font-weight:normal; text-transform:none; opacity:0.9; text-shadow:none;">+${data.points} pts in ${timeSec}s</span>`;
         }
       }
-      
+
       // Pop score pill
       document.getElementById('score-pill').classList.add('pop');
       setTimeout(() => document.getElementById('score-pill').classList.remove('pop'), 600);
@@ -1336,17 +1364,17 @@
   function showLeaderboard(data) {
     const entries = data.top10;
     $lbList.innerHTML = '';
-    const medals = ['🥇','🥈','🥉'];
-    
+    const medals = ['🥇', '🥈', '🥉'];
+
     $lbRoundInfo.textContent = `After Round ${currentRoundId}`;
 
     entries.forEach((e, i) => {
       const li = document.createElement('li');
       li.className = `lb-row${e.username === myUsername ? ' lb-me' : ''}`;
       li.style.animationDelay = `${i * 0.05}s`;
-      
-      const streakBadge = e.streak >= 2 
-        ? `<span class="lb-streak" title="${e.streak} correct in a row!">🔥 ${e.streak}</span>` 
+
+      const streakBadge = e.streak >= 2
+        ? `<span class="lb-streak" title="${e.streak} correct in a row!">🔥 ${e.streak}</span>`
         : '';
 
       li.innerHTML = `
@@ -1368,7 +1396,7 @@
       li.style.marginTop = '10px';
       li.style.borderTop = '2px dashed rgba(255,255,255,0.2)';
       li.style.paddingTop = '15px';
-      
+
       li.innerHTML = `
         <span class="lb-rank">${data.myRank} <span style="font-size:0.7em; color:#888;">/ ${data.totalPlayers}</span></span>
         <span class="lb-name">
@@ -1381,7 +1409,7 @@
     }
 
     $lbAdminCta.classList.toggle('hidden', !isGM);
-    
+
     // Auto switch to LB if player or display
     if (!isGM) {
       setTimeout(() => {
@@ -1442,15 +1470,15 @@
         const card = document.createElement('div');
         card.className = 'player-avatar-card';
         card.style.animationDelay = `${i * 0.05}s`;
-        
+
         const bubble = document.createElement('div');
         bubble.className = 'player-avatar-bubble';
         bubble.textContent = p.avatar || '👤';
-        
+
         const name = document.createElement('div');
         name.className = 'player-avatar-name';
         name.textContent = p.username || 'Player';
-        
+
         card.appendChild(bubble);
         card.appendChild(name);
         $playerLobbyPlayers.appendChild(card);
@@ -1478,15 +1506,15 @@
           card.className = 'display-avatar-card';
           card.style.animationDelay = `${i * 0.05}s`;
           card.style.order = i < mid ? i : i + 1;
-          
+
           const bubble = document.createElement('div');
           bubble.className = 'display-avatar-bubble';
           bubble.textContent = p.avatar || '👤';
-          
+
           const name = document.createElement('div');
           name.className = 'display-avatar-name';
           name.textContent = p.username || 'Player';
-          
+
           card.appendChild(bubble);
           card.appendChild(name);
           $displayLobbyPlayers.appendChild(card);

@@ -539,10 +539,27 @@ io.on('connection', (socket) => {
 
   // ── Player click ──────────────────────────────────────────────────────────
   socket.on('click', ({ color, clickTime } = {}) => {
-    if (!globalRoom.round.isOpen) return;
-
     const player = globalRoom.players.get(socket.id);
     if (!player || player.isGM || player.isDisplay) return;
+
+    if (!globalRoom.round.isOpen) {
+      // Clicked/popped when round has not started! Penalty!
+      player.score -= 5;
+      player.streak = 0;
+      socket.emit('click_result', {
+        success: false,
+        scoreGained: -5,
+        totalScore: player.score,
+        responseMs: 0,
+        selectedColor: color,
+        isCorrect: false,
+        isTrapTriggered: false,
+        reason: 'not_started',
+      });
+      broadcastLeaderboard();
+      return;
+    }
+
     if (player.clickedThisRound) return; // Only first click registers
 
     player.clickedThisRound = true;

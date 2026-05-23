@@ -334,6 +334,11 @@
     // Cancel any pending leaderboard panel switch from a previous round
     if (lbShowTimer) { clearTimeout(lbShowTimer); lbShowTimer = null; }
 
+    // Bypass showing narrative story filler rounds to playing players and spectator displays
+    if (!isGM && data.isFiller) {
+      return;
+    }
+
     showPanel(isGM ? 'admin' : (isDisplay ? 'display' : 'player'));
     currentRoundId = data.roundId;
     currentRoundIsOpen = !data.isFiller;
@@ -400,33 +405,13 @@
       $sentenceInput.value = '';
       updateCharCounter();
     } else if (isDisplay) {
-      // Check if this is a story mode round
-      if (data.storyProgress) {
-        isStoryModeActive = true;
-        // Use story view instead of normal display
-        if ($displayLobbyView) $displayLobbyView.style.display = 'none';
-        if ($displayGameView) $displayGameView.style.display = 'none';
-        if ($displayStoryView) $displayStoryView.classList.remove('hidden');
-        renderStoryView(data.storyProgress, 'active');
-
-        // Story timer
-        if ($displayStoryTimerBar) {
-          $displayStoryTimerBar.classList.remove('active');
-          if (data.isFiller) {
-            $displayStoryTimerWrap.classList.add('hidden');
-          } else {
-            $displayStoryTimerWrap.classList.remove('hidden');
-          }
-        }
-      } else {
-        isStoryModeActive = false;
-        if ($displayLobbyView) $displayLobbyView.style.display = 'none';
-        if ($displayGameView) $displayGameView.style.display = 'flex';
-        if ($displayStoryView) $displayStoryView.classList.add('hidden');
-        $displaySentence.textContent = data.sentence;
-        $displayTimerBar.classList.remove('active');
-        $displayTimerWrap.classList.remove('hidden');
-      }
+      isStoryModeActive = false;
+      if ($displayLobbyView) $displayLobbyView.style.display = 'none';
+      if ($displayGameView) $displayGameView.style.display = 'flex';
+      if ($displayStoryView) $displayStoryView.classList.add('hidden');
+      $displaySentence.textContent = data.sentence;
+      $displayTimerBar.classList.remove('active');
+      $displayTimerWrap.classList.remove('hidden');
     } else {
       hideResult();
       if ($playerLobbyView) $playerLobbyView.classList.add('hidden');
@@ -442,42 +427,8 @@
           $playerNarrativePrefix.classList.add('hidden');
         }
       } else {
-        // Calculate narrative prefix if story mode is active
-        let narrativePrefix = '';
-        if (data.storyProgress) {
-          const { storyMeta, storyActiveSentenceIndex } = data.storyProgress;
-          if (storyMeta && storyMeta.sentences) {
-            const sentences = storyMeta.sentences;
-            const roundSentences = sentences.filter(s => s.isRound);
-
-            // Find current round index in roundSentences based on storyActiveSentenceIndex
-            const activeIdx = storyActiveSentenceIndex;
-            const storyRoundIndex = roundSentences.findIndex(s => s.sentenceIndex === activeIdx);
-
-            if (storyRoundIndex !== -1) {
-              const activeRound = roundSentences[storyRoundIndex];
-              const activeSentenceIdx = activeRound.sentenceIndex;
-              // Find the previous round's sentenceIndex
-              let prevIdx = -1;
-              if (storyRoundIndex > 0 && roundSentences[storyRoundIndex - 1]) {
-                prevIdx = roundSentences[storyRoundIndex - 1].sentenceIndex;
-              }
-              // Collect narrative sentences between prevIdx and activeSentenceIdx
-              const prefixParts = [];
-              for (let i = prevIdx + 1; i < activeSentenceIdx; i++) {
-                if (!sentences[i].isRound) {
-                  prefixParts.push(sentences[i].text);
-                }
-              }
-              narrativePrefix = prefixParts.join(' ');
-            }
-          }
-        }
-
-        if (narrativePrefix && $playerNarrativePrefix) {
-          $playerNarrativePrefix.textContent = narrativePrefix;
-          $playerNarrativePrefix.classList.remove('hidden');
-        } else if ($playerNarrativePrefix) {
+        // Clear narrative prefix (story text not showing for playing players)
+        if ($playerNarrativePrefix) {
           $playerNarrativePrefix.textContent = '';
           $playerNarrativePrefix.classList.add('hidden');
         }
@@ -487,8 +438,8 @@
       }
     }
 
-    // Flash overlay only for active color rounds (bypass for playing players to avoid disruption)
-    if (!data.isFiller && (isGM || isDisplay)) {
+    // Flash overlay only for active color rounds (bypass for playing players and spectator displays to avoid displaying sentence)
+    if (!data.isFiller && isGM) {
       showOverlay(data.sentence);
     }
     // TTS removed — host reads the story aloud manually
@@ -550,10 +501,32 @@
     currentRoundIsOpen = false;
     currentRoundIsFiller = false;
     clearTimeout(closeTimer);
-    disableAllBalloons();
 
     if (data.storyProgress) {
       isStoryComplete = !!data.storyProgress.isStoryComplete;
+    }
+
+    if (!isGM && !isDisplay) {
+      disableAllBalloons(); // Disable immediately during initial closed transition
+      if (!isStoryComplete) {
+        // Show correct balloon for 3 seconds, then enable early pop detection!
+        setTimeout(() => {
+          if (!currentRoundIsOpen) {
+            // Enable remaining unpopped balloons for early pop penalty detection
+            resetAllBalloons();
+            const popped = data.storyProgress ? data.storyProgress.revealedRounds.map(r => r.color) : [];
+            applyPoppedBalloons(popped);
+            
+            // Allow players to click early (and get a penalty)
+            hasClicked = false;
+            $noClickResult.classList.remove('hidden');
+            $noClickResult.innerHTML = '⏱ <strong>Waiting...</strong> Host is preparing the next round. (Self-control check!)';
+            $noClickResult.className = 'no-click-result time-up';
+          }
+        }, 3000);
+      }
+    } else {
+      disableAllBalloons();
     }
 
     $timerWrap.classList.add('hidden');
@@ -623,6 +596,29 @@
   });
 
   socket.on('click_result', (data) => {
+    if (data.reason === 'not_started') {
+      totalScore = data.totalScore;
+      if ($totalScore) $totalScore.textContent = totalScore;
+
+      // Pop the clicked balloon visually immediately
+      const btn = balloonBtns.find(t => t.dataset.color === data.selectedColor);
+      if (btn) {
+        btn.classList.add('popped', 'disabled');
+        btn.disabled = true;
+      }
+
+      playSound('deflate');
+      
+      $noClickResult.classList.remove('hidden');
+      $noClickResult.innerHTML = `🚨 <strong>Too early!</strong> Popped a balloon before the round started! Penalty (${data.scoreGained} pts)`;
+      $noClickResult.className = 'no-click-result time-up'; // neutral/warning style
+      
+      // Prevent further clicks during this wait phase
+      disableAllBalloons();
+      hasClicked = true;
+      return;
+    }
+
     pendingClickResult = data;
     disableAllBalloons();
     $noClickResult.classList.remove('hidden');
@@ -1357,7 +1353,7 @@
 
   // ── Player: Gameplay ───────────────────────────────────────────────────────
   function showSentenceAndEnableTiles(sentence) {
-    $sentenceDisplay.textContent = sentence;
+    $sentenceDisplay.textContent = '👂 Listen closely to the Host...';
     $trapHint.classList.remove('hidden'); // Show hint about traps
     enableAllBalloons();
   }
@@ -1576,11 +1572,15 @@
 
     $lbAdminCta.classList.toggle('hidden', !isGM);
 
-    // Auto switch to LB if player or display (skip if a filler is already playing)
+    // Auto switch to LB if spectator display, or if playing player when the story is complete
     if (!isGM) {
       if (lbShowTimer) clearTimeout(lbShowTimer);
       lbShowTimer = setTimeout(() => {
-        if (!currentRoundIsOpen && !currentRoundIsFiller) showPanel('lb');
+        if (!currentRoundIsOpen && !currentRoundIsFiller) {
+          if (isDisplay || isStoryComplete) {
+            showPanel('lb');
+          }
+        }
         lbShowTimer = null;
       }, 3000); // 3 seconds after round ends
     } else {

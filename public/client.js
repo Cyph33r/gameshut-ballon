@@ -49,7 +49,6 @@
 
   // Admin
   const $sentenceForm = document.getElementById('sentence-form');
-  const $sentenceInput = document.getElementById('sentence-input');
   const singleColourBtns = Array.from($sentenceForm.querySelectorAll('.colour-btn'));
   const $adminError = document.getElementById('admin-error');
   const $adminStatus = document.getElementById('admin-status');
@@ -64,38 +63,8 @@
   const $adminLobbyStatus = document.getElementById('admin-lobby-status');
   const $adminLobbyPill = document.getElementById('admin-lobby-pill');
   const $roundActiveBanner = document.getElementById('round-active-banner');
-  const $rabSentencePreview = document.getElementById('rab-sentence-preview');
   const $rabTimerBar = document.getElementById('rab-timer-bar');
   const $adminModeSection = document.getElementById('admin-mode-section');
-  const $segHighlight = document.getElementById('seg-highlight');
-  const $charCounter = document.getElementById('char-counter');
-  const $storyCharCounter = document.getElementById('story-char-counter');
-
-  // Admin Story Mode
-  const $tabSingle = document.getElementById('tab-single');
-  const $tabStory = document.getElementById('tab-story');
-  const $storyForm = document.getElementById('story-form');
-  const $storyInput = document.getElementById('story-input');
-  const $selectStoryTemplate = document.getElementById('select-story-template');
-  const $btnProcessStory = document.getElementById('btn-process-story');
-  const $storyBuilder = document.getElementById('story-builder');
-  const $storyWordsContainer = document.getElementById('story-words-container');
-  const $storyPalette = document.getElementById('story-palette');
-  const $btnQueueStory = document.getElementById('btn-queue-story');
-  const storyPaletteBtns = Array.from($storyPalette.querySelectorAll('.colour-btn'));
-
-  const $queueCard = document.getElementById('queue-card');
-  const $queueList = document.getElementById('queue-list');
-  const $queueCount = document.getElementById('queue-count');
-  const $btnNextQueued = document.getElementById('btn-next-queued');
-  const $btnClearQueue = document.getElementById('btn-clear-queue');
-  const $chkAutoplay = document.getElementById('chk-autoplay');
-
-  // Display Story View
-  const $displayStoryView = document.getElementById('display-story-view');
-  const $storyScrollArea = document.getElementById('story-scroll-area');
-  const $displayStoryTimerWrap = document.getElementById('display-story-timer-wrap');
-  const $displayStoryTimerBar = document.getElementById('display-story-timer-bar');
 
   // Player
   const $playerNarrativePrefix = document.getElementById('player-narrative-prefix');
@@ -145,18 +114,7 @@
   let pendingClickResult = null;
   let ttsEnabled = true;
 
-  // Story Mode State
-  let storyDraft = []; // Array of { sentence, cleanSentence, color, wordId }
-  let activeWordSpan = null;
-  let activeSentenceRow = null;
-  let roundQueue = []; // Array of { sentence, correctColor }
-  let autoplayEnabled = false;
-  let autoplayTimer = null;
-  let isStoryModeActive = false; // true when a story queue is actively playing
-  let isStoryComplete = false;
 
-  // Hint-stripping regex: removes (sounds like X), (like X), etc.
-  const HINT_REGEX = /\s*\([^)]*(?:sounds?\s+like|like|≈)\s+[^)]+\)\s*/gi;
 
   // ── Monotonic clock ────────────────────────────────────────────────────────
   const perfOrigin = performance.now();
@@ -248,22 +206,17 @@
     currentRoundIsOpen = false;
     hasClicked = false;
     pendingClickResult = null;
-    isStoryModeActive = false;
-    isStoryComplete = false;
 
     totalScore = 0;
     if ($totalScore) $totalScore.textContent = '0';
     if ($roundNum) $roundNum.textContent = '—';
     if ($adminRoundNum) $adminRoundNum.textContent = '0';
 
-    clearTimeout(autoplayTimer);
-
     if (isGM) {
       if ($roundActiveBanner) $roundActiveBanner.classList.add('hidden');
       if ($adminModeSection) $adminModeSection.classList.remove('hidden');
       setAdminStatus('Session reset by admin. Ready to start new rounds.', '');
       setAdminTilesEnabled(true);
-      if ($adminRoundControls) $adminRoundControls.classList.add('hidden');
     }
 
     showPanel(isGM ? 'admin' : (isDisplay ? 'display' : 'player'));
@@ -276,7 +229,6 @@
     } else if (isDisplay) {
       if ($displayLobbyView) $displayLobbyView.style.display = 'flex';
       if ($displayGameView) $displayGameView.style.display = 'none';
-      if ($displayStoryView) $displayStoryView.classList.add('hidden');
       if ($displaySentence) $displaySentence.textContent = 'Waiting for the host to start a round...';
     }
 
@@ -334,15 +286,10 @@
     // Cancel any pending leaderboard panel switch from a previous round
     if (lbShowTimer) { clearTimeout(lbShowTimer); lbShowTimer = null; }
 
-    // Bypass showing narrative story filler rounds to playing players and spectator displays
-    if (!isGM && data.isFiller) {
-      return;
-    }
-
     showPanel(isGM ? 'admin' : (isDisplay ? 'display' : 'player'));
     currentRoundId = data.roundId;
-    currentRoundIsOpen = !data.isFiller;
-    currentRoundIsFiller = !!data.isFiller;
+    currentRoundIsOpen = true;
+    currentRoundIsFiller = false;
     hasGameStarted = true;
     $roundNum.textContent = data.roundId;
     hasClicked = false;
@@ -354,62 +301,27 @@
     if (isGM) {
       setAdminStatus('', '');
       setAdminTilesEnabled(false);
-      $adminRoundControls.classList.remove('hidden');
 
-      // Show round-active banner, hide mode section
+      // Show round-active banner
       if ($roundActiveBanner) {
-        $rabSentencePreview.textContent = data.sentence;
         $roundActiveBanner.classList.remove('hidden');
 
         const $rabStatusText = $roundActiveBanner.querySelector('.rab-status-text');
-        const $rabPulseDot = $roundActiveBanner.querySelector('.rab-pulse-dot');
-        const $rabTimerWrap = $roundActiveBanner.querySelector('.rab-timer-wrap');
+        if ($rabStatusText) $rabStatusText.textContent = 'Round in Progress';
 
-        if (data.isFiller) {
-          $roundActiveBanner.classList.add('filler-mode');
-          if ($rabStatusText) $rabStatusText.textContent = 'Story Progression';
-          if ($rabPulseDot) $rabPulseDot.style.background = '#6347ff'; // purple pulse for story progress
-          if ($rabTimerWrap) $rabTimerWrap.classList.add('hidden');
-          if ($btnForceClose) {
-            $btnForceClose.textContent = '▶ Next Sentence';
-            $btnForceClose.className = 'rab-end-btn next-filler-btn';
-          }
-
-          // Auto-play for filler sentences: GM automatically sends gm_queue_next after a read-friendly delay
-          if (autoplayEnabled && roundQueue.length > 0) {
-            clearTimeout(autoplayTimer);
-            autoplayTimer = setTimeout(() => {
-              socket.emit('gm_queue_next');
-            }, 6000); // 6 seconds to read filler, then auto-advance
-          }
-        } else {
-          $roundActiveBanner.classList.remove('filler-mode');
-          if ($rabStatusText) $rabStatusText.textContent = 'Round in Progress';
-          if ($rabPulseDot) $rabPulseDot.style.background = ''; // restore green pulse
-          if ($rabTimerWrap) $rabTimerWrap.classList.remove('hidden');
-          if ($btnForceClose) {
-            $btnForceClose.textContent = '⏹ End Round Early';
-            $btnForceClose.className = 'rab-end-btn';
-          }
-
-          // Animate the banner timer bar
-          $rabTimerBar.classList.remove('active');
-          const delay = Math.max(0, data.revealTime - serverNow());
-          setTimeout(() => {
-            $rabTimerBar.style.animationDuration = `${ANSWER_WINDOW}ms`;
-            $rabTimerBar.classList.add('active');
-          }, delay);
-        }
+        // Animate the banner timer bar
+        $rabTimerBar.classList.remove('active');
+        const delay = Math.max(0, data.revealTime - serverNow());
+        setTimeout(() => {
+          $rabTimerBar.style.animationDuration = `${ANSWER_WINDOW}ms`;
+          $rabTimerBar.classList.add('active');
+        }, delay);
       }
       if ($adminModeSection) $adminModeSection.classList.add('hidden');
-      $sentenceInput.value = '';
-      updateCharCounter();
     } else if (isDisplay) {
-      isStoryModeActive = false;
       if ($displayLobbyView) $displayLobbyView.style.display = 'none';
       if ($displayGameView) $displayGameView.style.display = 'flex';
-      if ($displayStoryView) $displayStoryView.classList.add('hidden');
-      $displaySentence.textContent = data.sentence;
+      $displaySentence.textContent = '👂 Listen closely to the Host...';
       $displayTimerBar.classList.remove('active');
       $displayTimerWrap.classList.remove('hidden');
     } else {
@@ -417,75 +329,41 @@
       if ($playerLobbyView) $playerLobbyView.classList.add('hidden');
       if ($playerGameView) $playerGameView.classList.remove('hidden');
 
-      if (data.isFiller) {
-        $sentenceDisplay.textContent = data.sentence;
-        $trapHint.classList.add('hidden');
-        disableAllBalloons();
-        $timerWrap.classList.add('hidden');
-        if ($playerNarrativePrefix) {
-          $playerNarrativePrefix.textContent = '';
-          $playerNarrativePrefix.classList.add('hidden');
-        }
-      } else {
-        // Clear narrative prefix (story text not showing for playing players)
-        if ($playerNarrativePrefix) {
-          $playerNarrativePrefix.textContent = '';
-          $playerNarrativePrefix.classList.add('hidden');
-        }
-
-        showSentenceAndEnableTiles(data.sentence);
-        applyPoppedBalloons(data.poppedColors);
+      if ($playerNarrativePrefix) {
+        $playerNarrativePrefix.textContent = '';
+        $playerNarrativePrefix.classList.add('hidden');
       }
-    }
 
-    // Flash overlay only for active color rounds (bypass for playing players and spectator displays to avoid displaying sentence)
-    if (!data.isFiller && isGM) {
-      showOverlay(data.sentence);
+      showSentenceAndEnableTiles(data.sentence);
+      applyPoppedBalloons(data.poppedColors);
     }
-    // TTS removed — host reads the story aloud manually
 
     if (!isGM && !isDisplay) {
-      if (data.isFiller) {
-        $timerBar.classList.remove('active');
-        $timerWrap.classList.add('hidden');
-      } else {
-        $timerBar.classList.remove('active');
-        $timerWrap.classList.remove('hidden');
-        // Sync animation to revealTime
-        const delay = Math.max(0, data.revealTime - serverNow());
-        setTimeout(() => {
-          $timerBar.style.animationDuration = `${ANSWER_WINDOW}ms`;
-          $timerBar.classList.add('active');
-        }, delay);
-      }
+      $timerBar.classList.remove('active');
+      $timerWrap.classList.remove('hidden');
+      // Sync animation to revealTime
+      const delay = Math.max(0, data.revealTime - serverNow());
+      setTimeout(() => {
+        $timerBar.style.animationDuration = `${ANSWER_WINDOW}ms`;
+        $timerBar.classList.add('active');
+      }, delay);
     } else if (isDisplay) {
       const delay = Math.max(0, data.revealTime - serverNow());
-      if (isStoryModeActive && $displayStoryTimerBar) {
-        if (!data.isFiller) {
-          setTimeout(() => {
-            $displayStoryTimerBar.style.animationDuration = `${ANSWER_WINDOW}ms`;
-            $displayStoryTimerBar.classList.add('active');
-          }, delay);
-        }
-      } else {
-        setTimeout(() => {
-          $displayTimerBar.style.animationDuration = `${ANSWER_WINDOW}ms`;
-          $displayTimerBar.classList.add('active');
-        }, delay);
-      }
+      setTimeout(() => {
+        $displayTimerBar.style.animationDuration = `${ANSWER_WINDOW}ms`;
+        $displayTimerBar.classList.add('active');
+      }, delay);
     }
 
     // Auto-disable client side after window (server authoritative anyway)
     clearTimeout(closeTimer);
-    if (!data.isFiller) {
-      const timeUntilClose = Math.max(0, data.revealTime + ANSWER_WINDOW - serverNow());
-      closeTimer = setTimeout(() => {
-        disableAllBalloons();
-      }, timeUntilClose);
-    }
+    const timeUntilClose = Math.max(0, data.revealTime + ANSWER_WINDOW - serverNow());
+    closeTimer = setTimeout(() => {
+      disableAllBalloons();
+    }, timeUntilClose);
 
     // Play tick warning sounds at ANSWER_WINDOW - 2000 and ANSWER_WINDOW - 1000
-    if (!isGM && !data.isFiller) {
+    if (!isGM) {
       const delay = Math.max(0, data.revealTime - serverNow());
       setTimeout(() => {
         playSound('tick');
@@ -502,29 +380,23 @@
     currentRoundIsFiller = false;
     clearTimeout(closeTimer);
 
-    if (data.storyProgress) {
-      isStoryComplete = !!data.storyProgress.isStoryComplete;
-    }
-
     if (!isGM && !isDisplay) {
       disableAllBalloons(); // Disable immediately during initial closed transition
-      if (!isStoryComplete) {
-        // Show correct balloon for 3 seconds, then enable early pop detection!
-        setTimeout(() => {
-          if (!currentRoundIsOpen) {
-            // Enable remaining unpopped balloons for early pop penalty detection
-            resetAllBalloons();
-            const popped = data.storyProgress ? data.storyProgress.revealedRounds.map(r => r.color) : [];
-            applyPoppedBalloons(popped);
-            
-            // Allow players to click early (and get a penalty)
-            hasClicked = false;
-            $noClickResult.classList.remove('hidden');
-            $noClickResult.innerHTML = '⏱ <strong>Waiting...</strong> Host is preparing the next round. (Self-control check!)';
-            $noClickResult.className = 'no-click-result time-up';
-          }
-        }, 3000);
-      }
+      
+      // Show correct balloon for 3 seconds, then enable early pop detection!
+      setTimeout(() => {
+        if (!currentRoundIsOpen) {
+          // Enable remaining unpopped balloons for early pop penalty detection
+          resetAllBalloons();
+          applyPoppedBalloons(data.poppedColors);
+          
+          // Allow players to click early (and get a penalty)
+          hasClicked = false;
+          $noClickResult.classList.remove('hidden');
+          $noClickResult.innerHTML = '⏱ <strong>Waiting...</strong> Host is preparing the next round. (Self-control check!)';
+          $noClickResult.className = 'no-click-result time-up';
+        }
+      }, 3000);
     } else {
       disableAllBalloons();
     }
@@ -545,31 +417,15 @@
 
     if (isGM) {
       setAdminTilesEnabled(true);
-      setAdminStatus('Round over — check the leaderboard, then queue the next one.', '');
-      $adminRoundControls.classList.add('hidden');
+      setAdminStatus('Round over — check the leaderboard, then select another color.', '');
       // Hide banner, show mode section
       if ($roundActiveBanner) {
         $roundActiveBanner.classList.add('hidden');
         $rabTimerBar.classList.remove('active');
       }
       if ($adminModeSection) $adminModeSection.classList.remove('hidden');
-
-      // Auto-play: auto-advance to next queued round after leaderboard delay
-      if (autoplayEnabled && roundQueue.length > 0) {
-        clearTimeout(autoplayTimer);
-        autoplayTimer = setTimeout(() => {
-          socket.emit('gm_queue_next');
-        }, 6000); // 6 second leaderboard display
-      }
     } else if (isDisplay) {
-      if (isStoryModeActive && data.storyProgress) {
-        // Update story view to show revealed colour
-        renderStoryView(data.storyProgress, 'closed');
-        if ($displayStoryTimerWrap) $displayStoryTimerWrap.classList.add('hidden');
-        if ($displayStoryTimerBar) $displayStoryTimerBar.classList.remove('active');
-      } else {
-        $displaySentence.textContent = 'Round Over! Loading leaderboard...';
-      }
+      $displaySentence.textContent = 'Round Over! Loading leaderboard...';
     } else {
       if (pendingClickResult) {
         totalScore = pendingClickResult.totalScore;
@@ -927,7 +783,6 @@
   $btnNextRound.addEventListener('click', () => {
     if (isGM) {
       showPanel('admin');
-      $sentenceInput.focus();
     }
   });
 
@@ -936,353 +791,18 @@
 
   singleColourBtns.forEach(btn => {
     btn.addEventListener('click', () => {
-      const sentence = $sentenceInput.value.trim();
       const color = btn.dataset.color === 'null' ? null : btn.dataset.color;
-
-      if (!sentence) {
-        $adminError.classList.remove('hidden');
-        $sentenceInput.focus();
-        return;
-      }
-      $adminError.classList.add('hidden');
 
       // Visual selection glow
       singleColourBtns.forEach(b => b.classList.remove('selected'));
       btn.classList.add('selected');
 
-      socket.emit('gm_round', { sentence, correctColor: color });
+      socket.emit('gm_round', { correctColor: color });
     });
   });
-
-  // ── Admin: Story Mode Logic ────────────────────────────────────────────────
-  $tabSingle.addEventListener('click', () => {
-    $tabSingle.classList.add('active');
-    $tabStory.classList.remove('active');
-    $sentenceForm.classList.remove('hidden');
-    $storyForm.classList.add('hidden');
-    if ($segHighlight) $segHighlight.classList.remove('right');
-  });
-
-  $tabStory.addEventListener('click', () => {
-    $tabStory.classList.add('active');
-    $tabSingle.classList.remove('active');
-    $sentenceForm.classList.add('hidden');
-    $storyForm.classList.remove('hidden');
-    if ($segHighlight) $segHighlight.classList.add('right');
-  });
-
-  $btnProcessStory.addEventListener('click', () => {
-    const text = $storyInput.value.trim();
-    if (!text) return;
-
-    // Split into sentences by && delimiter
-    const sentences = text.split('&&').map(s => s.trim()).filter(s => s.length > 0);
-
-    $storyWordsContainer.innerHTML = '';
-    storyDraft = [];
-    $storyPalette.classList.add('hidden');
-    activeWordSpan = null;
-    activeSentenceRow = null;
-
-    sentences.forEach((s, sentenceIdx) => {
-      // Store both original (with hints) and clean (without hints) text
-      const cleanText = s.replace(HINT_REGEX, ' ').replace(/\s+/g, ' ').trim();
-
-      storyDraft.push({ sentence: cleanText, originalSentence: s, color: undefined });
-
-      const div = document.createElement('div');
-      div.className = 'story-sentence-row';
-      div.dataset.sIdx = sentenceIdx;
-
-      // Render text: dim the hint text for host
-      const textParts = s.split(/(\([^)]+\))/g);
-      textParts.forEach(part => {
-        if (/^\([^)]+\)$/.test(part)) {
-          const hintSpan = document.createElement('span');
-          hintSpan.textContent = part;
-          hintSpan.style.opacity = '0.5';
-          hintSpan.style.fontStyle = 'italic';
-          hintSpan.style.marginLeft = '5px';
-          div.appendChild(hintSpan);
-        } else {
-          div.appendChild(document.createTextNode(part));
-        }
-      });
-
-      // Automatic color hint parsing
-      let parsedColor = undefined;
-      const hintMatch = s.match(/\((?:sounds?\s+like|like|≈)\s*(red|blue|yellow|orange|green|gold|trap|null)/i);
-      if (hintMatch) {
-        const matchedStr = hintMatch[1].toLowerCase();
-        if (matchedStr === 'trap' || matchedStr === 'null') {
-          parsedColor = null;
-        } else {
-          parsedColor = matchedStr;
-        }
-      } else {
-        // Look for literal spelt-out colors in the clean text (ignoring phonetic hints)
-        const speltMatch = cleanText.match(/\b(red|blue|yellow|orange|green|gold|golden)\b/i);
-        if (speltMatch) {
-          const matched = speltMatch[1].toLowerCase();
-          parsedColor = (matched === 'golden') ? 'gold' : matched;
-        }
-      }
-
-      if (parsedColor !== undefined) {
-        storyDraft[sentenceIdx].color = parsedColor;
-        div.classList.add(`assigned-${parsedColor}`);
-
-        const badge = document.createElement('span');
-        badge.className = `sentence-badge ${parsedColor === null ? 'null' : parsedColor}`;
-        badge.textContent = parsedColor === null ? 'Trap' : parsedColor;
-        div.appendChild(badge);
-      }
-
-      div.addEventListener('click', () => {
-        const alreadyActive = div.classList.contains('active');
-
-        // Clear all active classes
-        const allRows = $storyWordsContainer.querySelectorAll('.story-sentence-row');
-        allRows.forEach(r => r.classList.remove('active'));
-
-        if (alreadyActive) {
-          activeSentenceRow = null;
-          $storyPalette.classList.add('hidden');
-        } else {
-          activeSentenceRow = div;
-          div.classList.add('active');
-          $storyPalette.classList.remove('hidden');
-
-          // Pre-highlight the currently assigned color in the palette
-          const currentColor = storyDraft[sentenceIdx].color;
-          storyPaletteBtns.forEach(btn => {
-            let btnColor;
-            if (btn.dataset.color === 'null') {
-              btnColor = null;
-            } else if (btn.dataset.color === 'clear') {
-              btnColor = undefined;
-            } else {
-              btnColor = btn.dataset.color;
-            }
-
-            if (btnColor === currentColor) {
-              btn.classList.add('selected');
-            } else {
-              btn.classList.remove('selected');
-            }
-          });
-        }
-      });
-
-      $storyWordsContainer.appendChild(div);
-    });
-
-    $storyBuilder.classList.remove('hidden');
-  });
-
-  storyPaletteBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
-      if (!activeSentenceRow) return;
-      const sIdx = activeSentenceRow.dataset.sIdx;
-      let color;
-      if (btn.dataset.color === 'null') {
-        color = null;
-      } else if (btn.dataset.color === 'clear') {
-        color = undefined;
-      } else {
-        color = btn.dataset.color;
-      }
-
-      storyDraft[sIdx].color = color;
-
-      // Update row class
-      activeSentenceRow.className = 'story-sentence-row';
-      if (color !== undefined) {
-        activeSentenceRow.classList.add(`assigned-${color}`);
-      }
-
-      // Update badge display inside the row
-      const existingBadge = activeSentenceRow.querySelector('.sentence-badge');
-      if (existingBadge) existingBadge.remove();
-
-      if (color !== undefined) {
-        const badge = document.createElement('span');
-        badge.className = `sentence-badge ${color === null ? 'null' : color}`;
-        badge.textContent = color === null ? 'Trap' : color;
-        activeSentenceRow.appendChild(badge);
-      }
-
-      // Clear active selection state
-      activeSentenceRow.classList.remove('active');
-      activeSentenceRow = null;
-      $storyPalette.classList.add('hidden');
-    });
-  });
-
-  $btnQueueStory.addEventListener('click', () => {
-    // Process and queue the entire story (all sentences)
-    const storyQueueItems = storyDraft.map((s, idx) => ({
-      sentence: s.sentence,
-      correctColor: s.color !== undefined ? s.color : null,
-      isRound: s.color !== undefined,
-      sentenceIndex: idx
-    }));
-
-    // Build storyMeta: full list of ALL sentences with their roles
-    let roundIndex = 0;
-    const storyMetaSentences = storyDraft.map((s, idx) => {
-      if (s.color !== undefined) {
-        return { text: s.sentence, isRound: true, roundIndex: roundIndex++, sentenceIndex: idx };
-      } else {
-        return { text: s.sentence, isRound: false, roundIndex: null, sentenceIndex: idx };
-      }
-    });
-
-    const storyMeta = {
-      title: 'Story',
-      sentences: storyMetaSentences,
-    };
-
-    socket.emit('gm_queue_add', { rounds: storyQueueItems, storyMeta });
-
-    $storyInput.value = '';
-    $storyBuilder.classList.add('hidden');
-  });
-
-  socket.on('queue_update', (q) => {
-    roundQueue = q;
-    renderQueue();
-  });
-
-  function renderQueue() {
-    if (roundQueue.length > 0) {
-      $queueCard.classList.remove('hidden');
-    } else {
-      $queueCard.classList.add('hidden');
-    }
-
-    $queueCount.textContent = roundQueue.length;
-    $queueList.innerHTML = '';
-
-    roundQueue.forEach((r, idx) => {
-      const li = document.createElement('li');
-      let badgeHtml = '';
-      if (r.isRound) {
-        badgeHtml = `<span class="q-color ${r.correctColor === null ? 'null' : r.correctColor}">${r.correctColor === null ? 'Trap' : r.correctColor}</span>`;
-      } else {
-        badgeHtml = `<span class="q-color narrative-badge" style="background:#333; color:#aaa; border: 1px dashed #555; font-weight:normal; text-transform:none;">Narrative</span>`;
-      }
-
-      li.innerHTML = `<span style="flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-right:10px;">${idx + 1}. ${r.sentence}</span>
-                      ${badgeHtml}`;
-      $queueList.appendChild(li);
-    });
-
-    if (roundQueue.length === 0) {
-      $btnNextQueued.disabled = true;
-    } else {
-      $btnNextQueued.disabled = currentRoundIsOpen;
-    }
-  }
-
-  $btnNextQueued.addEventListener('click', () => {
-    if (roundQueue.length === 0 || currentRoundIsOpen) return;
-    socket.emit('gm_queue_next');
-  });
-
-  $btnClearQueue.addEventListener('click', () => {
-    socket.emit('gm_queue_clear');
-    isStoryModeActive = false;
-    clearTimeout(autoplayTimer);
-  });
-
-  // ── Auto-Play Toggle ───────────────────────────────────────────────────────
-  if ($chkAutoplay) {
-    $chkAutoplay.addEventListener('click', () => {
-      autoplayEnabled = !autoplayEnabled;
-      $chkAutoplay.classList.toggle('active', autoplayEnabled);
-      $chkAutoplay.setAttribute('aria-checked', autoplayEnabled ? 'true' : 'false');
-      if (!autoplayEnabled) clearTimeout(autoplayTimer);
-    });
-  }
-
-  // ── Display: Progressive Story View Renderer ───────────────────────────────
-  function renderStoryView(storyProgress, phase) {
-    if (!$storyScrollArea) return;
-
-    const { storyMeta, storyActiveSentenceIndex, revealedRounds } = storyProgress;
-    if (!storyMeta || !storyMeta.sentences) return;
-
-    const sentences = storyMeta.sentences;
-    const revealedMap = new Map(); // sentenceIndex -> color
-    (revealedRounds || []).forEach(r => revealedMap.set(r.sentenceIndex, r.color));
-
-    const activeSentenceIndex = storyActiveSentenceIndex;
-
-    $storyScrollArea.innerHTML = '';
-
-    sentences.forEach((s, idx) => {
-      const div = document.createElement('div');
-      div.className = 'story-line';
-      div.dataset.sIdx = idx;
-
-      // Determine the state of this sentence
-      if (s.sentenceIndex < activeSentenceIndex) {
-        // Past sentence
-        if (revealedMap.has(s.sentenceIndex)) {
-          // Past round — show with colour dot
-          div.classList.add('past-round');
-          const colorVal = revealedMap.get(s.sentenceIndex);
-          const dotClass = colorVal === null ? 'trap' : colorVal;
-          div.innerHTML = `${s.text} <span class="story-color-dot ${dotClass}"></span>`;
-        } else {
-          // Past narrative
-          div.classList.add('narrative');
-          div.textContent = s.text;
-        }
-      } else if (s.sentenceIndex === activeSentenceIndex) {
-        // Active sentence (could be round or narrative filler)
-        if (s.isRound) {
-          if (phase === 'closed') {
-            // Past round display
-            div.classList.add('past-round');
-            const colorVal = revealedMap.get(s.sentenceIndex);
-            const dotClass = colorVal === null ? 'trap' : colorVal;
-            div.innerHTML = `${s.text} <span class="story-color-dot ${dotClass}"></span>`;
-          } else {
-            // Active round display
-            div.classList.add('active');
-            div.textContent = s.text;
-          }
-        } else {
-          // Active narrative filler sentence!
-          div.classList.add('narrative-active');
-          div.textContent = s.text;
-        }
-      } else {
-        // Future — hide
-        div.classList.add('future');
-        div.textContent = s.text;
-      }
-
-      $storyScrollArea.appendChild(div);
-    });
-
-    // Auto-scroll to the active sentence
-    const activeEl = $storyScrollArea.querySelector('.story-line.active') || $storyScrollArea.querySelector('.story-line.narrative-active');
-    if (activeEl) {
-      setTimeout(() => {
-        activeEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }, 100);
-    }
-  }
 
   $btnForceClose.addEventListener('click', () => {
-    if ($btnForceClose.classList.contains('next-filler-btn')) {
-      socket.emit('gm_queue_next');
-    } else {
-      socket.emit('gm_close');
-    }
+    socket.emit('gm_close');
   });
 
   if ($btnResetSession) {
@@ -1303,52 +823,9 @@
       t.disabled = !on;
       if (!on) t.classList.remove('selected');
     });
-    if ($sentenceInput) $sentenceInput.disabled = !on;
-    $btnNextQueued.disabled = !on;
     if (on) {
-      // Re-render queue to update buttons if needed
-      renderQueue();
-      // Clear colour selection glow when re-enabling
       singleColourBtns.forEach(t => t.classList.remove('selected'));
     }
-  }
-
-  // ── Character Counter ──────────────────────────────────────────────────────
-  function updateCharCounter() {
-    if (!$charCounter || !$sentenceInput) return;
-    const len = $sentenceInput.value.length;
-    $charCounter.textContent = `${len} / 2000`;
-    $charCounter.classList.remove('warning', 'danger');
-    if (len > 1800) $charCounter.classList.add('danger');
-    else if (len > 1500) $charCounter.classList.add('warning');
-  }
-  if ($sentenceInput) {
-    $sentenceInput.addEventListener('input', updateCharCounter);
-  }
-
-  function updateStoryCharCounter() {
-    if (!$storyCharCounter || !$storyInput) return;
-    $storyCharCounter.textContent = $storyInput.value.length;
-  }
-  if ($storyInput) {
-    $storyInput.addEventListener('input', updateStoryCharCounter);
-  }
-
-  // ── Preloaded Story Templates ──────────────────────────────────────────────
-  const STORY_TEMPLATES = {
-    story1: `It was the morning of the 46th Birthday of Little Alex Horne.&& No one was excited but it was a beautiful day.&& The sky was… clear, the sun was bright and the grass was.. looking even more neatly mowed than usual.&& As is tradition, the party was held at his local Chesham Bowling Green.&& To start the party, Alex read (sounds like red) all his birthday cards.&& One of his birthday cards was from the mayor and had all his favorite fruits on… apples, a bunch of bananas and his favorite of the citrus family, a lovely round… grapefruit.&& Alex heard his phone ring… “Yeah?”, he answered.&& It was his uncle, calling to ask if Alex had opened his small inexpensive gift.&& The signal was not great, so Alex had to yell “Oh (sounds like yellow), yes, I did, thank you.”&& Alex hung up the phone and smiled.&& Just then, a friend walked over wearing a bright jacket that looked like citrus peel; though Alex joked it might have been an or an edge (sounds like orange) of something brighter.&& Suddenly, the wind blew (sounds like blue) across the green and a bowl rolled past; no one knew who it belonged to.&& Everyone gathered as the birthday game began.&& The guests listened closely to proceedings.&& The cake was cut, and loud music filled the space.&& However, the golden moment was the fireworks that ended the night.`
-  };
-
-  if ($selectStoryTemplate) {
-    $selectStoryTemplate.addEventListener('change', () => {
-      const templateKey = $selectStoryTemplate.value;
-      if (templateKey && STORY_TEMPLATES[templateKey]) {
-        $storyInput.value = STORY_TEMPLATES[templateKey];
-      } else {
-        $storyInput.value = '';
-      }
-      updateStoryCharCounter();
-    });
   }
 
   // ── Player: Gameplay ───────────────────────────────────────────────────────
@@ -1503,7 +980,7 @@
     // Render Game Over & Display Link Card
     const $lbGameOverCard = document.getElementById('lb-game-over-card');
     if ($lbGameOverCard) {
-      if (isStoryComplete && !isGM && !isDisplay) {
+      if (!isGM && !isDisplay) {
         $lbGameOverCard.classList.remove('hidden');
         
         const $lbDisplayLink = document.getElementById('lb-display-link');
@@ -1572,14 +1049,12 @@
 
     $lbAdminCta.classList.toggle('hidden', !isGM);
 
-    // Auto switch to LB if spectator display, or if playing player when the story is complete
+    // Auto switch to LB if spectator display or regular player
     if (!isGM) {
       if (lbShowTimer) clearTimeout(lbShowTimer);
       lbShowTimer = setTimeout(() => {
-        if (!currentRoundIsOpen && !currentRoundIsFiller) {
-          if (isDisplay || isStoryComplete) {
-            showPanel('lb');
-          }
+        if (!currentRoundIsOpen) {
+          showPanel('lb');
         }
         lbShowTimer = null;
       }, 3000); // 3 seconds after round ends

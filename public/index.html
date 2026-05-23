@@ -108,25 +108,14 @@
             <span class="rab-pulse-dot"></span>
             <span class="rab-status-text">Round in Progress</span>
           </div>
-          <div class="rab-sentence" id="rab-sentence-preview">—</div>
           <div class="rab-timer-wrap">
             <div class="rab-timer-bar" id="rab-timer-bar"></div>
           </div>
           <button type="button" id="btn-force-close" class="rab-end-btn">⏹ End Round Early</button>
         </div>
 
-        <!-- ── Mode Tabs (Segmented Control) ─────────────────────── -->
+        <!-- ── Mode Tabs & Color Launcher ────────────────────────── -->
         <div id="admin-mode-section" class="admin-mode-section">
-          <div class="admin-tabs-segmented">
-            <div class="seg-highlight" id="seg-highlight"></div>
-            <button id="tab-single" class="seg-tab active" data-tab="single">
-              <span class="seg-icon">📝</span> Single Sentence
-            </button>
-            <button id="tab-story" class="seg-tab" data-tab="story">
-              <span class="seg-icon">📖</span> Story Mode
-            </button>
-          </div>
-
           <!-- ── Lobby Lock Toggle ─────────────────────────────────── -->
           <div class="admin-lobby-toggle">
             <label class="lobby-toggle-label" for="btn-toggle-lock">
@@ -138,15 +127,11 @@
             </button>
           </div>
 
-          <!-- ── Single Sentence Form ──────────────────────────────── -->
+          <!-- ── Direct Color Launcher Form ────────────────────────── -->
           <form id="sentence-form" class="sentence-form">
-            <div class="textarea-wrap">
-              <textarea id="sentence-input"
-                placeholder='e.g. "The villain had an evil grin on his face" → orange (grin ≈ orange)' maxlength="2000"
-                rows="3" autocomplete="off" required></textarea>
-              <span class="char-counter" id="char-counter">0 / 2000</span>
-            </div>
-            <p class="form-label">Select the hidden colour — then click to launch:</p>
+            <p class="form-label" style="text-align: center; font-size: 1.1rem; margin-bottom: 20px; font-weight: 700; color: rgba(255,255,255,0.9);">
+              Click a Balloon to Start a Round:
+            </p>
             <div class="colour-picker-grid">
               <button type="button" class="colour-btn red" data-color="red" id="btn-red">
                 <div class="btn-balloon"></div><span>Red</span>
@@ -170,83 +155,8 @@
                 <span class="trap-icon">🚫</span><span>Trap<br><small>(no colour)</small></span>
               </button>
             </div>
-            <p id="admin-error" class="admin-error hidden">Please enter a sentence and select a colour (or Trap).</p>
+            <p id="admin-error" class="admin-error hidden"></p>
           </form>
-
-          <!-- ── Story Mode Form ───────────────────────────────────── -->
-          <div id="story-form" class="sentence-form hidden">
-            <div style="margin-bottom: 12px;">
-              <label class="form-label" style="display: block; margin-bottom: 6px;">Load Preloaded Story Template</label>
-              <select id="select-story-template" class="admin-select">
-                <option value="">-- Select a persistent story template --</option>
-                <option value="story1">Story 1: Little Alex Horne's 46th Birthday 🎈</option>
-              </select>
-            </div>
-            <div class="textarea-wrap">
-              <textarea id="story-input" placeholder="Paste a multi-sentence story here..." rows="4"
-                autocomplete="off"></textarea>
-              <span class="char-counter" id="story-char-counter">0</span>
-            </div>
-            <button type="button" id="btn-process-story" class="btn-primary" style="margin-top: 10px;">✨ Process
-              Story</button>
-
-            <div id="story-builder" class="hidden" style="margin-top: 15px;">
-              <p class="form-label" style="margin-bottom: 5px;">Click a sentence to set its hidden colour or trap status:</p>
-              <div id="story-words-container" class="story-words"></div>
-
-              <div id="story-palette" class="colour-picker-grid hidden"
-                style="margin-top: 10px; background: rgba(0,0,0,0.3); padding: 10px; border-radius: var(--radius); grid-template-columns: repeat(4, 1fr);">
-                <button type="button" class="colour-btn red" data-color="red">
-                  <div class="btn-balloon"></div><span>Red</span>
-                </button>
-                <button type="button" class="colour-btn blue" data-color="blue">
-                  <div class="btn-balloon"></div><span>Blue</span>
-                </button>
-                <button type="button" class="colour-btn yellow" data-color="yellow">
-                  <div class="btn-balloon"></div><span>Yellow</span>
-                </button>
-                <button type="button" class="colour-btn orange" data-color="orange">
-                  <div class="btn-balloon"></div><span>Orange</span>
-                </button>
-                <button type="button" class="colour-btn green" data-color="green">
-                  <div class="btn-balloon"></div><span>Green</span>
-                </button>
-                <button type="button" class="colour-btn gold" data-color="gold">
-                  <div class="btn-balloon"></div><span>Gold</span>
-                </button>
-                <button type="button" class="colour-btn trap" data-color="null"><span
-                    class="trap-icon">🚫</span><span>Trap</span></button>
-                <button type="button" class="colour-btn clear" data-color="clear"><span
-                    class="trap-icon">📝</span><span>Narrative<br><small>(Clear)</small></span></button>
-              </div>
-
-              <button type="button" id="btn-queue-story" class="btn-primary" style="margin-top:16px;">📥 Save to
-                Queue</button>
-            </div>
-          </div>
-
-          <!-- ── Queue Card ────────────────────────────────────────── -->
-          <div id="queue-card" class="queue-card hidden">
-            <div class="queue-header">
-              <div class="queue-header-left">
-                <span class="queue-icon">📋</span>
-                <h3 class="queue-title">Round Queue</h3>
-                <span class="queue-badge" id="queue-count">0</span>
-              </div>
-              <button type="button" id="btn-clear-queue" class="queue-clear-btn" title="Clear Queue">✕</button>
-            </div>
-            <div class="queue-autoplay-row">
-              <label class="autoplay-label" for="chk-autoplay">
-                <span>⚡</span>
-                <span>Auto-Play (auto-advance rounds)</span>
-              </label>
-              <button type="button" id="chk-autoplay" class="toggle-switch" role="switch" aria-checked="false">
-                <span class="toggle-knob"></span>
-              </button>
-            </div>
-            <ul id="queue-list" class="queue-list"></ul>
-            <button type="button" id="btn-next-queued" class="btn-primary queue-next-btn">▶ Start Next Round</button>
-          </div>
         </div>
 
         <div id="admin-status" class="admin-status"></div>
@@ -363,19 +273,7 @@
         </div>
       </div>
 
-      <!-- Display story view (progressive story mode) -->
-      <div id="display-story-view" class="display-story-view hidden">
-        <div class="story-view-header">
-          <span class="story-view-icon">📖</span>
-          <h2 class="story-view-title">Story Time</h2>
-        </div>
-        <div class="story-scroll-area" id="story-scroll-area">
-          <!-- Sentence lines will be injected here dynamically -->
-        </div>
-        <div id="display-story-timer-wrap" class="timer-wrap display-story-timer-wrap hidden">
-          <div id="display-story-timer-bar" class="timer-bar"></div>
-        </div>
-      </div>
+
     </section>
 
     <!-- ── LEADERBOARD PANEL ─────────────────────────────────────────── -->

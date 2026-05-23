@@ -45,11 +45,6 @@ function createGlobalRoomState(hostPassword) {
     hostPassword: hostPassword ? hostPassword.trim() : null,
     isLocked: false,
     adminSocketId: null,
-    storyQueue: [],
-    storyMeta: null,       // { title, sentences: [{ text, isRound, roundIndex }] }
-    storyRoundIndex: 0,    // which story round we're currently on
-    storyActiveSentenceIndex: -1, // current active sentence index in the entire story
-    storyRevealedRounds: [], // [{ sentenceIndex, color }] — past round results
     round: {
       id: 0,
       sentence: null,
@@ -133,14 +128,14 @@ function broadcastLeaderboard() {
 }
 
 // ─── Round Lifecycle ─────────────────────────────────────────────────────────
-function startRound(sentence, correctColor, isFiller = false, sentenceIndex = -1) {
+function startRound(correctColor) {
   if (globalRoom.roundCloseTimeout) { clearTimeout(globalRoom.roundCloseTimeout); globalRoom.roundCloseTimeout = null; }
 
   globalRoom.round.id++;
-  globalRoom.round.sentence = sentence;
+  globalRoom.round.sentence = "";
   globalRoom.round.correctColor = correctColor; // null = trap round
   globalRoom.round.revealTime = serverNow() + 1500; // Account for overlay transition
-  globalRoom.round.isOpen = !isFiller; // If filler, round is NOT open for clicks!
+  globalRoom.round.isOpen = true;
   globalRoom.round.firstCorrectAt = null;
 
   // Reset per-round click flags
@@ -154,30 +149,13 @@ function startRound(sentence, correctColor, isFiller = false, sentenceIndex = -1
     roundId: globalRoom.round.id,
     sentence: globalRoom.round.sentence,
     revealTime: globalRoom.round.revealTime,
-    isFiller: isFiller,
+    isFiller: false,
     poppedColors: [...globalRoom.poppedColors],
   };
 
-  // Include story progress if a story is active
-  if (globalRoom.storyMeta) {
-    if (sentenceIndex !== -1) {
-      globalRoom.storyActiveSentenceIndex = sentenceIndex;
-    }
-    
-    roundPayload.storyProgress = {
-      storyMeta: globalRoom.storyMeta,
-      storyRoundIndex: globalRoom.storyRoundIndex,
-      storyActiveSentenceIndex: globalRoom.storyActiveSentenceIndex,
-      revealedRounds: [...globalRoom.storyRevealedRounds],
-    };
-  }
-
   io.emit('round_start', roundPayload);
 
-  // Auto-close after ANSWER_WINDOW only if it is NOT a filler round!
-  if (!isFiller) {
-    globalRoom.roundCloseTimeout = setTimeout(() => closeRound(), ANSWER_WINDOW);
-  }
+  globalRoom.roundCloseTimeout = setTimeout(() => closeRound(), ANSWER_WINDOW);
 }
 
 function closeRound() {
@@ -207,32 +185,11 @@ function closeRound() {
     }
   }
 
-  // Record story round result if story is active
-  if (globalRoom.storyMeta) {
-    // Find the sentence index for the current story round
-    const activeIdx = globalRoom.storyActiveSentenceIndex;
-    const activeSentence = globalRoom.storyMeta.sentences.find(s => s.sentenceIndex === activeIdx);
-    if (activeSentence && activeSentence.isRound) {
-      globalRoom.storyRevealedRounds.push({
-        sentenceIndex: activeIdx,
-        color: globalRoom.round.correctColor,
-      });
-      globalRoom.storyRoundIndex++;
-    }
-  }
-
-  const closedPayload = { roundId: globalRoom.round.id, correctColor: globalRoom.round.correctColor };
-
-  // Include story progress in round_closed
-  if (globalRoom.storyMeta) {
-    closedPayload.storyProgress = {
-      storyMeta: globalRoom.storyMeta,
-      storyRoundIndex: globalRoom.storyRoundIndex,
-      storyActiveSentenceIndex: globalRoom.storyActiveSentenceIndex,
-      revealedRounds: [...globalRoom.storyRevealedRounds],
-      isStoryComplete: globalRoom.storyQueue.length === 0,
-    };
-  }
+  const closedPayload = {
+    roundId: globalRoom.round.id,
+    correctColor: globalRoom.round.correctColor,
+    poppedColors: [...globalRoom.poppedColors]
+  };
 
   io.emit('round_closed', closedPayload);
   broadcastLeaderboard();
@@ -311,7 +268,6 @@ io.on('connection', (socket) => {
         isDisplay: false,
         isLocked: globalRoom.isLocked
       });
-      socket.emit('queue_update', globalRoom.storyQueue);
       sendLeaderboardTo(socket);
       return;
     }
@@ -406,71 +362,15 @@ io.on('connection', (socket) => {
     io.emit('room_lock_update', { isLocked: globalRoom.isLocked });
   });
 
-  // ── Admin submits a sentence + correct colour ─────────────────────────────
-  socket.on('gm_round', ({ sentence, correctColor }) => {
+  // ── Admin submits a colour to start a round ───────────────────────────────
+  socket.on('gm_round', ({ sentence, correctColor } = {}) => {
     if (globalRoom.adminSocketId !== socket.id) return;
-
-    const trimmed = String(sentence || '').trim();
-    if (!trimmed) return;
+    if (globalRoom.round.isOpen) return;
 
     const color = correctColor === null ? null : (COLORS.includes(correctColor) ? correctColor : null);
     if (correctColor !== null && color === null) return;
 
-    if (globalRoom.round.isOpen) return;
-
-    startRound(trimmed, color);
-  });
-
-  // ── Story Mode Queue Management ───────────────────────────────────────────
-  socket.on('gm_queue_add', (payload) => {
-    if (globalRoom.adminSocketId !== socket.id) return;
-    
-    // Support both old format (array) and new format ({ rounds, storyMeta })
-    let rounds, storyMeta;
-    if (Array.isArray(payload)) {
-      rounds = payload;
-      storyMeta = null;
-    } else if (payload && Array.isArray(payload.rounds)) {
-      rounds = payload.rounds;
-      storyMeta = payload.storyMeta || null;
-    } else {
-      return;
-    }
-
-    globalRoom.storyQueue.push(...rounds);
-    
-    // Store story metadata if provided
-    if (storyMeta) {
-      globalRoom.storyMeta = storyMeta;
-      globalRoom.storyRoundIndex = 0;
-      globalRoom.storyActiveSentenceIndex = -1;
-      globalRoom.storyRevealedRounds = [];
-    }
-    
-    io.emit('queue_update', globalRoom.storyQueue);
-  });
-
-  socket.on('gm_queue_next', () => {
-    if (globalRoom.adminSocketId !== socket.id) return;
-    if (globalRoom.storyQueue.length === 0) return;
-    if (globalRoom.round.isOpen) return;
-
-    const next = globalRoom.storyQueue.shift();
-    io.emit('queue_update', globalRoom.storyQueue);
-
-    const isFiller = !next.isRound;
-    startRound(next.sentence, next.correctColor, isFiller, next.sentenceIndex);
-  });
-
-  socket.on('gm_queue_clear', () => {
-    if (globalRoom.adminSocketId !== socket.id) return;
-
-    globalRoom.storyQueue = [];
-    globalRoom.storyMeta = null;
-    globalRoom.storyRoundIndex = 0;
-    globalRoom.storyActiveSentenceIndex = -1;
-    globalRoom.storyRevealedRounds = [];
-    io.emit('queue_update', globalRoom.storyQueue);
+    startRound(color);
   });
 
   // ── Admin force-close round ───────────────────────────────────────────────
@@ -497,13 +397,6 @@ io.on('connection', (socket) => {
     globalRoom.round.correctColor = null;
     globalRoom.round.revealTime = null;
     globalRoom.round.firstCorrectAt = null;
-
-    // Clear queue and story state
-    globalRoom.storyQueue = [];
-    globalRoom.storyMeta = null;
-    globalRoom.storyRoundIndex = 0;
-    globalRoom.storyActiveSentenceIndex = -1;
-    globalRoom.storyRevealedRounds = [];
 
     // Unlock lobby
     globalRoom.isLocked = false;
@@ -532,7 +425,6 @@ io.on('connection', (socket) => {
 
     // Broadcast reset to all clients
     io.emit('session_reset');
-    io.emit('queue_update', globalRoom.storyQueue);
     io.emit('room_lock_update', { isLocked: false });
     broadcastPlayerCount();
   });

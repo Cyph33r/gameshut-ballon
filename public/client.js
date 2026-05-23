@@ -481,6 +481,7 @@
         }
 
         showSentenceAndEnableTiles(data.sentence);
+        applyPoppedBalloons(data.poppedColors);
       }
     }
 
@@ -1567,7 +1568,8 @@
   // ── Helpers ────────────────────────────────────────────────────────────────
   function resetAllBalloons() {
     balloonBtns.forEach(t => {
-      t.classList.remove('chosen', 'correct', 'wrong');
+      t.classList.remove('chosen', 'correct', 'wrong', 'popped');
+      t.disabled = false;
       const label = t.querySelector('.balloon-label');
       if (label) {
         label.innerHTML = t.dataset.color.charAt(0).toUpperCase() + t.dataset.color.slice(1);
@@ -1577,12 +1579,26 @@
 
   function enableAllBalloons() {
     resetAllBalloons();
-    balloonBtns.forEach(t => t.classList.remove('disabled'));
+    balloonBtns.forEach(t => {
+      t.classList.remove('disabled');
+      t.disabled = false;
+    });
   }
 
   function disableAllBalloons() {
     balloonBtns.forEach(t => {
       t.classList.add('disabled');
+      t.disabled = true;
+    });
+  }
+
+  function applyPoppedBalloons(poppedColors) {
+    if (!poppedColors) return;
+    balloonBtns.forEach(t => {
+      if (poppedColors.includes(t.dataset.color)) {
+        t.classList.add('popped', 'disabled');
+        t.disabled = true;
+      }
     });
   }
 

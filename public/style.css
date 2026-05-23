@@ -964,6 +964,7 @@ body::before {
   /* other styles remain */
 }
 .balloon-btn.disabled { filter: grayscale(0.6) brightness(0.4); cursor: not-allowed; pointer-events: none; }
+.balloon-btn.popped { visibility: hidden; pointer-events: none; opacity: 0; }
 
 /* Click Animations */
 @keyframes pop-explode {

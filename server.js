@@ -61,6 +61,7 @@ function createGlobalRoomState(hostPassword) {
     roundCloseTimeout: null,
     players: new Map(), // socketId -> player object
     scoresHistory: new Map(), // username (lowercase) -> player object
+    poppedColors: [],
   };
 }
 
@@ -154,6 +155,7 @@ function startRound(sentence, correctColor, isFiller = false, sentenceIndex = -1
     sentence: globalRoom.round.sentence,
     revealTime: globalRoom.round.revealTime,
     isFiller: isFiller,
+    poppedColors: [...globalRoom.poppedColors],
   };
 
   // Include story progress if a story is active
@@ -183,6 +185,13 @@ function closeRound() {
 
   globalRoom.round.isOpen = false;
   if (globalRoom.roundCloseTimeout) { clearTimeout(globalRoom.roundCloseTimeout); globalRoom.roundCloseTimeout = null; }
+
+  // Add the correct color to the poppedColors array
+  if (globalRoom.round.correctColor !== null) {
+    if (!globalRoom.poppedColors.includes(globalRoom.round.correctColor)) {
+      globalRoom.poppedColors.push(globalRoom.round.correctColor);
+    }
+  }
 
   // Update streaks
   for (const [, p] of globalRoom.players) {
@@ -498,6 +507,9 @@ io.on('connection', (socket) => {
 
     // Unlock lobby
     globalRoom.isLocked = false;
+
+    // Reset poppedColors
+    globalRoom.poppedColors = [];
 
     // Clear scores history
     globalRoom.scoresHistory.clear();

@@ -153,6 +153,7 @@
   let autoplayEnabled = false;
   let autoplayTimer = null;
   let isStoryModeActive = false; // true when a story queue is actively playing
+  let isStoryComplete = false;
 
   // Hint-stripping regex: removes (sounds like X), (like X), etc.
   const HINT_REGEX = /\s*\([^)]*(?:sounds?\s+like|like|≈)\s+[^)]+\)\s*/gi;
@@ -248,6 +249,7 @@
     hasClicked = false;
     pendingClickResult = null;
     isStoryModeActive = false;
+    isStoryComplete = false;
 
     totalScore = 0;
     if ($totalScore) $totalScore.textContent = '0';
@@ -549,6 +551,10 @@
     currentRoundIsFiller = false;
     clearTimeout(closeTimer);
     disableAllBalloons();
+
+    if (data.storyProgress) {
+      isStoryComplete = !!data.storyProgress.isStoryComplete;
+    }
 
     $timerWrap.classList.add('hidden');
     $timerBar.classList.remove('active');
@@ -1496,6 +1502,23 @@
       }
     } else if ($lbPersonalCard) {
       $lbPersonalCard.classList.add('hidden');
+    }
+
+    // Render Game Over & Display Link Card
+    const $lbGameOverCard = document.getElementById('lb-game-over-card');
+    if ($lbGameOverCard) {
+      if (isStoryComplete && !isGM && !isDisplay) {
+        $lbGameOverCard.classList.remove('hidden');
+        
+        const $lbDisplayLink = document.getElementById('lb-display-link');
+        if ($lbDisplayLink) {
+          const displayUrl = `${window.location.origin}/?display=true`;
+          $lbDisplayLink.href = displayUrl;
+          $lbDisplayLink.textContent = displayUrl;
+        }
+      } else {
+        $lbGameOverCard.classList.add('hidden');
+      }
     }
 
     $lbRoundInfo.textContent = `After Round ${currentRoundId}`;

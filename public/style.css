@@ -659,6 +659,13 @@ body::before {
 .colour-btn.yellow { background: var(--c-yellow); color: #000; }
 .colour-btn.orange { background: var(--c-orange); }
 .colour-btn.trap   { background: var(--c-trap); }
+.colour-btn.clear  { background: rgba(255, 255, 255, 0.05); border: 2px dashed rgba(255, 255, 255, 0.15); color: #ccc; }
+.colour-btn.clear:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.4);
+  color: #fff;
+  box-shadow: 0 7px 0 rgba(0,0,0,0.3), 0 0 20px rgba(255,255,255,0.15);
+}
 
 /* Selection glow on colour buttons */
 .colour-btn.selected {

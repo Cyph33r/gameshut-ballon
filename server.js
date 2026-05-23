@@ -219,8 +219,9 @@ io.on('connection', (socket) => {
     const pass = String(data.hostPassword || '').trim();
 
     // Check if claiming or re-claiming GM role
-    const isReclaimingHost = globalRoom.hostPassword && pass === globalRoom.hostPassword;
-    const isGM = isReclaimingHost || (globalRoom.adminSocketId === socket.id);
+    const isPasswordCorrect = globalRoom.hostPassword && pass === globalRoom.hostPassword;
+    const isNoPasswordGM = !globalRoom.hostPassword && (data.isGM || data.hostPassword === '');
+    const isGM = isPasswordCorrect || (isNoPasswordGM && globalRoom.adminSocketId === null) || (globalRoom.adminSocketId === socket.id);
 
     if (isGM) {
       globalRoom.adminSocketId = socket.id;

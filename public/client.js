@@ -1004,6 +1004,25 @@
           activeSentenceRow = div;
           div.classList.add('active');
           $storyPalette.classList.remove('hidden');
+
+          // Pre-highlight the currently assigned color in the palette
+          const currentColor = storyDraft[sentenceIdx].color;
+          storyPaletteBtns.forEach(btn => {
+            let btnColor;
+            if (btn.dataset.color === 'null') {
+              btnColor = null;
+            } else if (btn.dataset.color === 'clear') {
+              btnColor = undefined;
+            } else {
+              btnColor = btn.dataset.color;
+            }
+
+            if (btnColor === currentColor) {
+              btn.classList.add('selected');
+            } else {
+              btn.classList.remove('selected');
+            }
+          });
         }
       });
 
@@ -1017,7 +1036,14 @@
     btn.addEventListener('click', () => {
       if (!activeSentenceRow) return;
       const sIdx = activeSentenceRow.dataset.sIdx;
-      const color = btn.dataset.color === 'null' ? null : btn.dataset.color;
+      let color;
+      if (btn.dataset.color === 'null') {
+        color = null;
+      } else if (btn.dataset.color === 'clear') {
+        color = undefined;
+      } else {
+        color = btn.dataset.color;
+      }
 
       storyDraft[sIdx].color = color;
 

@@ -182,7 +182,7 @@
               <div id="story-words-container" class="story-words"></div>
 
               <div id="story-palette" class="colour-picker-grid hidden"
-                style="margin-top: 10px; background: rgba(0,0,0,0.3); padding: 10px; border-radius: var(--radius);">
+                style="margin-top: 10px; background: rgba(0,0,0,0.3); padding: 10px; border-radius: var(--radius); grid-template-columns: repeat(6, 1fr);">
                 <button type="button" class="colour-btn red" data-color="red">
                   <div class="btn-balloon"></div><span>Red</span>
                 </button>
@@ -197,6 +197,8 @@
                 </button>
                 <button type="button" class="colour-btn trap" data-color="null"><span
                     class="trap-icon">🚫</span><span>Trap</span></button>
+                <button type="button" class="colour-btn clear" data-color="clear"><span
+                    class="trap-icon">📝</span><span>Narrative<br><small>(Clear)</small></span></button>
               </div>
 
               <button type="button" id="btn-queue-story" class="btn-primary" style="margin-top:16px;">📥 Save to

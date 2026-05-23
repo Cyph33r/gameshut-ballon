@@ -140,6 +140,7 @@
   // Story Mode State
   let storyDraft         = []; // Array of { sentence, cleanSentence, color, wordId }
   let activeWordSpan     = null;
+  let activeSentenceRow  = null;
   let roundQueue         = []; // Array of { sentence, correctColor }
   let autoplayEnabled    = false;
   let autoplayTimer      = null;
@@ -789,52 +790,51 @@
     storyDraft = [];
     $storyPalette.classList.add('hidden');
     activeWordSpan = null;
+    activeSentenceRow = null;
 
-    let wordIdCounter = 0;
-
-    sentences.forEach((s) => {
-      const sentenceText = s.trim();
-      if (!sentenceText) return;
-      
+    sentences.forEach((s, sentenceIdx) => {
       // Store both original (with hints) and clean (without hints) text
-      const cleanText = sentenceText.replace(HINT_REGEX, ' ').replace(/\s+/g, ' ').trim();
+      const cleanText = s.replace(HINT_REGEX, ' ').replace(/\s+/g, ' ').trim();
       
-      storyDraft.push({ sentence: cleanText, originalSentence: sentenceText, color: undefined, wordId: null });
-      const sentenceIdx = storyDraft.length - 1;
+      storyDraft.push({ sentence: cleanText, originalSentence: s, color: undefined });
 
-      // Split sentence into words and spaces to make words clickable
-      // Use the ORIGINAL text (with hints visible) for the host builder
-      const words = sentenceText.split(/(\s+)/);
+      const div = document.createElement('div');
+      div.className = 'story-sentence-row';
+      div.dataset.sIdx = sentenceIdx;
       
-      words.forEach(word => {
-        if (!word.trim()) {
-          $storyWordsContainer.appendChild(document.createTextNode(word));
-          return;
+      // Render text: dim the hint text for host
+      const textParts = s.split(/(\([^)]+\))/g);
+      textParts.forEach(part => {
+        if (/^\([^)]+\)$/.test(part)) {
+          const hintSpan = document.createElement('span');
+          hintSpan.textContent = part;
+          hintSpan.style.opacity = '0.5';
+          hintSpan.style.fontStyle = 'italic';
+          hintSpan.style.marginLeft = '5px';
+          div.appendChild(hintSpan);
+        } else {
+          div.appendChild(document.createTextNode(part));
         }
-        
-        const wId = wordIdCounter++;
-        const span = document.createElement('span');
-        span.textContent = word;
-        span.className = 'story-word';
-        span.dataset.sIdx = sentenceIdx;
-        span.dataset.wId = wId;
-        
-        // Dim hint text in parentheses
-        if (/^\(/.test(word) || /\)$/.test(word) || /sounds?\s+like/i.test(word)) {
-          span.style.opacity = '0.5';
-          span.style.fontStyle = 'italic';
-        }
-        
-        span.addEventListener('click', () => {
-          if (activeWordSpan) activeWordSpan.style.borderBottom = '';
-          activeWordSpan = span;
-          span.style.borderBottom = '3px solid white';
-          $storyPalette.classList.remove('hidden');
-        });
-        
-        $storyWordsContainer.appendChild(span);
       });
-      $storyWordsContainer.appendChild(document.createTextNode(' '));
+      
+      div.addEventListener('click', () => {
+        const alreadyActive = div.classList.contains('active');
+        
+        // Clear all active classes
+        const allRows = $storyWordsContainer.querySelectorAll('.story-sentence-row');
+        allRows.forEach(r => r.classList.remove('active'));
+        
+        if (alreadyActive) {
+          activeSentenceRow = null;
+          $storyPalette.classList.add('hidden');
+        } else {
+          activeSentenceRow = div;
+          div.classList.add('active');
+          $storyPalette.classList.remove('hidden');
+        }
+      });
+      
+      $storyWordsContainer.appendChild(div);
     });
 
     $storyBuilder.classList.remove('hidden');
@@ -842,19 +842,32 @@
 
   storyPaletteBtns.forEach(btn => {
     btn.addEventListener('click', () => {
-      if (!activeWordSpan) return;
-      const sIdx = activeWordSpan.dataset.sIdx;
+      if (!activeSentenceRow) return;
+      const sIdx = activeSentenceRow.dataset.sIdx;
       const color = btn.dataset.color === 'null' ? null : btn.dataset.color;
       
       storyDraft[sIdx].color = color;
-      storyDraft[sIdx].wordId = activeWordSpan.dataset.wId;
       
-      const allWords = $storyWordsContainer.querySelectorAll(`[data-s-idx="${sIdx}"]`);
-      allWords.forEach(w => w.className = 'story-word');
+      // Update row class
+      activeSentenceRow.className = 'story-sentence-row';
+      if (color !== undefined) {
+        activeSentenceRow.classList.add(`assigned-${color}`);
+      }
       
-      activeWordSpan.classList.add(`selected-${color}`);
-      activeWordSpan.style.borderBottom = '';
-      activeWordSpan = null;
+      // Update badge display inside the row
+      const existingBadge = activeSentenceRow.querySelector('.sentence-badge');
+      if (existingBadge) existingBadge.remove();
+      
+      if (color !== undefined) {
+        const badge = document.createElement('span');
+        badge.className = `sentence-badge ${color === null ? 'null' : color}`;
+        badge.textContent = color === null ? 'Trap' : color;
+        activeSentenceRow.appendChild(badge);
+      }
+      
+      // Clear active selection state
+      activeSentenceRow.classList.remove('active');
+      activeSentenceRow = null;
       $storyPalette.classList.add('hidden');
     });
   });

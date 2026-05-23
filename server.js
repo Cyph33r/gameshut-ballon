@@ -1,3 +1,9 @@
+try {
+  process.loadEnvFile();
+} catch (e) {
+  // Ignored if .env does not exist or process.loadEnvFile is not supported
+}
+
 import express from 'express';
 import http from 'http';
 import { Server } from 'socket.io';
@@ -34,9 +40,9 @@ const POINTS_MIN = 1;       // minimum score for a correct answer
 const LEADERBOARD_MAX = 20;      // max entries shown
 
 // ─── State ───────────────────────────────────────────────────────────────────
-function createGlobalRoomState(hostPassword = 'admin') {
+function createGlobalRoomState(hostPassword) {
   return {
-    hostPassword: hostPassword.trim(),
+    hostPassword: hostPassword ? hostPassword.trim() : null,
     isLocked: false,
     adminSocketId: null,
     storyQueue: [],
@@ -57,7 +63,7 @@ function createGlobalRoomState(hostPassword = 'admin') {
   };
 }
 
-const globalRoom = createGlobalRoomState(process.env.HOST_PASSWORD || 'admin');
+const globalRoom = createGlobalRoomState(process.env.ADMIN_PASSWORD || process.env.HOST_PASSWORD);
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 function sendLeaderboardTo(socket) {

@@ -35,7 +35,7 @@
   const $roomCodeInput = document.getElementById('room-code-input');
   const $btnCreateRoom = document.getElementById('btn-create-room');
   const $createRoomForm = document.getElementById('create-room-form');
-  const $hostPasswordInput = document.getElementById('host-password-input');
+  // Note: reuse $passwordInput (line 10) — there is no separate 'host-password-input' element
 
   const $tabBtnJoin = document.getElementById('tab-btn-join');
   const $tabBtnCreate = document.getElementById('tab-btn-create');
@@ -205,7 +205,7 @@
     sessionStorage.setItem('bb_is_display', isDisplay ? 'true' : 'false');
 
     if (isGM) {
-      const pass = $hostPasswordInput ? $hostPasswordInput.value.trim() : '';
+      const pass = ($passwordInput ? $passwordInput.value.trim() : '') || sessionStorage.getItem('bb_host_pass') || '';
       if (pass) {
         sessionStorage.setItem('bb_host_pass', pass);
       }

@@ -1324,98 +1324,174 @@ body::before {
 .kscreen, .join-card, .game-panel, .game-header { position: relative; z-index: 1; }
 
 /* ══════════════════════════════════════════════════════════════════
-   MOBILE RESPONSIVE
+   EXTRACTED INLINE STYLES — Header, Player, Display
 ══════════════════════════════════════════════════════════════════ */
-@media (max-width: 600px) {
-  .game-header {
-    padding: 10px 12px;
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-  .header-left {
-    gap: 6px;
-    flex: 1;
-    min-width: 0;
-  }
-  #room-code-badge {
-    font-size: 0.7rem !important;
-    padding: 3px 6px !important;
-    margin-left: 4px !important;
-  }
-  #round-badge {
-    font-size: 0.75rem;
-  }
-  .score-pill {
-    padding: 6px 12px;
-    font-size: 1rem;
-    gap: 6px !important;
-  }
-  .balloon-btn {
-    min-height: 130px;
-  }
-  .balloon-shape {
-    width: 45px;
-    height: 56px;
-  }
-  .balloon-label {
-    font-size: 1rem;
-    letter-spacing: 1px;
-  }
-  .sentence-display {
-    font-size: clamp(1.2rem, 4vw, 2rem) !important;
-  }
 
-  /* Admin Panel Mobile */
-  .admin-inner {
-    padding: 18px;
-    gap: 14px;
-  }
-  .admin-stats-bar {
-    gap: 6px;
-  }
-  .admin-stat-pill {
-    padding: 10px 8px;
-  }
-  .stat-value {
-    font-size: 1.1rem;
-  }
-  .stat-label {
-    font-size: 0.6rem;
-  }
-  .admin-title {
-    font-size: 1.4rem;
-  }
-  .seg-tab {
-    font-size: 0.8rem;
-    padding: 10px 8px;
-  }
-  .seg-icon {
-    font-size: 0.85rem;
-  }
-  .colour-picker-grid {
-    grid-template-columns: repeat(5, 1fr);
-    gap: 6px;
-  }
-  .colour-btn {
-    padding: 10px 4px;
-    font-size: 0.7rem;
-    gap: 5px;
-  }
-  .btn-balloon {
-    width: 22px;
-    height: 28px;
-    min-width: 22px;
-    min-height: 28px;
-  }
-  .round-active-banner {
-    padding: 16px;
-  }
-  .rab-sentence {
-    font-size: 0.95rem;
-  }
+/* ── Game Header Badges & Buttons ────────────────────────────── */
+.room-code-badge {
+  margin-left: 10px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-weight: 800;
+  font-family: var(--font-disp);
+  background: rgba(99, 71, 255, 0.2);
+  border: 1px solid var(--primary);
+  color: #fff;
+  font-size: 0.85rem;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+.header-icon-btn {
+  margin-left: 8px;
+  padding: 4px 8px;
+  font-size: 1rem;
+  background: rgba(255,255,255,0.15);
+}
+.header-icon-round {
+  border-radius: 50%;
+}
+.btn-leave {
+  padding: 6px 12px;
+  font-size: 0.8rem;
+  border-color: rgba(255,59,92,0.4);
+  color: #ff3b5c;
 }
 
-/* ── Display Screen Lobby Players ────────────────────────────── */
+/* ── Player Waiting Lobby ────────────────────────────────────── */
+.waiting-lobby {
+  margin-top: 20px;
+}
+.waiting-avatars {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+.waiting-text {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  font-weight: 700;
+}
+
+/* ── Display Lobby View ──────────────────────────────────────── */
+.display-lobby {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 75vh;
+  gap: 30px;
+  text-align: center;
+  padding: 30px 20px;
+}
+.display-lobby-header {
+  font-size: clamp(1.8rem, 4vw, 3rem);
+  font-weight: 800;
+  font-family: var(--font-disp);
+  color: #fff;
+  margin: 0;
+  text-shadow: 0 4px 10px rgba(0,0,0,0.3);
+}
+.display-lobby-join-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 30px;
+  transition: all 0.4s ease;
+}
+.qr-container {
+  background: #fff;
+  padding: 20px;
+  border-radius: 24px;
+  box-shadow: 0 20px 50px rgba(99, 71, 255, 0.4);
+  border: 4px solid var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+.display-qr-img {
+  width: clamp(150px, 25vw, 250px);
+  height: clamp(150px, 25vw, 250px);
+  border-radius: 8px;
+}
+.display-url-box {
+  background: rgba(255,255,255,0.06);
+  padding: 15px 30px;
+  border-radius: 100px;
+  border: 1px solid rgba(255,255,255,0.1);
+  backdrop-filter: blur(10px);
+}
+.display-url-label {
+  margin: 0 0 5px;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: var(--text-muted);
+  font-weight: 700;
+}
+.display-join-url {
+  font-family: var(--font-disp);
+  font-size: clamp(1.1rem, 2.5vw, 1.8rem);
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: 0.5px;
+}
+.display-lobby-players {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 20px;
+  max-width: 85%;
+  margin-top: 10px;
+  transition: all 0.4s ease;
+}
+
+/* ── Display Game View ───────────────────────────────────────── */
+.display-game-view {
+  text-align: center;
+  margin-top: 6vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+}
+.display-game-title {
+  font-size: clamp(1.8rem, 4vw, 3rem);
+  margin-bottom: 30px;
+  color: #fff;
+  font-family: var(--font-disp);
+  font-weight: 800;
+}
+.display-sentence-box {
+  font-size: clamp(1.6rem, 3.5vw, 2.5rem);
+  line-height: 1.5;
+  max-width: 90%;
+  background: rgba(0,0,0,0.3);
+  padding: 40px;
+  border-radius: 20px;
+}
+.display-timer-wrap {
+  position: relative;
+  margin-top: 50px;
+  height: 15px;
+  width: 80%;
+  max-width: 600px;
+}
+.display-story-timer-wrap {
+  position: relative;
+  margin-top: 20px;
+  height: 12px;
+  width: 90%;
+  max-width: 700px;
+  align-self: center;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   DISPLAY SCREEN LOBBY PLAYERS
+══════════════════════════════════════════════════════════════════ */
 .display-avatar-card {
   display: flex;
   flex-direction: column;
@@ -1456,8 +1532,9 @@ body::before {
   text-overflow: ellipsis;
 }
 
-/* Locked lobby styles */
-.display-lobby.lobby-locked #display-lobby-join-info {
+/* ── Locked lobby styles ─────────────────────────────────────── */
+.display-lobby.lobby-locked #display-lobby-join-info,
+.display-lobby.lobby-locked .display-lobby-join-info {
   opacity: 0;
   transform: scale(0.8);
   pointer-events: none;
@@ -1476,3 +1553,417 @@ body::before {
   font-size: 1.4rem;
   margin-top: 15px;
 }
+
+/* ══════════════════════════════════════════════════════════════════
+   RESPONSIVE — PHONES (≤600px)
+══════════════════════════════════════════════════════════════════ */
+@media (max-width: 600px) {
+  /* ── Game Header ─────────────────────────────────────────────── */
+  .game-header {
+    padding: 10px 12px;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .header-left {
+    gap: 4px;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+  }
+  .header-logo {
+    font-size: 1.2rem;
+  }
+  #round-badge {
+    font-size: 0.75rem;
+    white-space: nowrap;
+  }
+  .room-code-badge {
+    font-size: 0.7rem;
+    padding: 3px 6px;
+    margin-left: 4px;
+  }
+  .header-icon-btn {
+    margin-left: 4px;
+    padding: 3px 6px;
+    font-size: 0.9rem;
+  }
+  .score-pill {
+    padding: 6px 10px;
+    font-size: 0.95rem;
+    gap: 6px;
+  }
+  .btn-leave {
+    padding: 5px 10px;
+    font-size: 0.75rem;
+  }
+
+  /* ── Player Panel ────────────────────────────────────────────── */
+  .game-panel {
+    padding: 16px 12px 60px;
+    gap: 12px;
+  }
+  .sentence-area {
+    padding: 20px 16px;
+    border-radius: 16px;
+  }
+  .sentence-label {
+    font-size: 0.75rem;
+    letter-spacing: 1.5px;
+    margin-bottom: 10px;
+  }
+  .sentence-display {
+    font-size: clamp(1.2rem, 4.5vw, 1.8rem);
+  }
+  .balloon-grid {
+    gap: 10px;
+    max-width: 100%;
+  }
+  .balloon-btn {
+    min-height: 120px;
+    border-radius: 16px;
+  }
+  .balloon-shape {
+    width: 42px;
+    height: 52px;
+  }
+  .balloon-string {
+    height: 20px;
+  }
+  .balloon-label {
+    font-size: 0.9rem;
+    letter-spacing: 1px;
+    margin-top: 6px;
+  }
+  .trap-hint {
+    font-size: 0.8rem;
+    padding: 10px 16px;
+  }
+  .result-bar {
+    padding: 12px 16px;
+    gap: 12px;
+    border-radius: 16px;
+  }
+  .result-icon { font-size: 1.6rem; }
+  .result-text { font-size: 1.05rem; }
+  .result-pts  { font-size: 1.3rem; }
+
+  /* ── Admin Panel ─────────────────────────────────────────────── */
+  .admin-inner {
+    padding: 16px;
+    gap: 12px;
+    border-radius: 16px;
+  }
+  .admin-stats-bar {
+    gap: 6px;
+  }
+  .admin-stat-pill {
+    padding: 10px 6px;
+    border-radius: 12px;
+  }
+  .stat-icon { font-size: 1.1rem; }
+  .stat-value { font-size: 1.1rem; }
+  .stat-label { font-size: 0.6rem; }
+  .admin-title { font-size: 1.3rem; }
+  .admin-crown { font-size: 1.4rem; }
+  .seg-tab {
+    font-size: 0.8rem;
+    padding: 10px 8px;
+  }
+  .seg-icon { font-size: 0.85rem; }
+  .colour-picker-grid {
+    grid-template-columns: repeat(5, 1fr);
+    gap: 6px;
+  }
+  .colour-btn {
+    padding: 10px 4px;
+    font-size: 0.7rem;
+    gap: 5px;
+  }
+  .btn-balloon {
+    width: 22px; height: 28px;
+    min-width: 22px; min-height: 28px;
+  }
+  .round-active-banner { padding: 16px; }
+  .rab-sentence { font-size: 0.95rem; }
+  .queue-card { padding: 12px; }
+  .queue-list li { font-size: 0.85rem; padding: 8px; }
+
+  /* ── Display Lobby ───────────────────────────────────────────── */
+  .display-lobby {
+    min-height: auto;
+    gap: 20px;
+    padding: 20px 12px;
+  }
+  .display-lobby-header {
+    font-size: 1.6rem;
+  }
+  .display-lobby-join-info {
+    gap: 16px;
+  }
+  .qr-container {
+    padding: 12px;
+    border-radius: 16px;
+    border-width: 3px;
+  }
+  .display-url-box {
+    padding: 10px 20px;
+  }
+  .display-url-label {
+    font-size: 0.75rem;
+    letter-spacing: 1.5px;
+  }
+  .display-lobby-players {
+    gap: 12px;
+    max-width: 100%;
+  }
+  .display-avatar-card { width: 80px; }
+  .display-avatar-bubble {
+    width: 60px; height: 60px;
+    font-size: 1.8rem;
+  }
+  .display-avatar-name {
+    font-size: 0.8rem;
+    margin-top: 6px;
+  }
+
+  /* ── Display Game View ───────────────────────────────────────── */
+  .display-game-view { margin-top: 3vh; min-height: auto; }
+  .display-game-title { font-size: 1.5rem; margin-bottom: 16px; }
+  .display-sentence-box { padding: 20px; border-radius: 14px; }
+  .display-timer-wrap { margin-top: 24px; height: 10px; }
+
+  /* ── Leaderboard ─────────────────────────────────────────────── */
+  #lb-panel { padding-left: 12px; padding-right: 12px; }
+  .lb-title { font-size: 1.6rem; }
+  .lb-row {
+    padding: 12px 16px;
+    gap: 10px;
+    font-size: 0.95rem;
+  }
+  .lb-rank { font-size: 1.1rem; min-width: 28px; }
+  .lb-avatar { font-size: 1.2rem; }
+  .lb-pts { font-size: 1rem; }
+  .lb-streak { font-size: 0.7rem; padding: 3px 8px; }
+
+  /* ── Overlay ─────────────────────────────────────────────────── */
+  .overlay { padding: 24px; gap: 16px; }
+  .ov-label { font-size: 0.85rem; letter-spacing: 2px; }
+
+  /* ── Locked lobby mobile ─────────────────────────────────────── */
+  .display-lobby.lobby-locked .display-avatar-card { width: 90px; }
+  .display-lobby.lobby-locked .display-avatar-bubble {
+    width: 70px; height: 70px;
+    font-size: 2.2rem;
+  }
+  .display-lobby.lobby-locked .display-avatar-name {
+    font-size: 1rem;
+    margin-top: 8px;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   RESPONSIVE — VERY SMALL PHONES (≤400px)
+══════════════════════════════════════════════════════════════════ */
+@media (max-width: 400px) {
+  .game-header {
+    padding: 8px 8px;
+    gap: 4px;
+  }
+  .header-logo { display: none; }
+  .room-code-badge { display: none; }
+  .header-icon-btn { padding: 2px 5px; font-size: 0.85rem; margin-left: 2px; }
+  .score-pill {
+    padding: 5px 8px;
+    font-size: 0.85rem;
+    gap: 4px;
+  }
+  .btn-leave { padding: 4px 8px; font-size: 0.7rem; }
+
+  .sentence-area { padding: 14px 12px; }
+  .sentence-label { font-size: 0.65rem; margin-bottom: 6px; }
+  .sentence-display { font-size: clamp(1rem, 4vw, 1.5rem); }
+
+  .balloon-grid { gap: 8px; }
+  .balloon-btn { min-height: 100px; border-radius: 14px; }
+  .balloon-shape { width: 34px; height: 42px; }
+  .balloon-string { height: 16px; }
+  .balloon-label { font-size: 0.8rem; margin-top: 4px; }
+
+  .admin-inner { padding: 12px; gap: 10px; }
+  .admin-stat-pill { padding: 8px 4px; }
+  .stat-icon { font-size: 1rem; }
+  .stat-value { font-size: 0.95rem; }
+  .admin-title { font-size: 1.1rem; }
+  .admin-crown { font-size: 1.2rem; }
+
+  .join-card { padding: 24px 16px; }
+  .join-balloon-icon { font-size: 2.5rem; }
+  .join-logo-text { font-size: 1.6rem; }
+  .join-tagline { font-size: 0.85rem; }
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   RESPONSIVE — SHORT VIEWPORTS (≤700px height)
+   Ensures balloons + sentence fit on screen without scrolling
+══════════════════════════════════════════════════════════════════ */
+@media (max-height: 700px) and (max-width: 600px) {
+  .game-panel {
+    padding: 10px 10px 50px;
+    gap: 8px;
+  }
+  .sentence-area {
+    padding: 14px 12px;
+  }
+  .sentence-label {
+    margin-bottom: 6px;
+    font-size: 0.7rem;
+  }
+  .sentence-display {
+    font-size: clamp(1rem, 3.5vw, 1.5rem);
+  }
+  .waiting-lobby { margin-top: 10px; }
+  .balloon-grid {
+    gap: 8px;
+  }
+  .balloon-btn {
+    min-height: 90px;
+  }
+  .balloon-shape {
+    width: 32px;
+    height: 40px;
+  }
+  .balloon-string {
+    height: 14px;
+  }
+  .balloon-label {
+    font-size: 0.8rem;
+    margin-top: 4px;
+  }
+  .trap-hint {
+    font-size: 0.75rem;
+    padding: 8px 12px;
+  }
+  .result-bar {
+    padding: 10px 12px;
+  }
+  .result-icon { font-size: 1.4rem; }
+  .result-text { font-size: 0.95rem; }
+  .result-pts  { font-size: 1.1rem; }
+}
+
+/* Even shorter screens (e.g. landscape phones) */
+@media (max-height: 580px) {
+  .game-header {
+    padding: 6px 10px;
+    position: relative; /* un-stick header to save space */
+  }
+  .game-panel {
+    padding: 8px 8px 40px;
+    gap: 6px;
+  }
+  .sentence-area {
+    padding: 10px;
+  }
+  .sentence-label { display: none; }
+  .balloon-btn { min-height: 75px; }
+  .balloon-shape { width: 28px; height: 34px; }
+  .balloon-string { height: 10px; }
+  .balloon-label { font-size: 0.7rem; margin-top: 2px; letter-spacing: 0; }
+  .trap-hint { display: none; }
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   RESPONSIVE — TABLETS (601px – 900px)
+══════════════════════════════════════════════════════════════════ */
+@media (min-width: 601px) and (max-width: 900px) {
+  .game-panel {
+    padding: 20px 16px 60px;
+  }
+  .balloon-grid {
+    max-width: 420px;
+  }
+  .balloon-btn {
+    min-height: 140px;
+  }
+  .admin-inner {
+    max-width: 580px;
+  }
+  .display-lobby {
+    gap: 24px;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   RESPONSIVE — LARGE SCREENS (≥1200px)
+   Optimized for display/projection on TVs and large monitors
+══════════════════════════════════════════════════════════════════ */
+@media (min-width: 1200px) {
+  .display-lobby {
+    gap: 40px;
+    min-height: 80vh;
+  }
+  .display-lobby-header {
+    font-size: 3.5rem;
+  }
+  .qr-container {
+    padding: 28px;
+    border-radius: 28px;
+  }
+  .display-lobby-players {
+    gap: 28px;
+  }
+  .display-avatar-card { width: 140px; }
+  .display-avatar-bubble {
+    width: 110px; height: 110px;
+    font-size: 3.4rem;
+  }
+  .display-avatar-name {
+    font-size: 1.3rem;
+    margin-top: 14px;
+  }
+  .display-game-title {
+    font-size: 3.5rem;
+  }
+  .display-sentence-box {
+    padding: 50px 60px;
+    border-radius: 24px;
+  }
+
+  /* Locked lobby — extra large */
+  .display-lobby.lobby-locked .display-avatar-card { width: 180px; }
+  .display-lobby.lobby-locked .display-avatar-bubble {
+    width: 160px; height: 160px;
+    font-size: 5rem;
+  }
+  .display-lobby.lobby-locked .display-avatar-name {
+    font-size: 1.6rem;
+  }
+
+  /* Story view on large screens */
+  .story-scroll-area {
+    max-width: 1000px;
+    padding: 40px;
+  }
+  .story-line { font-size: 1.8rem; }
+  .story-line.active { font-size: 2rem; }
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   RESPONSIVE — EXTRA LARGE DISPLAYS (≥1800px)
+══════════════════════════════════════════════════════════════════ */
+@media (min-width: 1800px) {
+  .display-lobby-header { font-size: 4rem; }
+  .display-game-title { font-size: 4rem; }
+  .display-sentence-box {
+    font-size: 3rem;
+    padding: 60px 80px;
+  }
+  .display-lobby.lobby-locked .display-avatar-card { width: 200px; }
+  .display-lobby.lobby-locked .display-avatar-bubble {
+    width: 180px; height: 180px;
+    font-size: 5.5rem;
+  }
+  .story-line { font-size: 2rem; }
+  .story-line.active { font-size: 2.4rem; }
+}
+

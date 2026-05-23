@@ -61,15 +61,14 @@
       <div class="header-left">
         <span class="header-logo">🎈</span>
         <span id="round-badge">Round <strong id="round-num">—</strong></span>
-        <span id="room-code-badge" style="margin-left: 10px; padding: 4px 10px; border-radius: 6px; font-weight: 800; font-family: var(--font-disp); background: rgba(99, 71, 255, 0.2); border: 1px solid var(--primary); color: #fff; font-size: 0.85rem; letter-spacing: 0.5px;"><span id="room-lock-icon">🔓</span> · <span id="player-count-badge">👥 0</span></span>
-        <button id="btn-tts" class="icon-btn" title="Toggle Text-to-Speech"
-          style="margin-left: 8px; padding: 4px 8px; font-size: 1rem; background: rgba(255,255,255,0.15);">🔊</button>
+        <span id="room-code-badge" class="room-code-badge"><span id="room-lock-icon">🔓</span> · <span id="player-count-badge">👥 0</span></span>
+        <button id="btn-tts" class="icon-btn header-icon-btn" title="Toggle Text-to-Speech">🔊</button>
       </div>
-      <div id="score-pill" class="score-pill" style="gap: 12px; align-items: center;">
+      <div id="score-pill" class="score-pill">
         <span class="score-icon">⭐</span>
         <span id="total-score">0</span>
-        <button id="btn-sound-toggle" class="icon-btn" title="Toggle Sound FX" style="padding: 4px 8px; font-size: 1rem; background: rgba(255,255,255,0.15); border-radius: 50%;">🔊</button>
-        <button id="btn-leave-room" class="btn-outline" style="padding: 6px 12px; font-size: 0.8rem; border-color: rgba(255,59,92,0.4); color: #ff3b5c;">Leave</button>
+        <button id="btn-sound-toggle" class="icon-btn header-icon-btn header-icon-round" title="Toggle Sound FX">🔊</button>
+        <button id="btn-leave-room" class="btn-outline btn-leave">Leave</button>
       </div>
     </header>
 
@@ -243,9 +242,9 @@
         <div id="player-narrative-prefix" class="player-narrative-prefix hidden"></div>
         <p class="sentence-label">Find the hidden colour word in:</p>
         <div class="sentence-display" id="sentence-display">Waiting for host…</div>
-        <div id="waiting-lobby" style="margin-top: 20px;">
-          <div id="waiting-avatars" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin-bottom: 12px;"></div>
-          <p id="waiting-text" class="waiting-pulse" style="font-size: 0.9rem; color: var(--text-muted); font-weight: 700;">Waiting for the host to start...</p>
+        <div id="waiting-lobby" class="waiting-lobby">
+          <div id="waiting-avatars" class="waiting-avatars"></div>
+          <p id="waiting-text" class="waiting-pulse waiting-text">Waiting for the host to start...</p>
         </div>
         <div id="timer-wrap" class="timer-wrap hidden">
           <div id="timer-bar" class="timer-bar"></div>
@@ -299,29 +298,29 @@
     <!-- ── DISPLAY PANEL ─────────────────────────────────────────────── -->
     <section id="display-panel" class="game-panel hidden">
       <!-- Display lobby view (before game starts) -->
-      <div id="display-lobby-view" class="display-lobby" style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 75vh; gap: 30px; text-align: center;">
-        <h1 id="display-lobby-header" style="font-size: 3rem; font-weight: 800; font-family: var(--font-disp); color: #fff; margin: 0; text-shadow: 0 4px 10px rgba(0,0,0,0.3);">🎈 Join the Game! 🎈</h1>
+      <div id="display-lobby-view" class="display-lobby">
+        <h1 id="display-lobby-header" class="display-lobby-header">🎈 Join the Game! 🎈</h1>
         
-        <div id="display-lobby-join-info" style="display: flex; flex-direction: column; align-items: center; gap: 30px; transition: all 0.4s ease;">
-          <div class="qr-container" style="background: #fff; padding: 20px; border-radius: 24px; box-shadow: 0 20px 50px rgba(99, 71, 255, 0.4); border: 4px solid var(--primary); display: flex; align-items: center; justify-content: center; transition: all 0.3s ease;">
-            <img id="display-qr-img" src="" alt="QR Code" style="width: 250px; height: 250px; border-radius: 8px;">
+        <div id="display-lobby-join-info" class="display-lobby-join-info">
+          <div class="qr-container">
+            <img id="display-qr-img" src="" alt="QR Code" class="display-qr-img">
           </div>
-          <div class="display-url-box" style="background: rgba(255,255,255,0.06); padding: 15px 30px; border-radius: 100px; border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(10px);">
-            <p style="margin: 0; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 2px; color: var(--text-muted); font-weight: 700; margin-bottom: 5px;">Scan QR or Go to URL</p>
-            <span id="display-join-url" style="font-family: var(--font-disp); font-size: 1.8rem; font-weight: 800; color: #fff; letter-spacing: 0.5px;">—</span>
+          <div class="display-url-box">
+            <p class="display-url-label">Scan QR or Go to URL</p>
+            <span id="display-join-url" class="display-join-url">—</span>
           </div>
         </div>
 
-        <div id="display-lobby-players" class="display-lobby-players" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; max-width: 85%; margin-top: 10px; transition: all 0.4s ease;">
+        <div id="display-lobby-players" class="display-lobby-players">
           <!-- Avatar cards will be dynamically injected here -->
         </div>
       </div>
 
       <!-- Display gameplay view (during active round) -->
-      <div id="display-game-view" class="display-area hidden" style="text-align: center; margin-top: 10vh; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 60vh;">
-        <h1 style="font-size: 3rem; margin-bottom: 30px; color: #fff; font-family: var(--font-disp); font-weight: 800;">Find the hidden colour!</h1>
-        <div class="sentence-display" id="display-sentence" style="font-size: 2.5rem; line-height: 1.5; max-width: 90%; background: rgba(0,0,0,0.3); padding: 40px; border-radius: 20px;">Waiting for host…</div>
-        <div id="display-timer-wrap" class="timer-wrap hidden" style="margin-top: 50px; height: 15px; width: 80%; max-width: 600px;">
+      <div id="display-game-view" class="display-area display-game-view hidden">
+        <h1 class="display-game-title">Find the hidden colour!</h1>
+        <div class="sentence-display display-sentence-box" id="display-sentence">Waiting for host…</div>
+        <div id="display-timer-wrap" class="timer-wrap display-timer-wrap hidden">
           <div id="display-timer-bar" class="timer-bar"></div>
         </div>
       </div>
@@ -335,7 +334,7 @@
         <div class="story-scroll-area" id="story-scroll-area">
           <!-- Sentence lines will be injected here dynamically -->
         </div>
-        <div id="display-story-timer-wrap" class="timer-wrap hidden" style="margin-top: 20px; height: 12px; width: 90%; max-width: 700px; align-self: center;">
+        <div id="display-story-timer-wrap" class="timer-wrap display-story-timer-wrap hidden">
           <div id="display-story-timer-bar" class="timer-bar"></div>
         </div>
       </div>

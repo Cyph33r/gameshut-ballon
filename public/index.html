@@ -160,6 +160,12 @@
               <button type="button" class="colour-btn orange" data-color="orange" id="btn-orange">
                 <div class="btn-balloon"></div><span>Orange</span>
               </button>
+              <button type="button" class="colour-btn green" data-color="green" id="btn-green">
+                <div class="btn-balloon"></div><span>Green</span>
+              </button>
+              <button type="button" class="colour-btn gold" data-color="gold" id="btn-gold">
+                <div class="btn-balloon"></div><span>Gold</span>
+              </button>
               <button type="button" class="colour-btn trap" data-color="null" id="btn-trap">
                 <span class="trap-icon">🚫</span><span>Trap<br><small>(no colour)</small></span>
               </button>
@@ -189,7 +195,7 @@
               <div id="story-words-container" class="story-words"></div>
 
               <div id="story-palette" class="colour-picker-grid hidden"
-                style="margin-top: 10px; background: rgba(0,0,0,0.3); padding: 10px; border-radius: var(--radius); grid-template-columns: repeat(6, 1fr);">
+                style="margin-top: 10px; background: rgba(0,0,0,0.3); padding: 10px; border-radius: var(--radius); grid-template-columns: repeat(4, 1fr);">
                 <button type="button" class="colour-btn red" data-color="red">
                   <div class="btn-balloon"></div><span>Red</span>
                 </button>
@@ -201,6 +207,12 @@
                 </button>
                 <button type="button" class="colour-btn orange" data-color="orange">
                   <div class="btn-balloon"></div><span>Orange</span>
+                </button>
+                <button type="button" class="colour-btn green" data-color="green">
+                  <div class="btn-balloon"></div><span>Green</span>
+                </button>
+                <button type="button" class="colour-btn gold" data-color="gold">
+                  <div class="btn-balloon"></div><span>Gold</span>
                 </button>
                 <button type="button" class="colour-btn trap" data-color="null"><span
                     class="trap-icon">🚫</span><span>Trap</span></button>
@@ -273,7 +285,7 @@
           💡 <strong>Remember:</strong> If there's no hidden colour — don't click anything!
         </div>
 
-        <!-- 2×2 Balloon Grid -->
+        <!-- 3×2 Balloon Grid -->
         <div class="balloon-grid" id="balloon-grid">
           <button class="balloon-btn red    disabled" data-color="red" id="balloon-red" disabled>
             <div class="balloon-shape"></div>
@@ -294,6 +306,16 @@
             <div class="balloon-shape"></div>
             <div class="balloon-string"></div>
             <span class="balloon-label">Orange</span>
+          </button>
+          <button class="balloon-btn green  disabled" data-color="green" id="balloon-green" disabled>
+            <div class="balloon-shape"></div>
+            <div class="balloon-string"></div>
+            <span class="balloon-label">Green</span>
+          </button>
+          <button class="balloon-btn gold   disabled" data-color="gold" id="balloon-gold" disabled>
+            <div class="balloon-shape"></div>
+            <div class="balloon-string"></div>
+            <span class="balloon-label">Gold</span>
           </button>
         </div>
       </div>

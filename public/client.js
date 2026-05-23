@@ -1008,13 +1008,20 @@
 
       // Automatic color hint parsing
       let parsedColor = undefined;
-      const hintMatch = s.match(/\((?:sounds?\s+like|like|≈)\s*(red|blue|yellow|orange|trap|null)/i);
+      const hintMatch = s.match(/\((?:sounds?\s+like|like|≈)\s*(red|blue|yellow|orange|green|gold|trap|null)/i);
       if (hintMatch) {
         const matchedStr = hintMatch[1].toLowerCase();
         if (matchedStr === 'trap' || matchedStr === 'null') {
           parsedColor = null;
         } else {
           parsedColor = matchedStr;
+        }
+      } else {
+        // Look for literal spelt-out colors in the clean text (ignoring phonetic hints)
+        const speltMatch = cleanText.match(/\b(red|blue|yellow|orange|green|gold|golden)\b/i);
+        if (speltMatch) {
+          const matched = speltMatch[1].toLowerCase();
+          parsedColor = (matched === 'golden') ? 'gold' : matched;
         }
       }
 

@@ -29,8 +29,8 @@ host.on('joined', (data) => {
         console.log(`  🤖 Bot${i+1} sees story round ${rd.storyProgress.storyRoundIndex}`);
       }
       setTimeout(() => {
-        const colors = ['red', 'yellow', 'orange', 'blue'];
-        bot.emit('click', { color: colors[Math.floor(Math.random() * 4)] });
+        const colors = ['red', 'yellow', 'orange', 'blue', 'green', 'gold'];
+        bot.emit('click', { color: colors[Math.floor(Math.random() * 6)] });
       }, 200 + Math.random() * 500);
     });
   }

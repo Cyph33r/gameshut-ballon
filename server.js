@@ -31,7 +31,7 @@ function serverNow() {
 }
 
 // ─── Constants ───────────────────────────────────────────────────────────────
-const COLORS = ['red', 'yellow', 'orange', 'blue'];
+const COLORS = ['red', 'yellow', 'orange', 'blue', 'green', 'gold'];
 const ANSWER_WINDOW = 5_000 + 1_500;  // 1.5s delay + 5s window
 const MAX_TRUST_DIFF = 2000;    // ms: max allowed drift for client clickTime
 const POINTS_FIRST = 10;      // first correct answer gets this

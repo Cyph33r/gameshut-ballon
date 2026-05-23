@@ -3,7 +3,7 @@ import { io } from 'socket.io-client';
 const URL = process.env.URL || 'https://gameshut-ballon.onrender.com';
 const NUM_CLIENTS = 100;
 
-const COLORS = ['red', 'yellow', 'orange', 'blue'];
+const COLORS = ['red', 'yellow', 'orange', 'blue', 'green', 'gold'];
 const adjectives = ['Happy', 'Blue', 'Fast', 'Clever', 'Brave', 'Wild', 'Cool', 'Epic', 'Magic', 'Sneaky', 'Fierce', 'Mighty', 'Swift', 'Lucky', 'Smart', 'Bold', 'Neon', 'Cosmic', 'Silent', 'Mega', 'Cyber', 'Super', 'Rapid', 'Hyper', 'Flash', 'Shiny', 'Grand', 'Funky', 'Noble', 'Royal'];
 const nouns = ['Tiger', 'Fox', 'Bear', 'Wolf', 'Owl', 'Panda', 'Lion', 'Hawk', 'Duck', 'Frog', 'Dragon', 'Shark', 'Eagle', 'Cat', 'Dog', 'Seal', 'Koala', 'Whale', 'Puma', 'Cobra', 'Toad', 'Crow', 'Swan', 'Rhino', 'Moose', 'Sloth', 'Gecko', 'Lemur', 'Zebra', 'Sheep'];
 const emojis = ['🐯', '🦊', '🐻', '🐺', '🦉', '🐼', '🦁', '🦅', '🦆', '🐸', '🐉', '🦈', '🐈', '🐕', '🦭', '🐨', '🐳', '🐍', '🦢', '🦏', '🦥', '🦎', '🦓', '🐑', '🦖', '🦄', '🐙', '🐢', '🐧', '🦍'];

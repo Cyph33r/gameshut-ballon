@@ -1598,23 +1598,38 @@
         $displayLobbyPlayers.classList.remove('size-standard', 'size-medium', 'size-small', 'size-xsmall');
         $displayLobbyPlayers.classList.add(sizeClass);
 
-        // Remove existing avatar cards, leaving the join-info block intact
-        const existingCards = $displayLobbyPlayers.querySelectorAll('.display-avatar-card');
-        existingCards.forEach(card => card.remove());
-
-        const avatarsCount = data.avatars.length;
-        const mid = Math.floor(avatarsCount / 2);
-
-        const $displayLobbyJoinInfo = document.getElementById('display-lobby-join-info');
-        if ($displayLobbyJoinInfo) {
-          $displayLobbyJoinInfo.style.order = mid;
+        // Ensure Left and Right containers exist inside the display players lobby container
+        let $leftLobby = document.getElementById('display-lobby-left');
+        let $rightLobby = document.getElementById('display-lobby-right');
+        if (!$leftLobby) {
+          $leftLobby = document.createElement('div');
+          $leftLobby.id = 'display-lobby-left';
+          $leftLobby.className = 'display-lobby-side';
+          $displayLobbyPlayers.appendChild($leftLobby);
         }
+        if (!$rightLobby) {
+          $rightLobby = document.createElement('div');
+          $rightLobby.id = 'display-lobby-right';
+          $rightLobby.className = 'display-lobby-side';
+          $displayLobbyPlayers.appendChild($rightLobby);
+        }
+
+        // Apply active sizing classes to the left/right sub-lobby containers
+        $leftLobby.className = `display-lobby-side ${sizeClass}`;
+        $rightLobby.className = `display-lobby-side ${sizeClass}`;
+
+        // Clear existing avatar cards inside sub-lobbies
+        $leftLobby.innerHTML = '';
+        $rightLobby.innerHTML = '';
+
+        // Clean up any loose avatar cards that ended up directly in parent
+        const looseCards = $displayLobbyPlayers.querySelectorAll(':scope > .display-avatar-card');
+        looseCards.forEach(c => c.remove());
 
         data.avatars.forEach((p, i) => {
           const card = document.createElement('div');
           card.className = 'display-avatar-card';
           card.style.animationDelay = `${i * 0.05}s`;
-          card.style.order = i < mid ? i : i + 1;
 
           const bubble = document.createElement('div');
           bubble.className = 'display-avatar-bubble';
@@ -1626,7 +1641,13 @@
 
           card.appendChild(bubble);
           card.appendChild(name);
-          $displayLobbyPlayers.appendChild(card);
+
+          // Distribute players symmetrically: even index left, odd index right
+          if (i % 2 === 0) {
+            $leftLobby.appendChild(card);
+          } else {
+            $rightLobby.appendChild(card);
+          }
         });
       }
     }

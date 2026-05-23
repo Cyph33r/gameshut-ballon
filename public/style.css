@@ -1619,13 +1619,34 @@ body::before {
 .display-lobby-players {
   position: relative;
   width: 95vw;
-  height: 58vh;
+  min-height: 50vh;
   margin-top: 15px;
   transition: all 0.4s ease;
   overflow: visible;
   display: flex;
+  flex-direction: row;
   justify-content: center;
   align-items: center;
+  gap: 30px;
+  max-width: 1400px;
+}
+.display-lobby-side {
+  flex: 1 1 0%;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+}
+#display-lobby-left {
+  order: 1;
+}
+#display-lobby-join-info {
+  order: 2;
+  flex-shrink: 0;
+}
+#display-lobby-right {
+  order: 3;
 }
 
 /* ── Display Game View ───────────────────────────────────────── */
@@ -1673,14 +1694,12 @@ body::before {
    DISPLAY SCREEN LOBBY PLAYERS
 ══════════════════════════════════════════════════════════════════ */
 .display-avatar-card {
-  position: absolute;
   display: flex;
   flex-direction: column;
   align-items: center;
   width: 120px;
   animation: pop-in 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
   transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
-  will-change: left, top;
   z-index: 5;
 }
 .display-avatar-bubble {

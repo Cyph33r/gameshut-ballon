@@ -46,8 +46,9 @@ const emojis = ['🐯', '🦊', '🐻', '🐺', '🦉', '🐼', '🦁', '🐨', 
 const names = ['Tiger', 'Fox', 'Bear', 'Wolf', 'Owl', 'Panda', 'Lion', 'Koala', 'Frog', 'Octopus', 'Rabbit', 'Chicken', 'Penguin', 'Duck', 'Monkey', 'Unicorn', 'Bee', 'Ladybug', 'Turtle', 'Snake', 'Octopus', 'Blowfish', 'Fish', 'Dolphin', 'Whale', 'Shark', 'Crocodile', 'Leopard', 'Zebra', 'Elephant', 'Hippo', 'Rhino', 'Camel', 'Giraffe', 'Kangaroo', 'Llama', 'Ram', 'Pig', 'Deer', 'Horse'];
 
 for (let i = 0; i < 40; i++) {
+  const suffix = i >= names.length ? ` ${Math.floor(i / names.length) + 1}` : '';
   BOT_PRESETS.push({
-    name: `${names[i % names.length]} ${emojis[i % emojis.length]}`,
+    name: `${names[i % names.length]}${suffix}`,
     avatar: emojis[i % emojis.length]
   });
 }

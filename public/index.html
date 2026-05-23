@@ -300,13 +300,20 @@
     <section id="display-panel" class="game-panel hidden">
       <!-- Display lobby view (before game starts) -->
       <div id="display-lobby-view" class="display-lobby" style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 75vh; gap: 30px; text-align: center;">
-        <h1 style="font-size: 3rem; font-weight: 800; font-family: var(--font-disp); color: #fff; margin: 0; text-shadow: 0 4px 10px rgba(0,0,0,0.3);">🎈 Join the Game! 🎈</h1>
-        <div class="qr-container" style="background: #fff; padding: 20px; border-radius: 24px; box-shadow: 0 20px 50px rgba(99, 71, 255, 0.4); border: 4px solid var(--primary); display: flex; align-items: center; justify-content: center; transition: all 0.3s ease;">
-          <img id="display-qr-img" src="" alt="QR Code" style="width: 250px; height: 250px; border-radius: 8px;">
+        <h1 id="display-lobby-header" style="font-size: 3rem; font-weight: 800; font-family: var(--font-disp); color: #fff; margin: 0; text-shadow: 0 4px 10px rgba(0,0,0,0.3);">🎈 Join the Game! 🎈</h1>
+        
+        <div id="display-lobby-join-info" style="display: flex; flex-direction: column; align-items: center; gap: 30px; transition: all 0.4s ease;">
+          <div class="qr-container" style="background: #fff; padding: 20px; border-radius: 24px; box-shadow: 0 20px 50px rgba(99, 71, 255, 0.4); border: 4px solid var(--primary); display: flex; align-items: center; justify-content: center; transition: all 0.3s ease;">
+            <img id="display-qr-img" src="" alt="QR Code" style="width: 250px; height: 250px; border-radius: 8px;">
+          </div>
+          <div class="display-url-box" style="background: rgba(255,255,255,0.06); padding: 15px 30px; border-radius: 100px; border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(10px);">
+            <p style="margin: 0; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 2px; color: var(--text-muted); font-weight: 700; margin-bottom: 5px;">Scan QR or Go to URL</p>
+            <span id="display-join-url" style="font-family: var(--font-disp); font-size: 1.8rem; font-weight: 800; color: #fff; letter-spacing: 0.5px;">—</span>
+          </div>
         </div>
-        <div class="display-url-box" style="background: rgba(255,255,255,0.06); padding: 15px 30px; border-radius: 100px; border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(10px);">
-          <p style="margin: 0; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 2px; color: var(--text-muted); font-weight: 700; margin-bottom: 5px;">Scan QR or Go to URL</p>
-          <span id="display-join-url" style="font-family: var(--font-disp); font-size: 1.8rem; font-weight: 800; color: #fff; letter-spacing: 0.5px;">—</span>
+
+        <div id="display-lobby-players" class="display-lobby-players" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; max-width: 85%; margin-top: 10px; transition: all 0.4s ease;">
+          <!-- Avatar cards will be dynamically injected here -->
         </div>
       </div>
 

@@ -224,6 +224,10 @@
     const $lockIcon = document.getElementById('lock-icon');
     const $lockText = document.getElementById('lock-text');
     
+    // Display screen elements
+    const $displayLobbyView = document.getElementById('display-lobby-view');
+    const $displayLobbyHeader = document.getElementById('display-lobby-header');
+    
     if (isLocked) {
       if ($lockIcon) $lockIcon.textContent = '🔒';
       if ($lockText) $lockText.textContent = 'Lobby Locked';
@@ -234,6 +238,14 @@
       if ($adminLobbyIcon) $adminLobbyIcon.textContent = '🔒';
       if ($adminLobbyStatus) $adminLobbyStatus.textContent = 'Locked';
       if ($adminLobbyPill) $adminLobbyPill.classList.add('locked');
+      
+      // Update display screen lobby
+      if ($displayLobbyView) {
+        $displayLobbyView.classList.add('lobby-locked');
+      }
+      if ($displayLobbyHeader) {
+        $displayLobbyHeader.textContent = '🔒 Lobby Locked! Game Starting Soon... 🚀';
+      }
     } else {
       if ($lockIcon) $lockIcon.textContent = '🔓';
       if ($lockText) $lockText.textContent = 'Lobby Open';
@@ -242,6 +254,14 @@
       if ($adminLobbyIcon) $adminLobbyIcon.textContent = '🔓';
       if ($adminLobbyStatus) $adminLobbyStatus.textContent = 'Open';
       if ($adminLobbyPill) $adminLobbyPill.classList.remove('locked');
+      
+      // Update display screen lobby
+      if ($displayLobbyView) {
+        $displayLobbyView.classList.remove('lobby-locked');
+      }
+      if ($displayLobbyHeader) {
+        $displayLobbyHeader.textContent = '🎈 Join the Game! 🎈';
+      }
     }
   }
 
@@ -1359,6 +1379,29 @@
         bubble.textContent = p.avatar;
         bubble.style.animationDelay = `${i * 0.05}s`;
         $waitingAvatars.appendChild(bubble);
+      });
+    }
+
+    // Update display screen lobby avatars
+    const $displayLobbyPlayers = document.getElementById('display-lobby-players');
+    if ($displayLobbyPlayers) {
+      $displayLobbyPlayers.innerHTML = '';
+      data.avatars.forEach((p, i) => {
+        const card = document.createElement('div');
+        card.className = 'display-avatar-card';
+        card.style.animationDelay = `${i * 0.05}s`;
+        
+        const bubble = document.createElement('div');
+        bubble.className = 'display-avatar-bubble';
+        bubble.textContent = p.avatar || '👤';
+        
+        const name = document.createElement('div');
+        name.className = 'display-avatar-name';
+        name.textContent = p.username || 'Player';
+        
+        card.appendChild(bubble);
+        card.appendChild(name);
+        $displayLobbyPlayers.appendChild(card);
       });
     }
   });

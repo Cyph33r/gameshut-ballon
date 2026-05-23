@@ -1414,3 +1414,65 @@ body::before {
     font-size: 0.95rem;
   }
 }
+
+/* ── Display Screen Lobby Players ────────────────────────────── */
+.display-avatar-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 120px;
+  animation: pop-in 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+  transition: all 0.3s ease;
+}
+.display-avatar-bubble {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 90px;
+  height: 90px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 3px solid rgba(255, 255, 255, 0.15);
+  border-radius: 50%;
+  font-size: 2.8rem;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.display-avatar-card:hover .display-avatar-bubble {
+  transform: scale(1.18) translateY(-6px);
+  border-color: var(--primary);
+  background: rgba(99, 71, 255, 0.12);
+  box-shadow: 0 15px 35px rgba(99, 71, 255, 0.45);
+}
+.display-avatar-name {
+  margin-top: 10px;
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: rgba(255,255,255,0.95);
+  text-shadow: 0 2px 5px rgba(0,0,0,0.6);
+  text-align: center;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Locked lobby styles */
+.display-lobby.lobby-locked #display-lobby-join-info {
+  opacity: 0;
+  transform: scale(0.8);
+  pointer-events: none;
+  display: none !important;
+}
+.display-lobby.lobby-locked .display-avatar-card {
+  width: 150px;
+}
+.display-lobby.lobby-locked .display-avatar-bubble {
+  width: 130px;
+  height: 130px;
+  font-size: 4.2rem;
+  box-shadow: 0 15px 40px rgba(0,0,0,0.35);
+}
+.display-lobby.lobby-locked .display-avatar-name {
+  font-size: 1.4rem;
+  margin-top: 15px;
+}
